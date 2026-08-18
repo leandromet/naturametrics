@@ -27,6 +27,7 @@ reuse and what we deliberately change.
 | 09 | [open-decisions.md](09-open-decisions.md) | **Decision record** — D1–D10, all accepted 2026-08-18, with the reasoning kept |
 | 10 | [forest-age.md](10-forest-age.md) | Vegetation-age estimation from MapBiomas + Hansen — method, fusion, caveats |
 | 11 | [exports.md](11-exports.md) | CSV/chart export layout, grouping per buffer, provenance |
+| 12 | [deployment.md](12-deployment.md) | Cloud Run: image, service config, credentials, rollback |
 
 ## Language
 

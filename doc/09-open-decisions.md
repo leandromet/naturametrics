@@ -15,7 +15,7 @@ rationale is unreviewable later.
 | D7 | Fire and age | **A** — fire is a qualifier, never an age reset | Phase 3 |
 | D8 | Age bins | `0–5 \| 6–10 \| 11–20 \| 21–30 \| 31–40 \| ≥40`, user-configurable | Phase 3 |
 | D9 | Catalogue format | **A** — commit the flat CSV, not GeoJSON | **applied** |
-| D10 | Deployment | **Cloud Run, CD from GitHub `main`** | binds Phase 0 config |
+| D10 | Deployment | **Cloud Run service `naturametrics`, 2 vCPU / 4 GiB** | **artifacts built & verified** |
 
 D6 still carries three sub-questions that need the official legend document in hand — they
 are marked in place. Everything else is settled.

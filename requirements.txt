@@ -1,0 +1,26 @@
+# Naturametrics — runtime dependencies
+# See doc/08-dev-environment.md §3 for what is deliberately absent and why.
+
+# Core
+reflex==0.8.27              # same minor as Yvynation, so its component API matches
+python-dotenv==1.0.0
+
+# Earth Engine
+earthengine-api>=1.7.4
+google-auth>=2.27.0
+google-auth-oauthlib>=1.2.1
+
+# Data
+pandas>=2.2.0
+numpy>=2.0.0
+
+# Viz
+plotly>=6.1.1
+
+# Geospatial (runtime)
+shapely>=2.0.2
+pyproj>=3.6.0
+
+# Utilities
+requests>=2.31.0
+pydantic>=2.5.0

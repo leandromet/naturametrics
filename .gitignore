@@ -1,3 +1,7 @@
+assets/external/
+.states
+.web
+*.db
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -158,3 +162,63 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+
+# ---------------------------------------------------------------------------
+# Naturametrics — data policy (see data/README.md, doc/01-premises.md C3)
+# Raw downloads and bulk outputs never enter git; small derived artefacts do.
+# ---------------------------------------------------------------------------
+data/*
+!data/README.md
+!data/.gitkeep
+!data/ifn_points.csv
+!data/ifn_points.meta.json
+
+# Explicit belt-and-braces for the bulk trees
+data/raw/
+data/cache/
+
+# Bulk geospatial / tabular formats, wherever they land
+*.tif
+*.tiff
+*.img
+*.gpkg
+*.shp
+*.shx
+*.dbf
+*.prj
+*.cpg
+*.sbn
+*.sbx
+*.xlsx
+*.xls
+*.parquet
+*.nc
+*.hdf
+*.zip
+*.7z
+*.tar.gz
+
+# ---------------------------------------------------------------------------
+# Reflex
+# ---------------------------------------------------------------------------
+.web/
+.states/
+reflex.db
+*.db-journal
+uploaded_files/
+
+# ---------------------------------------------------------------------------
+# Secrets & local config
+# ---------------------------------------------------------------------------
+.env
+.env.local
+*service-account*.json
+*-key.json
+credentials.json
+
+# ---------------------------------------------------------------------------
+# Editors / OS
+# ---------------------------------------------------------------------------
+.vscode/
+.idea/
+.DS_Store

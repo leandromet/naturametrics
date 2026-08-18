@@ -1,0 +1,13 @@
+{
+  "source": "Serviço Florestal Brasileiro — Inventário Florestal Nacional",
+  "portal": "https://dados.florestal.gov.br",
+  "license": "CC-BY (Creative Commons Atribuição)",
+  "datasets": [
+    "unidades-amostrais-por-uf-ifn",
+    "ifn-uso-do-solo-e-observacao-do-entorno_disp-set2025"
+  ],
+  "generated_at": "2026-08-18T21:19:43.344163+00:00",
+  "generator": "scripts/fetch_ifn.py",
+  "status_note": "status_derivado is DERIVED from dataset membership, not published by the SFB — see doc/05-ifn.md section 4",
+  "feature_count": 1074
+}

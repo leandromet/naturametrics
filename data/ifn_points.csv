@@ -1,0 +1,1075 @@
+ua,lon,lat,uf,bioma,municipio,lote,data,impedimento,status_derivado,fontes
+AC_108,-70.92032,-8.45994,AC,Amazônia,Tarauacá,AC-01,2018/10/19 00:00:00,,medido_completo,ua|uso
+AC_109,-70.74003,-8.45983,AC,Amazônia,Tarauacá,AC-01,2018/10/30 00:00:00,,medido_completo,ua|uso
+AC_110,-70.56035,-8.45966,AC,Amazônia,Feijó,AC-01,2018/09/19 00:00:00,,medido_completo,ua|uso
+AC_111,-70.38034,-8.4598,AC,Amazônia,Feijó,AC-01,2018/09/07 00:00:00,,medido_completo,ua|uso
+AC_112,-70.20008,-8.46001,AC,Amazônia,Feijó,AC-01,2018/08/31 00:00:00,,medido_completo,ua|uso
+AC_113,-70.02039,-8.45968,AC,Amazônia,Feijó,AC-01,2018/09/05 00:00:00,,medido_completo,ua|uso
+AC_114,-69.84021,-8.45991,AC,Amazônia,Feijó,,2018/11/30 00:00:00,,medido_biofisico,ua
+AC_115,-69.66039,-8.45968,AC,Amazônia,Feijó,AC-01,2019/01/30 00:00:00,,medido_completo,ua|uso
+AC_118,-72.90039,-8.6398,AC,Amazônia,Porto Walter,AC-01,2018/11/20 00:00:00,,medido_completo,ua|uso
+AC_119,-72.72026,-8.63983,AC,Amazônia,Porto Walter,AC-01,2018/11/21 00:00:00,,medido_completo,ua|uso
+AC_128,-71.10033,-8.63987,AC,Amazônia,Tarauacá,AC-01,2018/10/25 00:00:00,,medido_completo,ua|uso
+AC_129,-70.92013,-8.63989,AC,Amazônia,Feijó,AC-01,2018/10/27 00:00:00,,medido_completo,ua|uso
+AC_13,-72.90009,-7.55995,AC,Amazônia,Mâncio Lima,AC-01,2018/08/30 00:00:00,,medido_completo,ua|uso
+AC_130,-70.74032,-8.63996,AC,Amazônia,Feijó,AC-01,2019/01/18 00:00:00,,medido_completo,ua|uso
+AC_133,-70.20047,-8.63966,AC,Amazônia,Feijó,AC-01,2018/11/28 00:00:00,,medido_completo,ua|uso
+AC_134,-70.02021,-8.64002,AC,Amazônia,Feijó,AC-01,2018/11/27 00:00:00,,medido_completo,ua|uso
+AC_135,-69.84047,-8.63964,AC,Amazônia,Feijó,AC-01,2018/09/04 00:00:00,,medido_completo,ua|uso
+AC_136,-69.66041,-8.63969,AC,Amazônia,Feijó,AC-01,2018/08/07 00:00:00,,medido_completo,ua|uso
+AC_137,-69.48043,-8.63968,AC,Amazônia,Manoel Urbano,,2018/08/29 00:00:00,,medido_biofisico,ua
+AC_138,-69.30035,-8.63968,AC,Amazônia,Manoel Urbano,AC-01,2018/08/17 00:00:00,,medido_completo,ua|uso
+AC_14,-72.72047,-7.55969,AC,Amazônia,Cruzeiro do Sul,AC-01,2018/08/17 00:00:00,,medido_completo,ua|uso
+AC_140,-72.90031,-8.81982,AC,Amazônia,Marechal Thaumaturgo,AC-01,2018/11/23 00:00:00,,medido_completo,ua|uso
+AC_141,-72.72046,-8.81964,AC,Amazônia,Marechal Thaumaturgo,AC-01,2018/11/26 00:00:00,,medido_completo,ua|uso
+AC_148,-71.46047,-8.81964,AC,Amazônia,Tarauacá,AC-01,2018/11/18 00:00:00,,medido_completo,ua|uso
+AC_149,-71.28041,-8.81974,AC,Amazônia,Tarauacá,AC-01,2018/11/19 00:00:00,,medido_completo,ua|uso
+AC_15,-72.54021,-7.56,AC,Amazônia,Cruzeiro do Sul,AC-01,2018/09/10 00:00:00,,medido_completo,ua|uso
+AC_150,-71.1002,-8.81982,AC,Amazônia,Feijó,AC-01,2018/10/23 00:00:00,,medido_completo,ua|uso
+AC_157,-69.84021,-8.82002,AC,Amazônia,Feijó,AC-01,2019/01/29 00:00:00,,medido_completo,ua|uso
+AC_158,-69.66,-8.82,AC,Amazônia,Manoel Urbano,AC-01,,,socioambiental,uso
+AC_159,-69.48017,-8.81993,AC,Amazônia,Manoel Urbano,AC-01,2018/08/10 00:00:00,,medido_completo,ua|uso
+AC_160,-69.30009,-8.81994,AC,Amazônia,Manoel Urbano,AC-01,2018/08/06 00:00:00,,medido_completo,ua|uso
+AC_161,-69.12037,-8.81965,AC,Amazônia,Manoel Urbano,AC-01,2018/11/06 00:00:00,,medido_completo,ua|uso
+AC_162,-68.94022,-8.81982,AC,Amazônia,Manoel Urbano,AC-01,2018/11/04 00:00:00,,medido_completo,ua|uso
+AC_164,-72.72008,-9.00002,AC,Amazônia,Marechal Thaumaturgo,AC-01,2018/11/25 00:00:00,,medido_completo,ua|uso
+AC_172,-71.28028,-9.00002,AC,Amazônia,Feijó,AC-01,2018/11/20 00:00:00,,medido_completo,ua|uso
+AC_173,-71.1,-9.0,AC,Amazônia,Feijó,AC-01,,,socioambiental,uso
+AC_178,-70.2,-9.0,AC,Amazônia,Santa Rosa do Purus,AC-01,,,socioambiental,uso
+AC_179,-70.02046,-8.99965,AC,Amazônia,Santa Rosa do Purus,AC-01,2019/02/15 00:00:00,,medido_completo,ua|uso
+AC_180,-69.84027,-8.99993,AC,Amazônia,Manoel Urbano,AC-01,2018/12/07 00:00:00,,medido_completo,ua|uso
+AC_181,-69.66023,-8.99995,AC,Amazônia,Manoel Urbano,AC-01,2018/12/04 00:00:00,,medido_completo,ua|uso
+AC_182,-69.48002,-8.99997,AC,Amazônia,Manoel Urbano,AC-01,2018/12/09 00:00:00,,medido_completo,ua|uso
+AC_183,-69.30026,-8.99969,AC,Amazônia,Manoel Urbano,AC-01,2018/11/10 00:00:00,,medido_completo,ua|uso
+AC_184,-69.12021,-8.99976,AC,Amazônia,Sena Madureira,AC-01,2018/08/07 00:00:00,,medido_completo,ua|uso
+AC_185,-68.94024,-8.9997,AC,Amazônia,Sena Madureira,AC-01,2018/08/03 00:00:00,,medido_completo,ua|uso
+AC_186,-68.76027,-8.99969,AC,Amazônia,Sena Madureira,AC-01,2018/07/31 00:00:00,,medido_completo,ua|uso
+AC_19,-73.08015,-7.73987,AC,Amazônia,Rodrigues Alves,AC-01,2018/08/24 00:00:00,,medido_completo,ua|uso
+AC_192,-72.00028,-9.17968,AC,Amazônia,Jordão,AC-01,2018/11/03 00:00:00,,medido_completo,ua|uso
+AC_193,-71.82034,-9.17975,AC,Amazônia,Jordão,AC-01,2018/11/09 00:00:00,,medido_completo,ua|uso
+AC_194,-71.64036,-9.17967,AC,Amazônia,Jordão,AC-01,2019/01/23 00:00:00,,medido_completo,ua|uso
+AC_20,-72.90043,-7.73961,AC,Amazônia,Rodrigues Alves,AC-01,2018/08/22 00:00:00,,medido_completo,ua|uso
+AC_205,-69.66,-9.18,AC,Amazônia,Manoel Urbano,AC-01,,,socioambiental,uso
+AC_206,-69.48,-9.18,AC,Amazônia,Sena Madureira,AC-01,,,socioambiental,uso
+AC_208,-69.12042,-9.17977,AC,Amazônia,Sena Madureira,AC-01,2018/12/12 00:00:00,,medido_completo,ua|uso
+AC_209,-68.94012,-9.17995,AC,Amazônia,Sena Madureira,AC-01,2018/08/16 00:00:00,,medido_completo,ua|uso
+AC_21,-72.72045,-7.73965,AC,Amazônia,Rodrigues Alves,AC-01,2018/08/20 00:00:00,,medido_completo,ua|uso
+AC_210,-68.76047,-9.17966,AC,Amazônia,Sena Madureira,AC-01,2018/08/01 00:00:00,,medido_completo,ua|uso
+AC_211,-68.58013,-9.17988,AC,Amazônia,Sena Madureira,AC-01,2018/08/10 00:00:00,,medido_completo,ua|uso
+AC_212,-68.40036,-9.17969,AC,Amazônia,Sena Madureira,AC-01,2018/08/03 00:00:00,,medido_completo,ua|uso
+AC_22,-72.54036,-7.73971,AC,Amazônia,Cruzeiro do Sul,AC-01,2018/08/31 00:00:00,Área alagada,medido_completo,ua|uso
+AC_220,-71.82023,-9.35985,AC,Amazônia,Jordão,AC-01,2018/11/06 00:00:00,,medido_completo,ua|uso
+AC_227,-70.56029,-9.35968,AC,Amazônia,Santa Rosa do Purus,AC-01,2019/02/11 00:00:00,,medido_completo,ua|uso
+AC_23,-72.36038,-7.73969,AC,Amazônia,Cruzeiro do Sul,AC-01,2018/08/27 00:00:00,,medido_completo,ua|uso
+AC_236,-68.94016,-9.36001,AC,Amazônia,Sena Madureira,AC-01,2018/08/19 00:00:00,,medido_completo,ua|uso
+AC_237,-68.76047,-9.35965,AC,Amazônia,Sena Madureira,AC-01,2018/09/05 00:00:00,,medido_completo,ua|uso
+AC_238,-68.58008,-9.35998,AC,Amazônia,Sena Madureira,AC-01,2018/08/08 00:00:00,,medido_completo,ua|uso
+AC_239,-68.40031,-9.35979,AC,Amazônia,Sena Madureira,AC-01,2018/07/31 00:00:00,,medido_completo,ua|uso
+AC_240,-68.22046,-9.35967,AC,Amazônia,Bujari,AC-01,2018/08/02 00:00:00,,medido_completo,ua|uso
+AC_241,-68.0403,-9.36,AC,Amazônia,Porto Acre,AC-01,2018/10/03 00:00:00,,medido_completo,ua|uso
+AC_25,-72.00046,-7.73965,AC,Amazônia,Cruzeiro do Sul,AC-01,2018/09/03 00:00:00,,medido_completo,ua|uso
+AC_252,-70.3804,-9.53981,AC,Amazônia,Santa Rosa do Purus,AC-01,2019/02/08 00:00:00,,medido_completo,ua|uso
+AC_259,-69.12,-9.54,AC,Amazônia,Sena Madureira,AC-01,,,socioambiental,uso
+AC_26,-71.82034,-7.73991,AC,Amazônia,Tarauacá,AC-01,2019/01/18 00:00:00,,medido_completo,ua|uso
+AC_260,-68.94047,-9.53967,AC,Amazônia,Sena Madureira,AC-01,2018/08/18 00:00:00,,medido_completo,ua|uso
+AC_261,-68.76047,-9.53966,AC,Amazônia,Sena Madureira,AC-01,2018/09/04 00:00:00,,medido_completo,ua|uso
+AC_262,-68.58005,-9.54001,AC,Amazônia,Sena Madureira,AC-01,2018/08/09 00:00:00,,medido_completo,ua|uso
+AC_263,-68.40018,-9.53979,AC,Amazônia,Bujari,AC-01,2018/08/14 00:00:00,,medido_completo,ua|uso
+AC_264,-68.2201,-9.53991,AC,Amazônia,Bujari,AC-01,2018/06/01 00:00:00,,medido_completo,ua|uso
+AC_265,-68.04045,-9.53967,AC,Amazônia,Porto Acre,,2018/07/27 00:00:00,,medido_biofisico,ua
+AC_266,-67.8601,-9.53998,AC,Amazônia,Porto Acre,AC-01,2018/07/17 00:00:00,,medido_completo,ua|uso
+AC_267,-67.68047,-9.53971,AC,Amazônia,Porto Acre,AC-01,2018/07/09 00:00:00,,medido_completo,ua|uso
+AC_27,-71.64019,-7.73986,AC,Amazônia,Tarauacá,AC-01,2018/11/16 00:00:00,,medido_completo,ua|uso
+AC_283,-69.12047,-9.71966,AC,Amazônia,Sena Madureira,AC-01,2019/02/17 00:00:00,,medido_completo,ua|uso
+AC_284,-68.94045,-9.71969,AC,Amazônia,Sena Madureira,AC-01,2018/08/31 00:00:00,,medido_completo,ua|uso
+AC_285,-68.76044,-9.71971,AC,Amazônia,Sena Madureira,AC-01,2018/07/20 00:00:00,,medido_completo,ua|uso
+AC_286,-68.58048,-9.71966,AC,Amazônia,Rio Branco,AC-01,2018/07/19 00:00:00,,medido_completo,ua|uso
+AC_287,-68.40048,-9.71964,AC,Amazônia,Bujari,AC-01,2018/09/25 00:00:00,,medido_completo,ua|uso
+AC_288,-68.22048,-9.71967,AC,Amazônia,Bujari,AC-01,2018/06/06 00:00:00,,medido_completo,ua|uso
+AC_289,-68.04,-9.72,AC,Amazônia,Bujari,AC-01,,,socioambiental,uso
+AC_290,-67.86034,-9.71988,AC,Amazônia,Porto Acre,AC-01,2018/05/22 00:00:00,,medido_completo,ua|uso
+AC_291,-67.68023,-9.71995,AC,Amazônia,Porto Acre,AC-01,2018/05/23 00:00:00,,medido_completo,ua|uso
+AC_292,-67.50035,-9.71969,AC,Amazônia,Porto Acre,AC-01,2018/09/26 00:00:00,,medido_completo,ua|uso
+AC_293,-67.32026,-9.71976,AC,Amazônia,Senador Guiomard,AC-01,2018/06/08 00:00:00,,medido_completo,ua|uso
+AC_294,-67.14031,-9.71979,AC,Amazônia,Acrelândia,AC-01,2018/06/12 00:00:00,,medido_completo,ua|uso
+AC_308,-69.12005,-9.90001,AC,Amazônia,Sena Madureira,AC-01,2019/02/15 00:00:00,,medido_completo,ua|uso
+AC_309,-68.94008,-9.89995,AC,Amazônia,Sena Madureira,AC-01,2018/08/27 00:00:00,,medido_completo,ua|uso
+AC_310,-68.76039,-9.89967,AC,Amazônia,Sena Madureira,AC-01,2018/10/11 00:00:00,,medido_completo,ua|uso
+AC_311,-68.58046,-9.89965,AC,Amazônia,Rio Branco,AC-01,2018/07/24 00:00:00,,medido_completo,ua|uso
+AC_312,-68.40048,-9.89966,AC,Amazônia,Rio Branco,AC-01,2018/05/30 00:00:00,,medido_completo,ua|uso
+AC_313,-68.22021,-9.89979,AC,Amazônia,Rio Branco,AC-01,2018/06/05 00:00:00,,medido_completo,ua|uso
+AC_314,-68.04009,-9.89991,AC,Amazônia,Rio Branco,AC-01,2018/06/04 00:00:00,,medido_completo,ua|uso
+AC_315,-67.86021,-9.89972,AC,Amazônia,Rio Branco,AC-01,2018/06/18 00:00:00,,medido_completo,ua|uso
+AC_316,-67.68043,-9.89965,AC,Amazônia,Rio Branco,AC-01,2018/07/10 00:00:00,,medido_completo,ua|uso
+AC_317,-67.50015,-9.89982,AC,Amazônia,Porto Acre,AC-01,2018/06/22 00:00:00,,medido_completo,ua|uso
+AC_318,-67.32,-9.9,AC,Amazônia,Senador Guiomard,AC-01,2018/06/19 00:00:00,,medido_completo,ua|uso
+AC_319,-67.14024,-9.89978,AC,Amazônia,Senador Guiomard,AC-01,2018/06/13 00:00:00,,medido_completo,ua|uso
+AC_320,-66.96036,-9.89968,AC,Amazônia,Acrelândia,AC-01,2018/06/11 00:00:00,,medido_completo,ua|uso
+AC_321,-66.78009,-9.89979,AC,Amazônia,Acrelândia,AC-01,2018/06/11 00:00:00,,medido_completo,ua|uso
+AC_328,-69.48,-10.08,AC,Amazônia,Sena Madureira,AC-01,,,socioambiental,uso
+AC_329,-69.30036,-10.07966,AC,Amazônia,Sena Madureira,AC-01,2018/08/24 00:00:00,,medido_completo,ua|uso
+AC_330,-69.12006,-10.08013,AC,Amazônia,Sena Madureira,AC-01,2018/08/25 00:00:00,,medido_completo,ua|uso
+AC_331,-68.94046,-10.07966,AC,Amazônia,Sena Madureira,AC-01,2018/10/10 00:00:00,,medido_completo,ua|uso
+AC_332,-68.7601,-10.07986,AC,Amazônia,Rio Branco,AC-01,2018/10/10 00:00:00,,medido_completo,ua|uso
+AC_333,-68.58015,-10.07987,AC,Amazônia,Rio Branco,AC-01,2018/10/04 00:00:00,,medido_completo,ua|uso
+AC_334,-68.40029,-10.07969,AC,Amazônia,Rio Branco,AC-01,2019/02/22 00:00:00,,medido_completo,ua|uso
+AC_335,-68.22035,-10.0797,AC,Amazônia,Rio Branco,AC-01,2018/10/02 00:00:00,,medido_completo,ua|uso
+AC_336,-68.04016,-10.08,AC,Amazônia,Rio Branco,AC-01,2018/07/16 00:00:00,,medido_completo,ua|uso
+AC_337,-67.86049,-10.07967,AC,Amazônia,Rio Branco,AC-01,2018/07/24 00:00:00,,medido_completo,ua|uso
+AC_338,-67.68036,-10.0797,AC,Amazônia,Rio Branco,AC-01,2018/07/18 00:00:00,,medido_completo,ua|uso
+AC_339,-67.50011,-10.07989,AC,Amazônia,Senador Guiomard,AC-01,2018/07/11 00:00:00,,medido_completo,ua|uso
+AC_340,-67.32047,-10.07966,AC,Amazônia,Plácido de Castro,AC-01,2018/06/07 00:00:00,,medido_completo,ua|uso
+AC_341,-67.14049,-10.07968,AC,Amazônia,Plácido de Castro,AC-01,2018/06/12 00:00:00,,medido_completo,ua|uso
+AC_342,-66.96032,-10.07983,AC,Amazônia,Acrelândia,AC-01,2018/06/13 00:00:00,,medido_completo,ua|uso
+AC_349,-69.48032,-10.25966,AC,Amazônia,Sena Madureira,AC-01,2018/08/17 00:00:00,,medido_completo,ua|uso
+AC_350,-69.30022,-10.25976,AC,Amazônia,Sena Madureira,AC-01,2018/08/21 00:00:00,,medido_completo,ua|uso
+AC_351,-69.12034,-10.25996,AC,Amazônia,Sena Madureira,AC-01,2018/10/09 00:00:00,,medido_completo,ua|uso
+AC_352,-68.94,-10.26,AC,Amazônia,Rio Branco,AC-01,,,socioambiental,uso
+AC_353,-68.76,-10.26,AC,Amazônia,Rio Branco,AC-01,,,socioambiental,uso
+AC_354,-68.58024,-10.25996,AC,Amazônia,Rio Branco,AC-01,2018/09/25 00:00:00,,medido_completo,ua|uso
+AC_355,-68.40041,-10.2597,AC,Amazônia,Rio Branco,AC-01,2018/10/03 00:00:00,,medido_completo,ua|uso
+AC_356,-68.22029,-10.25995,AC,Amazônia,Rio Branco,AC-01,2018/07/28 00:00:00,,medido_completo,ua|uso
+AC_357,-68.0405,-10.25969,AC,Amazônia,Rio Branco,AC-01,2018/07/26 00:00:00,,medido_completo,ua|uso
+AC_358,-67.86018,-10.2599,AC,Amazônia,Rio Branco,AC-01,2018/07/17 00:00:00,,medido_completo,ua|uso
+AC_359,-67.68017,-10.25981,AC,Amazônia,Senador Guiomard,AC-01,2018/05/25 00:00:00,,medido_completo,ua|uso
+AC_36,-72.72023,-7.91984,AC,Amazônia,Cruzeiro do Sul,AC-01,2018/11/28 00:00:00,,medido_completo,ua|uso
+AC_360,-67.50047,-10.25967,AC,Amazônia,Plácido de Castro,AC-01,2018/06/22 00:00:00,,medido_completo,ua|uso
+AC_361,-67.32001,-10.26014,AC,Amazônia,Plácido de Castro,AC-01,2018/06/14 00:00:00,,medido_completo,ua|uso
+AC_362,-67.14049,-10.25973,AC,Amazônia,Plácido de Castro,AC-01,2018/07/13 00:00:00,,medido_completo,ua|uso
+AC_368,-69.66046,-10.43964,AC,Amazônia,Assis Brasil,AC-01,2018/08/09 00:00:00,,medido_completo,ua|uso
+AC_369,-69.48016,-10.44,AC,Amazônia,Sena Madureira,AC-01,2018/09/19 00:00:00,,medido_completo,ua|uso
+AC_37,-72.54029,-7.9198,AC,Amazônia,Cruzeiro do Sul,AC-01,2018/08/28 00:00:00,,medido_completo,ua|uso
+AC_370,-69.3,-10.44001,AC,Amazônia,Rio Branco,AC-01,2018/09/26 00:00:00,,medido_completo,ua|uso
+AC_371,-69.12007,-10.44001,AC,Amazônia,Xapuri,AC-01,2018/09/27 00:00:00,,medido_completo,ua|uso
+AC_372,-68.94008,-10.43997,AC,Amazônia,Xapuri,AC-01,2018/09/27 00:00:00,,medido_completo,ua|uso
+AC_373,-68.7602,-10.43973,AC,Amazônia,Xapuri,AC-01,2018/09/18 00:00:00,,medido_completo,ua|uso
+AC_374,-68.58033,-10.43999,AC,Amazônia,Xapuri,AC-01,2018/09/13 00:00:00,,medido_completo,ua|uso
+AC_375,-68.40046,-10.43967,AC,Amazônia,Xapuri,AC-01,2018/09/19 00:00:00,,medido_completo,ua|uso
+AC_376,-68.22028,-10.43994,AC,Amazônia,Xapuri,AC-01,2018/09/29 00:00:00,,medido_completo,ua|uso
+AC_377,-68.04032,-10.43992,AC,Amazônia,Capixaba,AC-01,2018/09/20 00:00:00,,medido_completo,ua|uso
+AC_378,-67.86048,-10.43968,AC,Amazônia,Capixaba,AC-01,2018/05/24 00:00:00,,medido_completo,ua|uso
+AC_379,-67.68041,-10.43968,AC,Amazônia,Plácido de Castro,AC-01,2018/05/31 00:00:00,,medido_completo,ua|uso
+AC_38,-72.36037,-7.91965,AC,Amazônia,Cruzeiro do Sul,AC-01,2018/08/20 00:00:00,,medido_completo,ua|uso
+AC_380,-67.50049,-10.43969,AC,Amazônia,Plácido de Castro,AC-01,2018/06/07 00:00:00,,medido_completo,ua|uso
+AC_386,-69.66045,-10.61968,AC,Amazônia,Assis Brasil,AC-01,2018/09/13 00:00:00,,medido_completo,ua|uso
+AC_387,-69.4804,-10.61967,AC,Amazônia,Brasiléia,AC-01,2018/09/18 00:00:00,,medido_completo,ua|uso
+AC_388,-69.30008,-10.62001,AC,Amazônia,Brasiléia,AC-01,2018/09/12 00:00:00,,medido_completo,ua|uso
+AC_389,-69.12051,-10.61961,AC,Amazônia,Brasiléia,AC-01,2018/09/19 00:00:00,,medido_completo,ua|uso
+AC_390,-68.94045,-10.61973,AC,Amazônia,Brasiléia,AC-01,2018/09/27 00:00:00,,medido_completo,ua|uso
+AC_391,-68.76053,-10.61965,AC,Amazônia,Xapuri,AC-01,2018/09/25 00:00:00,,medido_completo,ua|uso
+AC_392,-68.58009,-10.61999,AC,Amazônia,Xapuri,AC-01,2018/09/14 00:00:00,,medido_completo,ua|uso
+AC_393,-68.4005,-10.61968,AC,Amazônia,Xapuri,AC-01,2018/09/21 00:00:00,,medido_completo,ua|uso
+AC_394,-68.22032,-10.6197,AC,Amazônia,Xapuri,AC-01,2018/09/21 00:00:00,,medido_completo,ua|uso
+AC_395,-68.04036,-10.61988,AC,Amazônia,Xapuri,AC-01,2018/05/18 00:00:00,,medido_completo,ua|uso
+AC_396,-67.86048,-10.61967,AC,Amazônia,Capixaba,AC-01,2018/05/28 00:00:00,,medido_completo,ua|uso
+AC_40,-72.00051,-7.91955,AC,Amazônia,Tarauacá,AC-01,2018/11/21 00:00:00,,medido_completo,ua|uso
+AC_402,-69.66047,-10.79965,AC,Amazônia,Brasiléia,AC-01,2018/09/14 00:00:00,,medido_completo,ua|uso
+AC_403,-69.48,-10.8,AC,Amazônia,Assis Brasil,AC-01,2018/09/11 00:00:00,,medido_completo,ua|uso
+AC_404,-69.3004,-10.79967,AC,Amazônia,Brasiléia,AC-01,2018/08/06 00:00:00,,medido_completo,ua|uso
+AC_405,-69.12031,-10.79964,AC,Amazônia,Brasiléia,AC-01,2018/08/06 00:00:00,,medido_completo,ua|uso
+AC_406,-68.9403,-10.79979,AC,Amazônia,Brasiléia,AC-01,2018/09/17 00:00:00,,medido_completo,ua|uso
+AC_407,-68.7602,-10.79991,AC,Amazônia,Epitaciolândia,AC-01,2018/09/21 00:00:00,,medido_completo,ua|uso
+AC_408,-68.58036,-10.79968,AC,Amazônia,Epitaciolândia,AC-01,2018/09/26 00:00:00,,medido_completo,ua|uso
+AC_409,-68.40044,-10.79962,AC,Amazônia,Xapuri,AC-01,2018/09/20 00:00:00,,medido_completo,ua|uso
+AC_41,-71.82021,-7.91972,AC,Amazônia,Tarauacá,AC-01,2018/09/05 00:00:00,,medido_completo,ua|uso
+AC_410,-68.22032,-10.79972,AC,Amazônia,Xapuri,AC-01,2018/05/18 00:00:00,,medido_completo,ua|uso
+AC_414,-68.76027,-10.9796,AC,Amazônia,Brasiléia,AC-01,2018/08/07 00:00:00,,medido_completo,ua|uso
+AC_415,-68.5802,-10.97971,AC,Amazônia,Epitaciolândia,AC-01,2018/09/17 00:00:00,,medido_completo,ua|uso
+AC_416,-68.40047,-10.97966,AC,Amazônia,Xapuri,AC-01,2018/09/25 00:00:00,,medido_completo,ua|uso
+AC_42,-71.6404,-7.91966,AC,Amazônia,Tarauacá,AC-01,2018/09/01 00:00:00,,medido_completo,ua|uso
+AC_43,-71.46044,-7.91964,AC,Amazônia,Tarauacá,AC-01,2018/09/03 00:00:00,,medido_completo,ua|uso
+AC_44,-71.28,-7.92,AC,Amazônia,Tarauacá,AC-01,,,socioambiental,uso
+AC_45,-71.10001,-7.92001,AC,Amazônia,Tarauacá,AC-01,2019/02/05 00:00:00,,medido_completo,ua|uso
+AC_46,-70.92042,-7.91964,AC,Amazônia,Tarauacá,AC-01,2018/11/01 00:00:00,,medido_completo,ua|uso
+AC_47,-70.74047,-7.91966,AC,Amazônia,Tarauacá,AC-01,2018/10/26 00:00:00,,medido_completo,ua|uso
+AC_48,-70.56039,-7.91979,AC,Amazônia,Feijó,AC-01,2018/10/24 00:00:00,,medido_completo,ua|uso
+AC_49,-70.38,-7.92,AC,Amazônia,Feijó,AC-01,,,socioambiental,uso
+AC_50,-70.20027,-7.91982,AC,Amazônia,Feijó,AC-01,2018/09/13 00:00:00,,medido_completo,ua|uso
+AC_51,-70.02026,-7.91976,AC,Amazônia,Feijó,AC-01,2018/09/12 00:00:00,,medido_completo,ua|uso
+AC_56,-72.72,-8.1,AC,Amazônia,Cruzeiro do Sul,AC-01,,,socioambiental,uso
+AC_57,-72.54007,-8.09992,AC,Amazônia,Cruzeiro do Sul,AC-01,2018/09/06 00:00:00,,medido_completo,ua|uso
+AC_58,-72.36018,-8.10004,AC,Amazônia,Cruzeiro do Sul,AC-01,2018/09/12 00:00:00,,medido_completo,ua|uso
+AC_59,-72.18,-8.1,AC,Amazônia,Tarauacá,AC-01,,,socioambiental,uso
+AC_6,-73.0802,-7.3797,AC,Amazônia,Mâncio Lima,AC-01,2018/08/22 00:00:00,,medido_completo,ua|uso
+AC_62,-71.64034,-8.09967,AC,Amazônia,Tarauacá,AC-01,2018/11/14 00:00:00,,medido_completo,ua|uso
+AC_63,-71.46026,-8.1,AC,Amazônia,Tarauacá,AC-01,2018/11/04 00:00:00,,medido_completo,ua|uso
+AC_64,-71.28035,-8.09967,AC,Amazônia,Tarauacá,AC-01,2018/11/05 00:00:00,,medido_completo,ua|uso
+AC_65,-71.10044,-8.09974,AC,Amazônia,Tarauacá,AC-01,2018/08/28 00:00:00,,medido_completo,ua|uso
+AC_66,-70.92029,-8.09994,AC,Amazônia,Tarauacá,AC-01,2018/08/31 00:00:00,,medido_completo,ua|uso
+AC_67,-70.74046,-8.09966,AC,Amazônia,Tarauacá,AC-01,2018/08/27 00:00:00,,medido_completo,ua|uso
+AC_68,-70.56039,-8.09967,AC,Amazônia,Feijó,AC-01,2018/11/08 00:00:00,,medido_completo,ua|uso
+AC_70,-70.20017,-8.09992,AC,Amazônia,Feijó,AC-01,2018/08/28 00:00:00,,medido_completo,ua|uso
+AC_71,-70.0202,-8.10002,AC,Amazônia,Feijó,AC-01,2018/12/06 00:00:00,,medido_completo,ua|uso
+AC_77,-72.72031,-8.27971,AC,Amazônia,Porto Walter,AC-01,2018/11/29 00:00:00,,medido_completo,ua|uso
+AC_78,-72.5401,-8.27997,AC,Amazônia,Porto Walter,AC-01,2018/12/01 00:00:00,,medido_completo,ua|uso
+AC_86,-71.10047,-8.27966,AC,Amazônia,Tarauacá,AC-01,2018/10/18 00:00:00,,medido_completo,ua|uso
+AC_87,-70.92018,-8.28,AC,Amazônia,Tarauacá,AC-01,2018/10/17 00:00:00,,medido_completo,ua|uso
+AC_89,-70.56042,-8.27963,AC,Amazônia,Feijó,AC-01,2018/09/21 00:00:00,,medido_completo,ua|uso
+AC_90,-70.38034,-8.27967,AC,Amazônia,Feijó,AC-01,2018/08/27 00:00:00,,medido_completo,ua|uso
+AC_91,-70.20011,-8.27995,AC,Amazônia,Feijó,AC-01,2018/08/30 00:00:00,,medido_completo,ua|uso
+AC_92,-70.02047,-8.27966,AC,Amazônia,Feijó,AC-01,2018/12/04 00:00:00,,medido_completo,ua|uso
+AC_93,-69.84007,-8.27975,AC,Amazônia,Feijó,AC-01,2018/12/01 00:00:00,,medido_completo,ua|uso
+AC_97,-72.9004,-8.45982,AC,Amazônia,Porto Walter,AC-01,2018/11/17 00:00:00,,medido_completo,ua|uso
+AC_98,-72.72039,-8.45964,AC,Amazônia,Porto Walter,AC-01,2018/11/15 00:00:00,,medido_completo,ua|uso
+BA_948,-46.26006,-13.32009,GO,Cerrado,São Domingos,,2017/07/27 00:00:00,,medido_biofisico,ua
+GO_1,-50.40033,-12.78007,GO,Cerrado,São Miguel do Araguaia,,2018/05/23 00:00:00,,medido_biofisico,ua
+GO_10,-50.40059,-13.14031,GO,Cerrado,São Miguel do Araguaia,GO-03,2018/05/23 00:00:00,,medido_completo,ua|uso
+GO_100,-50.58038,-13.86003,GO,Cerrado,Nova Crixás,GO-03,2018/05/23 00:00:00,,medido_completo,ua|uso
+GO_104,-49.86018,-13.86007,GO,Cerrado,Amaralina,GO-01,2018/05/08 00:00:00,,medido_completo,ua|uso
+GO_105,-49.68004,-13.8601,GO,Cerrado,Mara Rosa,GO-01,2018/05/10 00:00:00,,medido_completo,ua|uso
+GO_106,-49.50048,-13.86007,GO,Cerrado,Amaralina,GO-01,2018/05/22 00:00:00,,medido_completo,ua|uso
+GO_107,-49.32039,-13.86014,GO,Cerrado,Mutunópolis,GO-01,2018/05/03 00:00:00,,medido_completo,ua|uso
+GO_108,-49.1404,-13.86012,GO,Cerrado,Estrela do Norte,GO-01,2018/05/02 00:00:00,,medido_completo,ua|uso
+GO_109,-48.96042,-13.86012,GO,Cerrado,Formoso,GO-01,2018/04/25 00:00:00,,medido_completo,ua|uso
+GO_11,-50.22028,-13.14003,GO,Cerrado,São Miguel do Araguaia,GO-03,2018/05/22 00:00:00,,medido_completo,ua|uso
+GO_110,-48.78038,-13.86002,GO,Cerrado,Campinorte,GO-01,2018/05/11 00:00:00,,medido_completo,ua|uso
+GO_111,-48.60066,-13.86011,GO,Cerrado,Campinaçu,GO-01,2018/04/26 00:00:00,,medido_completo,ua|uso
+GO_112,-48.4204,-13.86003,GO,Cerrado,Campinaçu,GO-01,2018/10/10 00:00:00,,medido_completo,ua|uso
+GO_114,-48.06038,-13.86023,GO,Cerrado,Colinas do Sul,GO-01,2018/10/17 00:00:00,,medido_completo,ua|uso
+GO_116,-47.70035,-13.8601,GO,Cerrado,Cavalcante,GO-01,2018/10/25 00:00:00,,medido_completo,ua|uso
+GO_116_Q147,-47.64425,-13.99515,GO,Cerrado,Cavalcante,,2018/11/02 00:00:00,,medido_biofisico,ua
+GO_116_Q154,-47.68936,-14.00638,GO,Cerrado,Cavalcante,,2018/11/05 00:00:00,,medido_biofisico,ua
+GO_116_Q188,-47.57685,-14.02906,GO,Cerrado,Cavalcante,,2018/11/02 00:00:00,,medido_biofisico,ua
+GO_116_R380,-47.58198,-13.93866,GO,Cerrado,Cavalcante,,2018/11/05 00:00:00,,medido_biofisico,ua
+GO_116_R427,-47.59314,-13.95005,GO,Cerrado,Cavalcante,GO-01,2018/10/23 00:00:00,,medido_completo,ua|uso
+GO_116_R432,-47.5369,-13.95005,GO,Cerrado,Cavalcante,,2018/10/29 00:00:00,,medido_biofisico,ua
+GO_116_R497,-47.61614,-13.96703,GO,Cerrado,Cavalcante,GO-01,2018/10/24 00:00:00,,medido_completo,ua|uso
+GO_116_R541,-47.63854,-13.97834,GO,Cerrado,Cavalcante,,2018/11/06 00:00:00,,medido_biofisico,ua
+GO_116_R553,-47.57083,-13.97808,GO,Cerrado,Cavalcante,,2018/10/30 00:00:00,,medido_biofisico,ua
+GO_116_R606,-47.54252,-13.98938,GO,Cerrado,Cavalcante,GO-01,2018/10/26 00:00:00,,medido_completo,ua|uso
+GO_116_R662,-47.64967,-14.00622,GO,Cerrado,Cavalcante,,2018/10/31 00:00:00,,medido_biofisico,ua
+GO_116_R663,-47.63847,-14.00633,GO,Cerrado,Cavalcante,,2018/10/31 00:00:00,,medido_biofisico,ua
+GO_116_R682,-47.65519,-14.01192,GO,Cerrado,Cavalcante,,2018/10/29 00:00:00,,medido_biofisico,ua
+GO_116_R707,-47.68363,-14.01765,GO,Cerrado,Cavalcante,,2018/11/12 00:00:00,,medido_biofisico,ua
+GO_116_R723,-47.69454,-14.02321,GO,Cerrado,Cavalcante,,2018/11/05 00:00:00,,medido_biofisico,ua
+GO_116_R742,-47.58768,-14.02309,GO,Cerrado,Cavalcante,,2018/10/22 00:00:00,,medido_biofisico,ua
+GO_117,-47.52058,-13.8603,GO,Cerrado,Cavalcante,GO-01,2018/10/05 00:00:00,,medido_completo,ua|uso
+GO_117_R102,-47.49757,-13.87699,GO,Cerrado,Cavalcante,,2018/10/29 00:00:00,SOLO ROCHOSO,medido_biofisico,ua
+GO_117_R241,-47.52596,-13.91059,GO,Cerrado,Cavalcante,,2018/10/30 00:00:00,,medido_biofisico,ua
+GO_117_R54,-47.49804,-13.86592,GO,Cerrado,Cavalcante,GO-01,2018/11/01 00:00:00,,medido_completo,ua|uso
+GO_118,-47.34004,-13.85998,GO,Cerrado,Cavalcante,GO-01,2018/10/04 00:00:00,,medido_completo,ua|uso
+GO_119,-47.16051,-13.86015,GO,Cerrado,Nova Roma,GO-01,2018/10/02 00:00:00,,medido_completo,ua|uso
+GO_12,-50.04003,-13.14002,GO,Cerrado,São Miguel do Araguaia,GO-03,2018/05/24 00:00:00,,medido_completo,ua|uso
+GO_121,-46.80021,-13.85996,GO,Cerrado,Iaciara,GO-01,2018/09/28 00:00:00,,medido_completo,ua|uso
+GO_122,-46.62032,-13.86007,GO,Cerrado,Guarani de Goiás,GO-01,2018/09/24 00:00:00,,medido_completo,ua|uso
+GO_123,-46.44045,-13.86004,GO,Cerrado,Guarani de Goiás,GO-01,2018/09/28 00:00:00,,medido_completo,ua|uso
+GO_124,-46.26002,-13.86002,GO,Cerrado,Guarani de Goiás,GO-01,2018/09/27 00:00:00,,medido_completo,ua|uso
+GO_125,-50.7602,-14.03993,GO,Cerrado,Nova Crixás,GO-03,2018/05/24 00:00:00,,medido_completo,ua|uso
+GO_126,-50.58041,-14.0401,GO,Cerrado,Nova Crixás,GO-03,2018/05/28 00:00:00,,medido_completo,ua|uso
+GO_127,-50.40019,-14.04007,GO,Cerrado,Nova Crixás,GO-03,2018/05/30 00:00:00,,medido_completo,ua|uso
+GO_129,-50.04005,-14.03998,GO,Cerrado,Uirapuru,GO-01,2018/05/28 00:00:00,,medido_completo,ua|uso
+GO_13,-49.86021,-13.1401,GO,Cerrado,São Miguel do Araguaia,GO-01,2018/05/21 00:00:00,,medido_completo,ua|uso
+GO_130,-49.86041,-14.04022,GO,Cerrado,Santa Terezinha de Goiás,GO-01,2018/04/30 00:00:00,,medido_completo,ua|uso
+GO_132,-49.50011,-14.04008,GO,Cerrado,Mara Rosa,GO-01,2018/04/25 00:00:00,,medido_completo,ua|uso
+GO_133,-49.32033,-14.04001,GO,Cerrado,Mara Rosa,GO-01,2018/04/30 00:00:00,,medido_completo,ua|uso
+GO_134,-49.14034,-14.04003,GO,Cerrado,Campinorte,GO-01,2018/05/04 00:00:00,,medido_completo,ua|uso
+GO_135,-48.96007,-14.03995,GO,Cerrado,Campinorte,GO-01,2018/05/02 00:00:00,,medido_completo,ua|uso
+GO_136,-48.78033,-14.03995,GO,Cerrado,Uruaçu,GO-01,2018/05/09 00:00:00,,medido_completo,ua|uso
+GO_137,-48.60051,-14.04013,GO,Cerrado,Campinaçu,GO-01,2018/05/02 00:00:00,,medido_completo,ua|uso
+GO_139,-48.24045,-14.04007,GO,Cerrado,Niquelândia,GO-01,2018/10/18 00:00:00,,medido_completo,ua|uso
+GO_14,-49.68026,-13.13996,GO,Cerrado,Novo Planalto,GO-01,2018/05/21 00:00:00,,medido_completo,ua|uso
+GO_140,-48.06008,-14.04005,GO,Cerrado,Colinas do Sul,GO-01,2018/10/15 00:00:00,,medido_completo,ua|uso
+GO_141,-47.88082,-14.04039,GO,Cerrado,Cavalcante,GO-01,2018/11/02 00:00:00,,medido_completo,ua|uso
+GO_141_Q24,-47.71161,-14.05132,GO,Cerrado,Cavalcante,GO-01,2018/10/24 00:00:00,,medido_completo,ua|uso
+GO_141_Q8,-47.71145,-14.04009,GO,Cerrado,Cavalcante,,2018/10/23 00:00:00,,medido_biofisico,ua
+GO_141_R121,-47.75062,-14.05687,GO,Cerrado,Cavalcante,GO-01,,,socioambiental,uso
+GO_141_R479,-47.72819,-14.14137,GO,Cerrado,Alto Paraíso de Goiás,GO-01,2018/10/03 00:00:00,,medido_completo,ua|uso
+GO_142,-47.7003,-14.03993,GO,Cerrado,Cavalcante,,2018/11/09 00:00:00,,medido_biofisico,ua
+GO_142_R3,-47.69479,-14.0346,GO,Cerrado,Cavalcante,,2018/10/26 00:00:00,,medido_biofisico,ua
+GO_142_R307,-47.60474,-14.10198,GO,Cerrado,Alto Paraíso de Goiás,GO-01,2018/10/24 00:00:00,,medido_completo,ua|uso
+GO_142_R35,-47.68327,-14.04011,GO,Cerrado,Cavalcante,,2018/11/08 00:00:00,,medido_biofisico,ua
+GO_142_R4,-47.68899,-14.03443,GO,Cerrado,Cavalcante,,2018/11/10 00:00:00,,medido_biofisico,ua
+GO_143,-47.52005,-14.04001,GO,Cerrado,Alto Paraíso de Goiás,GO-01,2018/09/27 00:00:00,,medido_completo,ua|uso
+GO_144,-47.34018,-14.03999,GO,Cerrado,Alto Paraíso de Goiás,GO-01,2018/10/05 00:00:00,,medido_completo,ua|uso
+GO_145,-47.16008,-14.03993,GO,Cerrado,Alto Paraíso de Goiás,GO-01,2018/10/01 00:00:00,,medido_completo,ua|uso
+GO_146,-46.98025,-14.04001,GO,Cerrado,Nova Roma,GO-01,2018/09/27 00:00:00,,medido_completo,ua|uso
+GO_147,-46.80052,-14.04027,GO,Cerrado,Iaciara,GO-01,2018/09/26 00:00:00,,medido_completo,ua|uso
+GO_148,-46.62,-14.03996,GO,Cerrado,Iaciara,GO-01,2018/09/24 00:00:00,,medido_completo,ua|uso
+GO_149,-46.44015,-14.03995,GO,Cerrado,Iaciara,GO-01,2018/09/26 00:00:00,,medido_completo,ua|uso
+GO_15,-49.32008,-13.14013,GO,Cerrado,Porangatu,GO-01,2018/05/08 00:00:00,,medido_completo,ua|uso
+GO_150,-46.2605,-14.04009,GO,Cerrado,Guarani de Goiás,GO-01,2018/09/28 00:00:00,,medido_completo,ua|uso
+GO_152,-50.76056,-14.22027,GO,Cerrado,Nova Crixás,GO-03,2018/05/31 00:00:00,,medido_completo,ua|uso
+GO_153,-50.58075,-14.22019,GO,Cerrado,Nova Crixás,GO-03,2018/05/29 00:00:00,,medido_completo,ua|uso
+GO_155,-50.22005,-14.22016,GO,Cerrado,Crixás,GO-01,2018/06/04 00:00:00,,medido_completo,ua|uso
+GO_156,-50.04002,-14.22006,GO,Cerrado,Uirapuru,GO-01,2018/06/01 00:00:00,,medido_completo,ua|uso
+GO_157,-49.86054,-14.22026,GO,Cerrado,Uirapuru,GO-01,2018/06/01 00:00:00,,medido_completo,ua|uso
+GO_158,-49.68007,-14.21997,GO,Cerrado,Campos Verdes,GO-01,2018/06/05 00:00:00,,medido_completo,ua|uso
+GO_159,-49.50063,-14.22015,GO,Cerrado,Alto Horizonte,GO-01,2018/04/24 00:00:00,,medido_completo,ua|uso
+GO_16,-49.14004,-13.14018,GO,Cerrado,Porangatu,GO-01,2018/05/04 00:00:00,Terreno Rochoso,medido_completo,ua|uso
+GO_160,-49.32007,-14.22,GO,Cerrado,Alto Horizonte,GO-01,2018/04/23 00:00:00,,medido_completo,ua|uso
+GO_161,-49.14052,-14.22012,GO,Cerrado,Campinorte,GO-01,2018/05/08 00:00:00,,medido_completo,ua|uso
+GO_162,-48.96018,-14.22003,GO,Cerrado,Uruaçu,GO-01,2018/04/26 00:00:00,,medido_completo,ua|uso
+GO_163,-48.78011,-14.21992,GO,Cerrado,Niquelândia,GO-01,2018/04/19 00:00:00,,medido_completo,ua|uso
+GO_164,-48.60007,-14.22013,GO,Cerrado,Niquelândia,GO-01,2018/10/15 00:00:00,,medido_completo,ua|uso
+GO_165,-48.42036,-14.2202,GO,Cerrado,Niquelândia,GO-01,2018/10/09 00:00:00,,medido_completo,ua|uso
+GO_167,-48.06021,-14.22017,GO,Cerrado,Niquelândia,GO-01,2018/10/20 00:00:00,Solo pedregoso,medido_completo,ua|uso
+GO_168,-47.88035,-14.22004,GO,Cerrado,Alto Paraíso de Goiás,GO-01,2018/10/16 00:00:00,,medido_completo,ua|uso
+GO_169,-47.70029,-14.21998,GO,Cerrado,Alto Paraíso de Goiás,GO-01,2018/10/04 00:00:00,,medido_completo,ua|uso
+GO_17,-48.96004,-13.13998,GO,Cerrado,Porangatu,GO-01,2018/05/17 00:00:00,,medido_completo,ua|uso
+GO_170,-47.52035,-14.21996,GO,Cerrado,Alto Paraíso de Goiás,GO-01,2018/09/25 00:00:00,,medido_completo,ua|uso
+GO_171,-47.34017,-14.22024,GO,Cerrado,São João d'Aliança,GO-01,2018/09/24 00:00:00,,medido_completo,ua|uso
+GO_172,-47.16055,-14.22027,GO,Cerrado,São João d'Aliança,GO-01,2018/09/19 00:00:00,,medido_completo,ua|uso
+GO_173,-46.98055,-14.22028,GO,Cerrado,Flores de Goiás,GO-01,2018/09/18 00:00:00,,medido_completo,ua|uso
+GO_174,-46.80084,-14.22044,GO,Cerrado,Iaciara,GO-01,2018/09/27 00:00:00,,medido_completo,ua|uso
+GO_175,-46.62007,-14.21997,GO,Cerrado,Posse,GO-01,2018/09/28 00:00:00,,medido_completo,ua|uso
+GO_176,-46.44039,-14.22012,GO,Cerrado,Posse,GO-01,2018/09/18 00:00:00,,medido_completo,ua|uso
+GO_177,-46.26036,-14.22004,GO,Cerrado,Posse,GO-01,2018/09/24 00:00:00,,medido_completo,ua|uso
+GO_178,-46.08053,-14.22017,GO,Cerrado,Posse,GO-01,2018/09/25 00:00:00,,medido_completo,ua|uso
+GO_18,-48.78035,-13.14003,GO,Cerrado,Montividiu do Norte,GO-01,2018/05/17 00:00:00,,medido_completo,ua|uso
+GO_180,-50.76005,-14.39998,GO,Cerrado,Nova Crixás,GO-03,2018/06/13 00:00:00,,medido_completo,ua|uso
+GO_181,-50.58034,-14.40001,GO,Cerrado,Nova Crixás,GO-03,2018/06/13 00:00:00,,medido_completo,ua|uso
+GO_182,-50.40009,-14.40006,GO,Cerrado,Nova Crixás,GO-01,2018/10/10 00:00:00,,medido_completo,ua|uso
+GO_183,-50.22008,-14.39999,GO,Cerrado,Crixás,GO-01,2018/06/01 00:00:00,,medido_completo,ua|uso
+GO_184,-50.04006,-14.39997,GO,Cerrado,Crixás,GO-01,2018/05/28 00:00:00,,medido_completo,ua|uso
+GO_185,-49.86003,-14.4,GO,Cerrado,Crixás,GO-01,2018/05/29 00:00:00,,medido_completo,ua|uso
+GO_187,-49.49997,-14.40003,GO,Cerrado,Santa Terezinha de Goiás,GO-01,2018/05/04 00:00:00,,medido_completo,ua|uso
+GO_188,-49.32027,-14.40009,GO,Cerrado,Nova Iguaçu de Goiás,GO-01,2018/04/25 00:00:00,,medido_completo,ua|uso
+GO_189,-49.14019,-14.3999,GO,Cerrado,Uruaçu,GO-01,2018/04/20 00:00:00,,medido_completo,ua|uso
+GO_19,-48.60005,-13.14012,GO,Cerrado,Montividiu do Norte,GO-01,2018/05/03 00:00:00,,medido_completo,ua|uso
+GO_190,-48.96048,-14.40009,GO,Cerrado,Niquelândia,GO-01,2018/04/18 00:00:00,,medido_completo,ua|uso
+GO_191,-48.78039,-14.40009,GO,Cerrado,Niquelândia,GO-01,2018/04/19 00:00:00,,medido_completo,ua|uso
+GO_192,-48.60015,-14.40001,GO,Cerrado,Niquelândia,GO-01,2018/10/15 00:00:00,,medido_completo,ua|uso
+GO_193,-48.42019,-14.4,GO,Cerrado,Niquelândia,GO-01,2018/10/10 00:00:00,,medido_completo,ua|uso
+GO_194,-48.24009,-14.39999,GO,Cerrado,Niquelândia,GO-01,2018/10/08 00:00:00,,medido_completo,ua|uso
+GO_195,-48.0605,-14.40017,GO,Cerrado,Niquelândia,GO-01,2018/10/11 00:00:00,,medido_completo,ua|uso
+GO_196,-47.88,-14.4,GO,Cerrado,Niquelândia,GO-01,,,socioambiental,uso
+GO_197,-47.70059,-14.40035,GO,Cerrado,Alto Paraíso de Goiás,GO-01,2018/10/02 00:00:00,,medido_completo,ua|uso
+GO_198,-47.52006,-14.40008,GO,Cerrado,Alto Paraíso de Goiás,GO-01,2018/09/24 00:00:00,,medido_completo,ua|uso
+GO_199,-47.34038,-14.40003,GO,Cerrado,São João d'Aliança,GO-01,2018/09/28 00:00:00,solo pedregoso,medido_completo,ua|uso
+GO_2,-50.40018,-12.95992,GO,Cerrado,São Miguel do Araguaia,,2018/05/23 00:00:00,,medido_biofisico,ua
+GO_200,-47.16031,-14.39995,GO,Cerrado,Flores de Goiás,GO-01,2018/09/17 00:00:00,,medido_completo,ua|uso
+GO_201,-46.98044,-14.39997,GO,Cerrado,Flores de Goiás,GO-01,2018/09/20 00:00:00,,medido_completo,ua|uso
+GO_202,-46.80059,-14.4003,GO,Cerrado,Alvorada do Norte,GO-01,2018/09/17 00:00:00,,medido_completo,ua|uso
+GO_203,-46.62017,-14.39992,GO,Cerrado,Simolândia,GO-01,2018/09/19 00:00:00,,medido_completo,ua|uso
+GO_204,-46.44004,-14.39998,GO,Cerrado,Simolândia,GO-01,2018/09/19 00:00:00,,medido_completo,ua|uso
+GO_205,-46.2601,-14.39985,GO,Cerrado,Buritinópolis,GO-01,2018/09/20 00:00:00,,medido_completo,ua|uso
+GO_206,-46.08024,-14.3999,GO,Cerrado,Mambaí,GO-01,2018/09/24 00:00:00,,medido_completo,ua|uso
+GO_207,-50.94027,-14.58003,GO,Cerrado,Aruanã,GO-03,2018/06/19 00:00:00,,medido_completo,ua|uso
+GO_208,-50.76027,-14.58002,GO,Cerrado,Nova Crixás,GO-03,2018/06/06 00:00:00,,medido_completo,ua|uso
+GO_209,-50.58031,-14.58018,GO,Cerrado,Nova Crixás,GO-03,2018/06/14 00:00:00,,medido_completo,ua|uso
+GO_21,-46.80028,-13.13995,GO,Cerrado,Monte Alegre de Goiás,GO-01,2018/10/01 00:00:00,,medido_completo,ua|uso
+GO_210,-50.40012,-14.58001,GO,Cerrado,Nova Crixás,GO-01,2018/06/06 00:00:00,,medido_completo,ua|uso
+GO_211,-50.22006,-14.58002,GO,Cerrado,Crixás,GO-01,2018/05/31 00:00:00,,medido_completo,ua|uso
+GO_212,-50.04011,-14.58002,GO,Cerrado,Crixás,GO-01,2018/05/31 00:00:00,,medido_completo,ua|uso
+GO_213,-49.86037,-14.58004,GO,Cerrado,Crixás,GO-01,2018/06/07 00:00:00,,medido_completo,ua|uso
+GO_214,-49.6802,-14.58008,GO,Cerrado,Guarinos,GO-01,2018/05/30 00:00:00,,medido_completo,ua|uso
+GO_215,-49.50001,-14.58005,GO,Cerrado,Pilar de Goiás,GO-01,2018/04/20 00:00:00,,medido_completo,ua|uso
+GO_216,-49.32019,-14.58004,GO,Cerrado,Uruaçu,GO-01,2018/04/24 00:00:00,,medido_completo,ua|uso
+GO_217,-49.14044,-14.58003,GO,Cerrado,Uruaçu,GO-01,2018/05/04 00:00:00,,medido_completo,ua|uso
+GO_218,-48.96036,-14.58001,GO,Cerrado,Niquelândia,GO-01,2018/04/16 00:00:00,,medido_completo,ua|uso
+GO_219,-48.78056,-14.57999,GO,Cerrado,Niquelândia,GO-01,2018/04/19 00:00:00,,medido_completo,ua|uso
+GO_22,-46.62051,-13.14014,GO,Cerrado,Monte Alegre de Goiás,GO-01,2018/10/06 00:00:00,,medido_completo,ua|uso
+GO_220,-48.60056,-14.58028,GO,Cerrado,Niquelândia,GO-01,2018/10/18 00:00:00,,medido_completo,ua|uso
+GO_221,-48.4201,-14.58001,GO,Cerrado,Niquelândia,,2018/10/10 00:00:00,,medido_biofisico,ua
+GO_222,-48.24048,-14.58014,GO,Cerrado,Niquelândia,GO-01,2018/10/19 00:00:00,Solo pedregoso,medido_completo,ua|uso
+GO_223,-48.06,-14.58,GO,Cerrado,Niquelândia,GO-01,,,socioambiental,uso
+GO_224,-47.88017,-14.58013,GO,Cerrado,Niquelândia,GO-01,2018/09/21 00:00:00,,medido_completo,ua|uso
+GO_225,-47.70015,-14.58,GO,Cerrado,São João d'Aliança,GO-01,2018/09/26 00:00:00,,medido_completo,ua|uso
+GO_226,-47.52017,-14.58012,GO,Cerrado,São João d'Aliança,GO-01,2018/09/18 00:00:00,,medido_completo,ua|uso
+GO_227,-47.34003,-14.58007,GO,Cerrado,São João d'Aliança,GO-01,2018/09/20 00:00:00,,medido_completo,ua|uso
+GO_228,-47.16013,-14.57996,GO,Cerrado,Formosa,GO-01,2018/09/20 00:00:00,,medido_completo,ua|uso
+GO_229,-46.9802,-14.58012,GO,Cerrado,Flores de Goiás,GO-01,2018/09/17 00:00:00,,medido_completo,ua|uso
+GO_23,-46.44053,-13.14016,GO,Cerrado,Divinópolis de Goiás,GO-01,2018/09/27 00:00:00,,medido_completo,ua|uso
+GO_230,-46.8,-14.57997,GO,Cerrado,Flores de Goiás,GO-01,2018/09/21 00:00:00,,medido_completo,ua|uso
+GO_231,-46.62053,-14.58018,GO,Cerrado,Alvorada do Norte,GO-01,2018/09/17 00:00:00,,medido_completo,ua|uso
+GO_232,-46.4405,-14.58016,GO,Cerrado,Alvorada do Norte,GO-01,2018/09/21 00:00:00,,medido_completo,ua|uso
+GO_233,-46.26007,-14.58008,GO,Cerrado,Damianópolis,GO-01,2018/09/28 00:00:00,,medido_completo,ua|uso
+GO_234,-46.08048,-14.58009,GO,Cerrado,Mambaí,GO-01,2018/09/25 00:00:00,,medido_completo,ua|uso
+GO_235,-50.94002,-14.76009,GO,Cerrado,Aruanã,GO-03,2018/06/05 00:00:00,,medido_completo,ua|uso
+GO_236,-50.76019,-14.76004,GO,Cerrado,Mozarlândia,GO-03,2018/06/04 00:00:00,,medido_completo,ua|uso
+GO_237,-50.58034,-14.76008,GO,Cerrado,Mozarlândia,GO-03,2018/06/04 00:00:00,,medido_completo,ua|uso
+GO_238,-50.40014,-14.75997,GO,Cerrado,Crixás,GO-01,2018/06/07 00:00:00,,medido_completo,ua|uso
+GO_239,-50.22028,-14.76005,GO,Cerrado,Crixás,GO-01,2018/06/08 00:00:00,,medido_completo,ua|uso
+GO_24,-50.58053,-13.32017,GO,Cerrado,São Miguel do Araguaia,GO-03,2018/05/25 00:00:00,,medido_completo,ua|uso
+GO_240,-50.0402,-14.76001,GO,Cerrado,Crixás,GO-01,2018/06/06 00:00:00,,medido_completo,ua|uso
+GO_241,-49.8601,-14.76009,GO,Cerrado,Crixás,GO-01,2018/05/29 00:00:00,,medido_completo,ua|uso
+GO_242,-49.68023,-14.76016,GO,Cerrado,Guarinos,GO-01,2018/05/30 00:00:00,,medido_completo,ua|uso
+GO_243,-49.50037,-14.76011,GO,Cerrado,Hidrolina,GO-01,2018/04/23 00:00:00,,medido_completo,ua|uso
+GO_244,-49.32039,-14.76012,GO,Cerrado,Hidrolina,GO-01,2018/04/27 00:00:00,,medido_completo,ua|uso
+GO_245,-49.14025,-14.76008,GO,Cerrado,Santa Rita do Novo Destino,GO-01,2018/04/17 00:00:00,,medido_completo,ua|uso
+GO_246,-48.96026,-14.76001,GO,Cerrado,Santa Rita do Novo Destino,GO-01,2018/04/18 00:00:00,,medido_completo,ua|uso
+GO_247,-48.78035,-14.76013,GO,Cerrado,Barro Alto,GO-01,2018/05/02 00:00:00,,medido_completo,ua|uso
+GO_248,-48.59999,-14.76,GO,Cerrado,Niquelândia,GO-01,2018/10/15 00:00:00,,medido_completo,ua|uso
+GO_249,-48.42045,-14.76004,GO,Cerrado,Niquelândia,GO-01,2018/10/17 00:00:00,,medido_completo,ua|uso
+GO_25,-50.4001,-13.32004,GO,Cerrado,São Miguel do Araguaia,GO-03,2018/05/22 00:00:00,,medido_completo,ua|uso
+GO_250,-48.24,-14.76,GO,Cerrado,Niquelândia,GO-01,,,socioambiental,uso
+GO_251,-48.06039,-14.76011,GO,Cerrado,Niquelândia,GO-01,2018/09/17 00:00:00,,medido_completo,ua|uso
+GO_252,-47.88065,-14.76023,GO,Cerrado,Niquelândia,GO-01,2018/09/17 00:00:00,,medido_completo,ua|uso
+GO_253,-47.70011,-14.76013,GO,Cerrado,Água Fria de Goiás,GO-01,2018/09/30 00:00:00,,medido_completo,ua|uso
+GO_254,-47.5199,-14.75992,GO,Cerrado,São João d'Aliança,GO-01,2018/09/13 00:00:00,solo pedregoso,medido_completo,ua|uso
+GO_255,-47.34006,-14.76007,GO,Cerrado,São João d'Aliança,GO-01,2018/09/19 00:00:00,,medido_completo,ua|uso
+GO_256,-47.16013,-14.76004,GO,Cerrado,Vila Boa,GO-01,2018/09/21 00:00:00,,medido_completo,ua|uso
+GO_257,-46.98046,-14.75993,GO,Cerrado,Flores de Goiás,GO-01,2018/09/18 00:00:00,,medido_completo,ua|uso
+GO_258,-46.80006,-14.76007,GO,Cerrado,Flores de Goiás,GO-01,2018/09/21 00:00:00,,medido_completo,ua|uso
+GO_259,-46.62007,-14.76006,GO,Cerrado,Alvorada do Norte,GO-01,2018/09/20 00:00:00,,medido_completo,ua|uso
+GO_26,-50.22013,-13.31993,GO,Cerrado,São Miguel do Araguaia,GO-03,2018/05/25 00:00:00,,medido_completo,ua|uso
+GO_260,-46.26024,-14.75994,GO,Cerrado,Sítio d'Abadia,GO-01,2018/09/26 00:00:00,,medido_completo,ua|uso
+GO_261,-46.08017,-14.76005,GO,Cerrado,Sítio d'Abadia,GO-01,2018/09/27 00:00:00,,medido_completo,ua|uso
+GO_263,-50.94043,-14.93997,GO,Cerrado,Aruanã,GO-03,2018/06/06 00:00:00,,medido_completo,ua|uso
+GO_264,-50.76047,-14.94003,GO,Cerrado,Mozarlândia,GO-03,2018/06/05 00:00:00,,medido_completo,ua|uso
+GO_265,-50.58059,-14.9403,GO,Cerrado,Mozarlândia,GO-03,2018/06/12 00:00:00,,medido_completo,ua|uso
+GO_267,-50.22047,-14.94016,GO,Cerrado,Crixás,GO-01,2018/06/11 00:00:00,,medido_completo,ua|uso
+GO_268,-50.0403,-14.93994,GO,Cerrado,Crixás,GO-01,2018/06/08 00:00:00,,medido_completo,ua|uso
+GO_269,-49.86006,-14.93997,GO,Cerrado,Crixás,GO-01,2018/05/30 00:00:00,,medido_completo,ua|uso
+GO_27,-50.04054,-13.32012,GO,Cerrado,São Miguel do Araguaia,GO-01,2018/05/23 00:00:00,,medido_completo,ua|uso
+GO_270,-49.68061,-14.93997,GO,Cerrado,Itapaci,GO-01,2018/06/08 00:00:00,,medido_completo,ua|uso
+GO_271,-49.50035,-14.93997,GO,Cerrado,Itapaci,GO-01,2018/04/25 00:00:00,,medido_completo,ua|uso
+GO_272,-49.31995,-14.9399,GO,Cerrado,São Luiz do Norte,GO-01,2018/04/25 00:00:00,,medido_completo,ua|uso
+GO_273,-49.14023,-14.93992,GO,Cerrado,São Luiz do Norte,GO-01,2018/05/03 00:00:00,,medido_completo,ua|uso
+GO_274,-48.96001,-14.94011,GO,Cerrado,Barro Alto,GO-01,2018/04/26 00:00:00,,medido_completo,ua|uso
+GO_275,-48.78037,-14.94006,GO,Cerrado,Vila Propício,GO-01,2018/04/20 00:00:00,,medido_completo,ua|uso
+GO_277,-48.42056,-14.94027,GO,Cerrado,Mimoso de Goiás,GO-01,2018/09/10 00:00:00,Solo pedregoso / cascalho,medido_completo,ua|uso
+GO_278,-48.24047,-14.94002,GO,Cerrado,Mimoso de Goiás,GO-01,2018/09/12 00:00:00,,medido_completo,ua|uso
+GO_279,-48.06055,-14.9403,GO,Cerrado,Mimoso de Goiás,GO-01,2018/09/10 00:00:00,,medido_completo,ua|uso
+GO_28,-49.86021,-13.31999,GO,Cerrado,São Miguel do Araguaia,GO-01,2018/05/24 00:00:00,,medido_completo,ua|uso
+GO_280,-47.88036,-14.94001,GO,Cerrado,Água Fria de Goiás,GO-01,2018/09/11 00:00:00,,medido_completo,ua|uso
+GO_281,-47.70053,-14.94018,GO,Cerrado,Água Fria de Goiás,GO-01,2018/09/14 00:00:00,,medido_completo,ua|uso
+GO_282,-47.52037,-14.94006,GO,Cerrado,Formosa,GO-01,2018/11/08 00:00:00,,medido_completo,ua|uso
+GO_283,-47.34006,-14.9401,GO,Cerrado,Formosa,GO-01,2018/09/19 00:00:00,,medido_completo,ua|uso
+GO_284,-47.16002,-14.93996,GO,Cerrado,Vila Boa,GO-01,2018/06/19 00:00:00,,medido_completo,ua|uso
+GO_285,-46.98004,-14.93996,GO,Cerrado,Vila Boa,GO-01,2018/09/19 00:00:00,,medido_completo,ua|uso
+GO_286,-46.80059,-14.94031,GO,Cerrado,Flores de Goiás,GO-01,2018/09/19 00:00:00,,medido_completo,ua|uso
+GO_287,-46.62071,-14.94021,GO,Cerrado,Flores de Goiás,GO-01,2018/09/18 00:00:00,,medido_completo,ua|uso
+GO_288,-51.48004,-15.11997,GO,Cerrado,Jussara,GO-03,2018/06/29 00:00:00,Solo alagado,medido_completo,ua|uso
+GO_29,-49.68027,-13.32006,GO,Cerrado,Novo Planalto,GO-01,2018/05/15 00:00:00,,medido_completo,ua|uso
+GO_290,-51.12056,-15.12025,GO,Cerrado,Aruanã,GO-03,2018/06/18 00:00:00,,medido_completo,ua|uso
+GO_291,-50.94021,-15.11992,GO,Cerrado,Aruanã,GO-03,2018/06/12 00:00:00,,medido_completo,ua|uso
+GO_292,-50.76061,-15.12031,GO,Cerrado,Aruanã,GO-03,2018/06/12 00:00:00,,medido_completo,ua|uso
+GO_293,-50.58017,-15.1199,GO,Cerrado,Araguapaz,GO-01,2018/03/23 00:00:00,,medido_completo,ua|uso
+GO_295,-50.22024,-15.11997,GO,Cerrado,Araguapaz,GO-01,2018/03/26 00:00:00,,medido_completo,ua|uso
+GO_297,-49.86054,-15.12016,GO,Cerrado,Rubiataba,GO-01,2018/04/09 00:00:00,,medido_completo,ua|uso
+GO_299,-49.50021,-15.11998,GO,Cerrado,Nova Glória,GO-01,2018/04/12 00:00:00,,medido_completo,ua|uso
+GO_3,-50.2201,-12.96014,GO,Cerrado,São Miguel do Araguaia,GO-03,2018/05/23 00:00:00,,medido_completo,ua|uso
+GO_30,-49.50102,-13.32031,GO,Cerrado,Porangatu,GO-01,2018/05/28 00:00:00,,medido_completo,ua|uso
+GO_300,-49.32053,-15.12028,GO,Cerrado,Santa Isabel,GO-01,2018/04/09 00:00:00,,medido_completo,ua|uso
+GO_301,-49.14008,-15.11997,GO,Cerrado,Santa Rita do Novo Destino,GO-01,2018/04/02 00:00:00,,medido_completo,ua|uso
+GO_302,-48.96055,-15.12,GO,Cerrado,Barro Alto,GO-01,2018/04/10 00:00:00,,medido_completo,ua|uso
+GO_303,-48.78049,-15.12004,GO,Cerrado,Vila Propício,GO-01,2018/04/03 00:00:00,,medido_completo,ua|uso
+GO_304,-48.60006,-15.11999,GO,Cerrado,Mimoso de Goiás,GO-01,2018/09/10 00:00:00,,medido_completo,ua|uso
+GO_305,-48.42019,-15.11991,GO,Cerrado,Padre Bernardo,GO-01,2018/09/11 00:00:00,,medido_completo,ua|uso
+GO_306,-48.24012,-15.12007,GO,Cerrado,Mimoso de Goiás,GO-01,2018/09/13 00:00:00,,medido_completo,ua|uso
+GO_307,-48.06004,-15.12002,GO,Cerrado,Água Fria de Goiás,GO-01,2018/09/14 00:00:00,,medido_completo,ua|uso
+GO_308,-47.88047,-15.11998,GO,Cerrado,Planaltina,GO-01,2018/09/12 00:00:00,,medido_completo,ua|uso
+GO_308_Q15,-47.80131,-15.13121,GO,Cerrado,Planaltina,GO-01,2018/09/12 00:00:00,,medido_completo,ua|uso
+GO_308_Q19,-47.75679,-15.13153,GO,Cerrado,Planaltina,GO-01,2018/09/14 00:00:00,,medido_completo,ua|uso
+GO_309,-47.70072,-15.1202,GO,Cerrado,Planaltina,GO-01,2018/09/10 00:00:00,,medido_completo,ua|uso
+GO_31,-49.32016,-13.32003,GO,Cerrado,Porangatu,GO-01,2018/05/14 00:00:00,,medido_completo,ua|uso
+GO_310,-47.52007,-15.11992,GO,Cerrado,Formosa,GO-01,2018/11/09 00:00:00,,medido_completo,ua|uso
+GO_311,-47.34029,-15.12012,GO,Cerrado,Formosa,GO-01,2018/06/19 00:00:00,,medido_completo,ua|uso
+GO_312,-47.16005,-15.12011,GO,Cerrado,Formosa,GO-01,2018/06/12 00:00:00,,medido_completo,ua|uso
+GO_313,-46.98053,-15.12014,GO,Cerrado,Vila Boa,GO-01,2018/06/21 00:00:00,,medido_completo,ua|uso
+GO_314,-51.6601,-15.2999,GO,Cerrado,Jussara,GO-03,2018/06/18 00:00:00,,medido_completo,ua|uso
+GO_315,-51.48023,-15.3,GO,Cerrado,Jussara,GO-03,2018/06/20 00:00:00,,medido_completo,ua|uso
+GO_316,-51.30006,-15.30009,GO,Cerrado,Jussara,GO-03,2018/06/21 00:00:00,,medido_completo,ua|uso
+GO_317,-51.12035,-15.3001,GO,Cerrado,Britânia,GO-03,2018/06/29 00:00:00,,medido_completo,ua|uso
+GO_318,-50.94002,-15.30011,GO,Cerrado,Aruanã,GO-03,2018/06/15 00:00:00,,medido_completo,ua|uso
+GO_319,-50.76062,-15.30013,GO,Cerrado,Matrinchã,GO-03,2018/06/13 00:00:00,,medido_completo,ua|uso
+GO_320,-50.58002,-15.29997,GO,Cerrado,Faina,GO-03,2018/06/11 00:00:00,,medido_completo,ua|uso
+GO_322,-50.22006,-15.30012,GO,Cerrado,Faina,GO-01,2018/03/28 00:00:00,,medido_completo,ua|uso
+GO_323,-50.04048,-15.29998,GO,Cerrado,Morro Agudo de Goiás,GO-01,2018/04/13 00:00:00,,medido_completo,ua|uso
+GO_324,-49.86018,-15.29994,GO,Cerrado,Rubiataba,GO-01,2018/04/06 00:00:00,,medido_completo,ua|uso
+GO_325,-49.68004,-15.29998,GO,Cerrado,Ceres,GO-01,2018/04/11 00:00:00,,medido_completo,ua|uso
+GO_326,-49.50005,-15.30012,GO,Cerrado,Rialma,GO-01,2018/04/12 00:00:00,,medido_completo,ua|uso
+GO_328,-49.14004,-15.29991,GO,Cerrado,Goianésia,GO-01,2018/04/02 00:00:00,,medido_completo,ua|uso
+GO_329,-48.96018,-15.30008,GO,Cerrado,Vila Propício,GO-01,2018/04/11 00:00:00,,medido_completo,ua|uso
+GO_330,-48.78036,-15.30006,GO,Cerrado,Vila Propício,GO-01,2018/04/05 00:00:00,,medido_completo,ua|uso
+GO_331,-48.60027,-15.29994,GO,Cerrado,Vila Propício,GO-01,2018/09/11 00:00:00,,medido_completo,ua|uso
+GO_332,-48.42015,-15.30012,GO,Cerrado,Padre Bernardo,GO-01,2018/09/13 00:00:00,,medido_completo,ua|uso
+GO_333,-48.24007,-15.30009,GO,Cerrado,Padre Bernardo,GO-01,2018/09/14 00:00:00,,medido_completo,ua|uso
+GO_334,-48.06014,-15.30003,GO,Cerrado,Padre Bernardo,GO-01,2018/09/14 00:00:00,Cascalho,medido_completo,ua|uso
+GO_335,-47.8802,-15.29998,GO,Cerrado,Planaltina,GO-01,2018/09/11 00:00:00,Solo pedregoso,medido_completo,ua|uso
+GO_336,-47.70051,-15.30005,GO,Cerrado,Planaltina,GO-01,2018/09/13 00:00:00,,medido_completo,ua|uso
+GO_337,-47.52016,-15.30013,GO,Cerrado,Planaltina,GO-01,2018/06/14 00:00:00,,medido_completo,ua|uso
+GO_338,-47.34,-15.3,GO,Cerrado,Formosa,GO-01,,,socioambiental,uso
+GO_339,-47.16041,-15.29995,GO,Cerrado,Formosa,GO-01,2018/06/13 00:00:00,,medido_completo,ua|uso
+GO_34,-48.78013,-13.32002,GO,Cerrado,Montividiu do Norte,GO-01,2018/05/10 00:00:00,,medido_completo,ua|uso
+GO_340,-46.98029,-15.30005,GO,Cerrado,Formosa,GO-01,2018/06/18 00:00:00,,medido_completo,ua|uso
+GO_341,-51.66018,-15.47992,GO,Cerrado,Jussara,GO-03,2018/06/26 00:00:00,,medido_completo,ua|uso
+GO_342,-51.48035,-15.48019,GO,Cerrado,Jussara,GO-03,2018/06/26 00:00:00,,medido_completo,ua|uso
+GO_343,-51.3001,-15.48009,GO,Cerrado,Jussara,GO-03,2018/06/22 00:00:00,,medido_completo,ua|uso
+GO_344,-51.12053,-15.48013,GO,Cerrado,Santa Fé de Goiás,GO-03,2018/06/22 00:00:00,,medido_completo,ua|uso
+GO_345,-50.94033,-15.48021,GO,Cerrado,Itapirapuã,GO-03,2018/04/04 00:00:00,,medido_completo,ua|uso
+GO_346,-50.76011,-15.48011,GO,Cerrado,Matrinchã,GO-03,2018/06/14 00:00:00,,medido_completo,ua|uso
+GO_347,-50.58019,-15.47998,GO,Cerrado,Matrinchã,GO-03,2018/03/21 00:00:00,,medido_completo,ua|uso
+GO_348,-50.40018,-15.47996,GO,Cerrado,Faina,GO-03,2018/03/20 00:00:00,,medido_completo,ua|uso
+GO_349,-50.22066,-15.48011,GO,Cerrado,Faina,GO-01,2018/03/19 00:00:00,,medido_completo,ua|uso
+GO_35,-48.60055,-13.32028,GO,Cerrado,Montividiu do Norte,GO-01,2018/05/10 00:00:00,,medido_completo,ua|uso
+GO_350,-50.04011,-15.48,GO,Cerrado,Itapuranga,GO-01,2018/03/26 00:00:00,,medido_completo,ua|uso
+GO_351,-49.86056,-15.48029,GO,Cerrado,Carmo do Rio Verde,GO-01,2018/04/18 00:00:00,,medido_completo,ua|uso
+GO_352,-49.68016,-15.48005,GO,Cerrado,Uruana,GO-01,2018/04/10 00:00:00,,medido_completo,ua|uso
+GO_353,-49.50058,-15.48001,GO,Cerrado,Rianápolis,GO-01,2018/04/07 00:00:00,,medido_completo,ua|uso
+GO_354,-49.32047,-15.48005,GO,Cerrado,Santa Isabel,GO-01,2018/04/05 00:00:00,,medido_completo,ua|uso
+GO_356,-48.96009,-15.48008,GO,Cerrado,Vila Propício,GO-01,2018/04/03 00:00:00,,medido_completo,ua|uso
+GO_357,-48.78058,-15.47998,GO,Cerrado,Vila Propício,GO-01,2018/04/12 00:00:00,,medido_completo,ua|uso
+GO_358,-48.60056,-15.48029,GO,Cerrado,Cocalzinho de Goiás,GO-01,2018/09/12 00:00:00,,medido_completo,ua|uso
+GO_359,-48.42037,-15.48003,GO,Cerrado,Padre Bernardo,GO-01,2018/09/12 00:00:00,Solo pedregoso/ Cascalho,medido_completo,ua|uso
+GO_36,-48.42009,-13.3201,GO,Cerrado,Minaçu,GO-01,2018/10/11 00:00:00,,medido_completo,ua|uso
+GO_360,-48.24036,-15.48,GO,Cerrado,Padre Bernardo,GO-01,2018/09/13 00:00:00,,medido_completo,ua|uso
+GO_361,-48.06022,-15.48014,GO,Cerrado,Padre Bernardo,GO-01,2018/09/11 00:00:00,,medido_completo,ua|uso
+GO_362,-47.88055,-15.48027,GO,Cerrado,Planaltina,GO-01,2018/09/11 00:00:00,,medido_completo,ua|uso
+GO_363,-47.70021,-15.47999,GO,Cerrado,Planaltina,GO-01,2018/06/14 00:00:00,,medido_completo,ua|uso
+GO_365,-47.34033,-15.48002,GO,Cerrado,Formosa,GO-01,2018/06/15 00:00:00,,medido_completo,ua|uso
+GO_366,-47.16071,-15.48022,GO,Cerrado,Formosa,GO-01,2018/06/12 00:00:00,,medido_completo,ua|uso
+GO_367,-46.98026,-15.47996,GO,Cerrado,Formosa,GO-01,2018/06/11 00:00:00,,medido_completo,ua|uso
+GO_368,-51.66008,-15.65993,GO,Cerrado,Montes Claros de Goiás,GO-03,2018/10/10 00:00:00,,medido_completo,ua|uso
+GO_369,-51.48034,-15.65991,GO,Cerrado,Jussara,GO-03,2018/06/30 00:00:00,,medido_completo,ua|uso
+GO_37,-48.24018,-13.32001,GO,Cerrado,Minaçu,GO-01,2018/10/09 00:00:00,,medido_completo,ua|uso
+GO_370,-51.30005,-15.66012,GO,Cerrado,Santa Fé de Goiás,GO-03,2018/06/22 00:00:00,,medido_completo,ua|uso
+GO_371,-51.12045,-15.65999,GO,Cerrado,Santa Fé de Goiás,GO-03,2018/06/22 00:00:00,,medido_completo,ua|uso
+GO_372,-50.9403,-15.66,GO,Cerrado,Itapirapuã,GO-03,2018/03/29 00:00:00,,medido_completo,ua|uso
+GO_374,-50.58037,-15.66003,GO,Cerrado,Goiás,GO-03,2018/04/02 00:00:00,,medido_completo,ua|uso
+GO_375,-50.4005,-15.66006,GO,Cerrado,Goiás,GO-03,2018/04/17 00:00:00,,medido_completo,ua|uso
+GO_376,-50.22027,-15.65997,GO,Cerrado,Goiás,GO-03,2018/03/23 00:00:00,,medido_completo,ua|uso
+GO_377,-50.04027,-15.65996,GO,Cerrado,Guaraíta,GO-01,2018/04/05 00:00:00,,medido_completo,ua|uso
+GO_378,-49.86051,-15.66014,GO,Cerrado,Itapuranga,GO-01,2018/04/23 00:00:00,,medido_completo,ua|uso
+GO_379,-49.68021,-15.65995,GO,Cerrado,Uruana,GO-01,2018/04/09 00:00:00,,medido_completo,ua|uso
+GO_38,-48.0608,-13.3204,GO,Cerrado,Cavalcante,GO-01,2018/10/09 00:00:00,,medido_completo,ua|uso
+GO_380,-49.50046,-15.66003,GO,Cerrado,Jaraguá,GO-01,2018/04/09 00:00:00,,medido_completo,ua|uso
+GO_381,-49.32047,-15.66003,GO,Cerrado,Jaraguá,GO-01,2018/04/16 00:00:00,,medido_completo,ua|uso
+GO_382,-49.14017,-15.65999,GO,Cerrado,Pirenópolis,GO-01,2018/03/14 00:00:00,,medido_completo,ua|uso
+GO_383,-48.96053,-15.66009,GO,Cerrado,Pirenópolis,GO-01,2018/03/15 00:00:00,muitas pedras,medido_completo,ua|uso
+GO_384,-48.78002,-15.66009,GO,Cerrado,Cocalzinho de Goiás,GO-01,2018/03/09 00:00:00,Terreno Pedregoso,medido_completo,ua|uso
+GO_385,-48.60053,-15.66017,GO,Cerrado,Cocalzinho de Goiás,GO-01,2018/03/08 00:00:00,,medido_completo,ua|uso
+GO_386,-48.42016,-15.65996,GO,Cerrado,Cocalzinho de Goiás,GO-01,2018/09/13 00:00:00,,medido_completo,ua|uso
+GO_388,-47.1606,-15.66031,GO,Cerrado,Formosa,,2018/11/07 00:00:00,,medido_biofisico,ua
+GO_389,-46.98006,-15.65987,GO,Cerrado,Cabeceiras,GO-01,2018/06/11 00:00:00,,medido_completo,ua|uso
+GO_39,-47.88036,-13.31996,GO,Cerrado,Cavalcante,GO-01,2018/10/22 00:00:00,,medido_completo,ua|uso
+GO_390,-51.84039,-15.84003,GO,Cerrado,Montes Claros de Goiás,GO-03,2018/06/18 00:00:00,,medido_completo,ua|uso
+GO_391,-51.6603,-15.83988,GO,Cerrado,Montes Claros de Goiás,GO-03,2018/06/19 00:00:00,,medido_completo,ua|uso
+GO_392,-51.48024,-15.84013,GO,Cerrado,Montes Claros de Goiás,GO-03,2018/06/21 00:00:00,,medido_completo,ua|uso
+GO_393,-51.30056,-15.84026,GO,Cerrado,Jussara,GO-03,2018/06/18 00:00:00,,medido_completo,ua|uso
+GO_394,-51.12069,-15.84021,GO,Cerrado,Santa Fé de Goiás,GO-03,2018/06/28 00:00:00,,medido_completo,ua|uso
+GO_395,-50.94022,-15.84001,GO,Cerrado,Jussara,GO-03,2018/03/19 00:00:00,,medido_completo,ua|uso
+GO_396,-50.76063,-15.84009,GO,Cerrado,Itapirapuã,GO-03,2018/03/19 00:00:00,,medido_completo,ua|uso
+GO_397,-50.58027,-15.83995,GO,Cerrado,Itapirapuã,GO-03,2018/03/20 00:00:00,,medido_completo,ua|uso
+GO_398,-50.40002,-15.83998,GO,Cerrado,Goiás,GO-03,2018/03/26 00:00:00,,medido_completo,ua|uso
+GO_399,-50.22031,-15.84011,GO,Cerrado,Goiás,GO-03,2018/04/02 00:00:00,,medido_completo,ua|uso
+GO_4,-50.0406,-12.96028,GO,Cerrado,São Miguel do Araguaia,GO-03,2018/05/24 00:00:00,,medido_completo,ua|uso
+GO_40,-47.52026,-13.31998,GO,Cerrado,Cavalcante,GO-01,2018/10/22 00:00:00,,medido_completo,ua|uso
+GO_400,-50.04026,-15.84,GO,Cerrado,Goiás,GO-01,2018/04/04 00:00:00,,medido_completo,ua|uso
+GO_401,-49.8601,-15.84014,GO,Cerrado,Goiás,GO-01,2018/04/09 00:00:00,,medido_completo,ua|uso
+GO_402,-49.68013,-15.83995,GO,Cerrado,Itaguaru,GO-01,2018/04/10 00:00:00,,medido_completo,ua|uso
+GO_403,-49.50055,-15.84015,GO,Cerrado,Jaraguá,GO-01,2018/04/11 00:00:00,,medido_completo,ua|uso
+GO_404,-49.32004,-15.84001,GO,Cerrado,São Francisco de Goiás,GO-02,2018/03/12 00:00:00,,medido_completo,ua|uso
+GO_406,-48.96025,-15.84016,GO,Cerrado,Pirenópolis,GO-02,2018/03/14 00:00:00,,medido_completo,ua|uso
+GO_407,-48.7802,-15.84007,GO,Cerrado,Corumbá de Goiás,GO-02,2018/03/12 00:00:00,,medido_completo,ua|uso
+GO_408,-48.60008,-15.84022,GO,Cerrado,Corumbá de Goiás,GO-02,2018/03/09 00:00:00,,medido_completo,ua|uso
+GO_409,-48.42045,-15.84025,GO,Cerrado,Cocalzinho de Goiás,GO-02,2018/03/19 00:00:00,,medido_completo,ua|uso
+GO_41,-47.34022,-13.31998,GO,Cerrado,Monte Alegre de Goiás,GO-01,2018/10/31 00:00:00,,medido_completo,ua|uso
+GO_410,-47.34029,-15.84003,GO,Cerrado,Formosa,,2018/11/05 00:00:00,,medido_biofisico,ua
+GO_411,-47.16016,-15.83992,GO,Cerrado,Formosa,,2018/11/06 00:00:00,,medido_biofisico,ua
+GO_412,-46.98005,-15.84012,GO,Cerrado,Cabeceiras,GO-01,2018/06/11 00:00:00,,medido_completo,ua|uso
+GO_413,-52.20036,-16.02004,GO,Cerrado,Aragarças,GO-03,2018/06/26 00:00:00,,medido_completo,ua|uso
+GO_414,-52.02016,-16.01991,GO,Cerrado,Bom Jardim de Goiás,GO-03,2018/06/22 00:00:00,,medido_completo,ua|uso
+GO_415,-51.84048,-16.02002,GO,Cerrado,Bom Jardim de Goiás,GO-03,2018/06/19 00:00:00,,medido_completo,ua|uso
+GO_416,-51.66054,-16.02017,GO,Cerrado,Montes Claros de Goiás,GO-03,2018/06/19 00:00:00,,medido_completo,ua|uso
+GO_417,-51.48036,-16.02004,GO,Cerrado,Montes Claros de Goiás,GO-03,2018/06/25 00:00:00,,medido_completo,ua|uso
+GO_418,-51.30011,-16.02007,GO,Cerrado,Montes Claros de Goiás,GO-03,2018/06/18 00:00:00,,medido_completo,ua|uso
+GO_419,-51.12003,-16.02003,GO,Cerrado,Fazenda Nova,GO-03,2018/03/22 00:00:00,,medido_completo,ua|uso
+GO_42,-47.16003,-13.31995,GO,Cerrado,Monte Alegre de Goiás,GO-01,2018/10/04 00:00:00,,medido_completo,ua|uso
+GO_420,-50.94032,-16.02018,GO,Cerrado,Jussara,GO-03,2018/03/21 00:00:00,,medido_completo,ua|uso
+GO_421,-50.76034,-16.02014,GO,Cerrado,Novo Brasil,GO-03,2018/03/22 00:00:00,,medido_completo,ua|uso
+GO_422,-50.58058,-16.02031,GO,Cerrado,Itapirapuã,GO-03,2018/03/23 00:00:00,,medido_completo,ua|uso
+GO_423,-50.40007,-16.01996,GO,Cerrado,Goiás,GO-03,2018/04/06 00:00:00,,medido_completo,ua|uso
+GO_424,-50.22055,-16.02014,GO,Cerrado,Goiás,GO-03,2018/04/13 00:00:00,,medido_completo,ua|uso
+GO_425,-50.04004,-16.02017,GO,Cerrado,Goiás,GO-02,2018/04/13 00:00:00,,medido_completo,ua|uso
+GO_426,-49.86009,-16.01989,GO,Cerrado,Itaberaí,GO-01,2018/04/18 00:00:00,,medido_completo,ua|uso
+GO_427,-49.68055,-16.02017,GO,Cerrado,Itaberaí,GO-02,2018/04/18 00:00:00,,medido_completo,ua|uso
+GO_428,-49.50005,-16.01995,GO,Cerrado,Santa Rosa de Goiás,GO-02,2018/03/09 00:00:00,,medido_completo,ua|uso
+GO_429,-49.32035,-16.02002,GO,Cerrado,Petrolina de Goiás,GO-02,2018/03/08 00:00:00,,medido_completo,ua|uso
+GO_43,-46.98036,-13.31997,GO,Cerrado,Monte Alegre de Goiás,GO-01,2018/10/03 00:00:00,,medido_completo,ua|uso
+GO_430,-49.14025,-16.02009,GO,Cerrado,Pirenópolis,GO-02,2018/03/08 00:00:00,,medido_completo,ua|uso
+GO_431,-48.9601,-16.0201,GO,Cerrado,Pirenópolis,GO-02,2018/03/20 00:00:00,,medido_completo,ua|uso
+GO_432,-48.78005,-16.0199,GO,Cerrado,Corumbá de Goiás,GO-02,2018/03/13 00:00:00,,medido_completo,ua|uso
+GO_433,-48.60006,-16.02003,GO,Cerrado,Alexânia,GO-02,2018/03/16 00:00:00,,medido_completo,ua|uso
+GO_434,-48.42037,-16.01997,GO,Cerrado,Alexânia,GO-02,2018/03/21 00:00:00,,medido_completo,ua|uso
+GO_435,-52.38006,-16.20011,GO,Cerrado,Baliza,GO-03,2018/06/20 00:00:00,,medido_completo,ua|uso
+GO_436,-52.2003,-16.20018,GO,Cerrado,Bom Jardim de Goiás,GO-03,2018/06/20 00:00:00,,medido_completo,ua|uso
+GO_437,-52.02021,-16.20006,GO,Cerrado,Bom Jardim de Goiás,GO-03,2018/06/20 00:00:00,,medido_completo,ua|uso
+GO_438,-51.84038,-16.20012,GO,Cerrado,Piranhas,GO-03,2018/06/11 00:00:00,,medido_completo,ua|uso
+GO_439,-51.66007,-16.20012,GO,Cerrado,Arenópolis,GO-03,2018/06/11 00:00:00,,medido_completo,ua|uso
+GO_44,-46.80005,-13.32004,GO,Cerrado,Monte Alegre de Goiás,GO-01,2018/10/02 00:00:00,,medido_completo,ua|uso
+GO_440,-51.48029,-16.20009,GO,Cerrado,Diorama,GO-03,2018/06/08 00:00:00,,medido_completo,ua|uso
+GO_441,-51.30053,-16.2002,GO,Cerrado,Diorama,GO-03,2018/03/22 00:00:00,,medido_completo,ua|uso
+GO_442,-51.12032,-16.2,GO,Cerrado,Jaupaci,GO-03,2018/03/29 00:00:00,,medido_completo,ua|uso
+GO_443,-50.94016,-16.2,GO,Cerrado,Jaupaci,GO-03,2018/03/19 00:00:00,,medido_completo,ua|uso
+GO_444,-50.76009,-16.20011,GO,Cerrado,Fazenda Nova,GO-03,2018/03/23 00:00:00,,medido_completo,ua|uso
+GO_445,-50.58037,-16.20011,GO,Cerrado,Novo Brasil,GO-03,2018/03/21 00:00:00,,medido_completo,ua|uso
+GO_446,-50.39999,-16.19999,GO,Cerrado,Buriti de Goiás,GO-03,2018/04/03 00:00:00,,medido_completo,ua|uso
+GO_447,-50.2201,-16.2,GO,Cerrado,Mossâmedes,GO-02,2018/04/12 00:00:00,,medido_completo,ua|uso
+GO_448,-50.04003,-16.20002,GO,Cerrado,Mossâmedes,GO-02,2018/04/04 00:00:00,,medido_completo,ua|uso
+GO_449,-49.86045,-16.20004,GO,Cerrado,Itaberaí,GO-02,2018/03/08 00:00:00,,medido_completo,ua|uso
+GO_45,-46.62042,-13.31997,GO,Cerrado,Divinópolis de Goiás,GO-01,2018/10/05 00:00:00,,medido_completo,ua|uso
+GO_450,-49.6801,-16.20005,GO,Cerrado,Itauçu,GO-02,2018/03/09 00:00:00,,medido_completo,ua|uso
+GO_451,-49.50009,-16.19991,GO,Cerrado,Inhumas,GO-02,2018/04/17 00:00:00,,medido_completo,ua|uso
+GO_452,-49.32047,-16.19998,GO,Cerrado,Petrolina de Goiás,GO-02,2018/03/12 00:00:00,,medido_completo,ua|uso
+GO_453,-49.14004,-16.2,GO,Cerrado,Anápolis,GO-02,2018/03/10 00:00:00,,medido_completo,ua|uso
+GO_454,-48.96001,-16.20001,GO,Cerrado,Anápolis,GO-02,2018/03/16 00:00:00,,medido_completo,ua|uso
+GO_455,-48.7803,-16.20009,GO,Cerrado,Abadiânia,GO-02,2018/03/08 00:00:00,,medido_completo,ua|uso
+GO_456,-48.60019,-16.20005,GO,Cerrado,Abadiânia,GO-02,2018/03/15 00:00:00,,medido_completo,ua|uso
+GO_457,-48.42004,-16.20012,GO,Cerrado,Alexânia,GO-02,2018/07/12 00:00:00,,medido_completo,ua|uso
+GO_458,-48.24041,-16.19993,GO,Cerrado,Santo Antônio do Descoberto,GO-02,2018/07/11 00:00:00,,medido_completo,ua|uso
+GO_459,-48.06012,-16.19989,GO,Cerrado,Luziânia,GO-02,2018/07/16 00:00:00,,medido_completo,ua|uso
+GO_46,-46.44034,-13.32009,GO,Cerrado,Divinópolis de Goiás,GO-01,2018/09/26 00:00:00,,medido_completo,ua|uso
+GO_460,-47.88019,-16.19997,GO,Cerrado,Luziânia,GO-02,2018/06/28 00:00:00,,medido_completo,ua|uso
+GO_461,-47.70007,-16.20011,GO,Cerrado,Luziânia,GO-02,2018/07/18 00:00:00,,medido_completo,ua|uso
+GO_462,-47.52055,-16.20026,GO,Cerrado,Cristalina,GO-02,2018/06/26 00:00:00,,medido_completo,ua|uso
+GO_463,-47.34006,-16.19996,GO,Cerrado,Cristalina,GO-02,2018/07/13 00:00:00,,medido_completo,ua|uso
+GO_464,-52.56036,-16.38004,GO,Cerrado,Baliza,GO-03,2018/09/05 00:00:00,,medido_completo,ua|uso
+GO_465,-52.38008,-16.38001,GO,Cerrado,Baliza,GO-03,2018/09/03 00:00:00,,medido_completo,ua|uso
+GO_466,-52.20005,-16.37998,GO,Cerrado,Bom Jardim de Goiás,GO-03,2018/08/31 00:00:00,,medido_completo,ua|uso
+GO_468,-51.84037,-16.38011,GO,Cerrado,Piranhas,GO-03,2018/06/04 00:00:00,,medido_completo,ua|uso
+GO_469,-51.66003,-16.37996,GO,Cerrado,Piranhas,GO-03,2018/06/04 00:00:00,,medido_completo,ua|uso
+GO_470,-51.48054,-16.38018,GO,Cerrado,Arenópolis,GO-03,2018/06/05 00:00:00,,medido_completo,ua|uso
+GO_471,-51.3001,-16.38009,GO,Cerrado,Iporá,GO-03,2018/03/26 00:00:00,,medido_completo,ua|uso
+GO_472,-51.12041,-16.3802,GO,Cerrado,Iporá,GO-03,2018/03/27 00:00:00,,medido_completo,ua|uso
+GO_473,-50.94002,-16.37997,GO,Cerrado,Israelândia,GO-03,2018/03/28 00:00:00,,medido_completo,ua|uso
+GO_474,-50.76059,-16.38029,GO,Cerrado,Israelândia,GO-03,2018/03/20 00:00:00,,medido_completo,ua|uso
+GO_475,-50.58062,-16.38029,GO,Cerrado,Córrego do Ouro,GO-03,2018/03/12 00:00:00,,medido_completo,ua|uso
+GO_476,-50.40057,-16.38028,GO,Cerrado,São Luís de Montes Belos,GO-03,2018/03/12 00:00:00,,medido_completo,ua|uso
+GO_477,-50.22018,-16.38013,GO,Cerrado,Adelândia,GO-02,2018/03/10 00:00:00,,medido_completo,ua|uso
+GO_478,-50.04014,-16.38004,GO,Cerrado,Anicuns,GO-02,2018/03/08 00:00:00,,medido_completo,ua|uso
+GO_479,-49.86045,-16.37996,GO,Cerrado,Anicuns,GO-02,2018/03/16 00:00:00,,medido_completo,ua|uso
+GO_480,-49.6804,-16.3802,GO,Cerrado,Araçu,GO-02,2018/03/13 00:00:00,,medido_completo,ua|uso
+GO_481,-49.50004,-16.38017,GO,Cerrado,Inhumas,GO-02,2018/03/09 00:00:00,,medido_completo,ua|uso
+GO_482,-49.32007,-16.37997,GO,Cerrado,Nova Veneza,GO-02,2018/04/12 00:00:00,,medido_completo,ua|uso
+GO_483,-49.14006,-16.38012,GO,Cerrado,Anápolis,GO-02,2018/03/09 00:00:00,,medido_completo,ua|uso
+GO_485,-48.7801,-16.38006,GO,Cerrado,Anápolis,GO-02,2018/07/11 00:00:00,,medido_completo,ua|uso
+GO_486,-48.60027,-16.37998,GO,Cerrado,Gameleira de Goiás,GO-02,2018/07/11 00:00:00,,medido_completo,ua|uso
+GO_487,-48.42007,-16.38015,GO,Cerrado,Silvânia,GO-02,2018/07/12 00:00:00,,medido_completo,ua|uso
+GO_488,-48.24029,-16.38012,GO,Cerrado,Luziânia,GO-02,2018/06/23 00:00:00,,medido_completo,ua|uso
+GO_489,-48.0601,-16.37989,GO,Cerrado,Luziânia,GO-02,2018/07/19 00:00:00,,medido_completo,ua|uso
+GO_49,-50.40004,-13.50017,GO,Cerrado,São Miguel do Araguaia,GO-03,2018/05/25 00:00:00,,medido_completo,ua|uso
+GO_490,-47.8801,-16.37998,GO,Cerrado,Luziânia,GO-02,2018/07/10 00:00:00,,medido_completo,ua|uso
+GO_491,-47.70003,-16.37997,GO,Cerrado,Luziânia,GO-02,2018/07/09 00:00:00,,medido_completo,ua|uso
+GO_492,-47.52055,-16.38027,GO,Cerrado,Cristalina,GO-02,2018/06/28 00:00:00,,medido_completo,ua|uso
+GO_493,-52.5605,-16.56015,GO,Cerrado,Doverlândia,GO-03,2018/09/06 00:00:00,,medido_completo,ua|uso
+GO_494,-52.38062,-16.56028,GO,Cerrado,Doverlândia,GO-03,2018/09/06 00:00:00,,medido_completo,ua|uso
+GO_495,-52.20033,-16.55994,GO,Cerrado,Caiapônia,GO-03,2018/08/29 00:00:00,,medido_completo,ua|uso
+GO_496,-52.02023,-16.55996,GO,Cerrado,Caiapônia,GO-03,2018/09/06 00:00:00,,medido_completo,ua|uso
+GO_497,-51.84009,-16.55995,GO,Cerrado,Piranhas,GO-03,2018/09/05 00:00:00,,medido_completo,ua|uso
+GO_498,-51.66008,-16.56009,GO,Cerrado,Piranhas,GO-03,2018/06/13 00:00:00,,medido_completo,ua|uso
+GO_499,-51.48022,-16.56,GO,Cerrado,Palestina de Goiás,GO-03,2018/06/13 00:00:00,,medido_completo,ua|uso
+GO_5,-49.14004,-12.95998,GO,Cerrado,Porangatu,GO-01,2018/05/02 00:00:00,,medido_completo,ua|uso
+GO_50,-50.22043,-13.49994,GO,Cerrado,São Miguel do Araguaia,GO-01,2018/05/25 00:00:00,,medido_completo,ua|uso
+GO_500,-51.30022,-16.56004,GO,Cerrado,Palestina de Goiás,GO-03,2018/06/11 00:00:00,,medido_completo,ua|uso
+GO_501,-51.12055,-16.56016,GO,Cerrado,Amorinópolis,GO-03,2018/03/27 00:00:00,,medido_completo,ua|uso
+GO_502,-50.94083,-16.56039,GO,Cerrado,Ivolândia,GO-03,2018/03/26 00:00:00,,medido_completo,ua|uso
+GO_503,-50.76061,-16.56031,GO,Cerrado,Moiporá,GO-03,2018/03/19 00:00:00,,medido_completo,ua|uso
+GO_504,-50.58056,-16.56013,GO,Cerrado,Aurilândia,GO-03,2018/03/15 00:00:00,,medido_completo,ua|uso
+GO_505,-50.40006,-16.56013,GO,Cerrado,São Luís de Montes Belos,GO-03,2018/03/16 00:00:00,,medido_completo,ua|uso
+GO_506,-50.22052,-16.56014,GO,Cerrado,Turvânia,GO-02,2018/03/09 00:00:00,,medido_completo,ua|uso
+GO_507,-50.04009,-16.56013,GO,Cerrado,Turvânia,GO-02,2018/03/08 00:00:00,,medido_completo,ua|uso
+GO_508,-49.86015,-16.56005,GO,Cerrado,Nazário,GO-02,2018/03/14 00:00:00,,medido_completo,ua|uso
+GO_509,-49.68007,-16.55997,GO,Cerrado,Santa Bárbara de Goiás,GO-02,2018/03/16 00:00:00,,medido_completo,ua|uso
+GO_51,-50.04064,-13.50003,GO,Cerrado,São Miguel do Araguaia,GO-01,2018/05/25 00:00:00,,medido_completo,ua|uso
+GO_510,-49.50009,-16.55993,GO,Cerrado,Trindade,GO-02,2018/03/17 00:00:00,,medido_completo,ua|uso
+GO_511,-49.32059,-16.56031,GO,Cerrado,Goiânia,GO-02,2018/03/13 00:00:00,,medido_completo,ua|uso
+GO_512,-49.14027,-16.56006,GO,Cerrado,Goianápolis,GO-02,2018/03/14 00:00:00,,medido_completo,ua|uso
+GO_513,-48.9602,-16.56007,GO,Cerrado,Leopoldo de Bulhões,GO-02,2018/08/03 00:00:00,,medido_completo,ua|uso
+GO_514,-48.7802,-16.5601,GO,Cerrado,Silvânia,GO-02,2018/07/16 00:00:00,,medido_completo,ua|uso
+GO_515,-48.60005,-16.55998,GO,Cerrado,Silvânia,GO-02,2018/07/11 00:00:00,,medido_completo,ua|uso
+GO_516,-48.42028,-16.56,GO,Cerrado,Silvânia,GO-02,2018/07/18 00:00:00,,medido_completo,ua|uso
+GO_517,-48.24023,-16.55999,GO,Cerrado,Luziânia,GO-02,2018/06/25 00:00:00,,medido_completo,ua|uso
+GO_518,-48.06005,-16.55998,GO,Cerrado,Luziânia,GO-02,2018/06/25 00:00:00,,medido_completo,ua|uso
+GO_519,-47.88048,-16.56004,GO,Cerrado,Luziânia,GO-02,2018/07/26 00:00:00,,medido_completo,ua|uso
+GO_52,-49.86014,-13.50014,GO,Cerrado,Bonópolis,GO-01,2018/05/22 00:00:00,,medido_completo,ua|uso
+GO_520,-47.70024,-16.56,GO,Cerrado,Cristalina,GO-02,2018/07/25 00:00:00,,medido_completo,ua|uso
+GO_521,-47.52056,-16.56016,GO,Cerrado,Cristalina,GO-02,2018/07/26 00:00:00,,medido_completo,ua|uso
+GO_522,-52.74007,-16.73996,GO,Cerrado,Doverlândia,GO-03,2018/08/30 00:00:00,,medido_completo,ua|uso
+GO_523,-52.56002,-16.74005,GO,Cerrado,Doverlândia,GO-03,2018/09/05 00:00:00,,medido_completo,ua|uso
+GO_524,-52.38019,-16.73999,GO,Cerrado,Doverlândia,GO-03,2018/08/30 00:00:00,,medido_completo,ua|uso
+GO_525,-52.20023,-16.74008,GO,Cerrado,Doverlândia,GO-03,2018/09/03 00:00:00,,medido_completo,ua|uso
+GO_526,-52.02038,-16.74002,GO,Cerrado,Caiapônia,GO-03,2018/09/06 00:00:00,,medido_completo,ua|uso
+GO_527,-51.84009,-16.74002,GO,Cerrado,Caiapônia,GO-03,2018/09/05 00:00:00,,medido_completo,ua|uso
+GO_528,-51.66048,-16.74002,GO,Cerrado,Caiapônia,GO-03,2018/06/14 00:00:00,,medido_completo,ua|uso
+GO_529,-51.48005,-16.73998,GO,Cerrado,Palestina de Goiás,GO-03,2018/06/13 00:00:00,,medido_completo,ua|uso
+GO_53,-49.68023,-13.5001,GO,Cerrado,Bonópolis,GO-01,2018/05/14 00:00:00,,medido_completo,ua|uso
+GO_530,-51.30033,-16.73995,GO,Cerrado,Palestina de Goiás,GO-03,2018/06/15 00:00:00,,medido_completo,ua|uso
+GO_531,-51.1203,-16.73995,GO,Cerrado,Ivolândia,GO-03,2018/06/05 00:00:00,,medido_completo,ua|uso
+GO_532,-50.94005,-16.73998,GO,Cerrado,Ivolândia,GO-03,2018/05/30 00:00:00,,medido_completo,ua|uso
+GO_533,-50.76038,-16.74009,GO,Cerrado,Cachoeira de Goiás,GO-03,2018/06/06 00:00:00,,medido_completo,ua|uso
+GO_534,-50.57999,-16.74006,GO,Cerrado,Aurilândia,GO-03,2018/03/14 00:00:00,,medido_completo,ua|uso
+GO_535,-50.40001,-16.74,GO,Cerrado,São João da Paraúna,GO-03,2018/03/13 00:00:00,,medido_completo,ua|uso
+GO_536,-50.22004,-16.73998,GO,Cerrado,Palminópolis,GO-02,2018/03/09 00:00:00,,medido_completo,ua|uso
+GO_537,-50.04029,-16.74015,GO,Cerrado,Palmeiras de Goiás,GO-02,2018/05/10 00:00:00,,medido_completo,ua|uso
+GO_538,-49.86004,-16.74001,GO,Cerrado,Palmeiras de Goiás,GO-02,2018/05/10 00:00:00,,medido_completo,ua|uso
+GO_539,-49.68036,-16.74003,GO,Cerrado,Campestre de Goiás,GO-02,2018/03/16 00:00:00,,medido_completo,ua|uso
+GO_540,-49.50011,-16.74003,GO,Cerrado,Trindade,GO-02,2018/03/12 00:00:00,,medido_completo,ua|uso
+GO_541,-49.32063,-16.7403,GO,Cerrado,Goiânia,,2018/09/07 00:00:00,,medido_biofisico,ua
+GO_542,-49.14023,-16.74008,GO,Cerrado,Senador Canedo,GO-02,2018/07/30 00:00:00,,medido_completo,ua|uso
+GO_543,-48.96038,-16.74015,GO,Cerrado,Caldazinha,GO-02,2018/07/06 00:00:00,,medido_completo,ua|uso
+GO_544,-48.78045,-16.73997,GO,Cerrado,Silvânia,GO-02,2018/07/21 00:00:00,,medido_completo,ua|uso
+GO_545,-48.60071,-16.74024,GO,Cerrado,Silvânia,GO-02,2018/07/13 00:00:00,,medido_completo,ua|uso
+GO_546,-48.42002,-16.73996,GO,Cerrado,Vianópolis,GO-02,2018/07/21 00:00:00,,medido_completo,ua|uso
+GO_547,-48.24024,-16.74001,GO,Cerrado,Orizona,GO-02,2018/07/25 00:00:00,,medido_completo,ua|uso
+GO_548,-48.06026,-16.74,GO,Cerrado,Luziânia,GO-02,2018/07/19 00:00:00,,medido_completo,ua|uso
+GO_549,-47.88036,-16.73995,GO,Cerrado,Cristalina,GO-02,2018/07/23 00:00:00,,medido_completo,ua|uso
+GO_55,-49.32051,-13.50016,GO,Cerrado,Porangatu,GO-01,2018/05/15 00:00:00,,medido_completo,ua|uso
+GO_550,-47.70032,-16.74002,GO,Cerrado,Cristalina,GO-02,2018/07/25 00:00:00,,medido_completo,ua|uso
+GO_551,-47.52052,-16.74013,GO,Cerrado,Cristalina,GO-02,2018/07/20 00:00:00,,medido_completo,ua|uso
+GO_552,-47.34082,-16.74039,GO,Cerrado,Cristalina,GO-02,2018/07/20 00:00:00,Solo pedregoso,medido_completo,ua|uso
+GO_553,-52.92091,-16.92039,GO,Cerrado,Santa Rita do Araguaia,GO-03,2018/08/28 00:00:00,,medido_completo,ua|uso
+GO_554,-52.74014,-16.92004,GO,Cerrado,Doverlândia,GO-03,2018/08/30 00:00:00,,medido_completo,ua|uso
+GO_556,-52.38038,-16.92002,GO,Cerrado,Doverlândia,GO-03,2018/09/04 00:00:00,,medido_completo,ua|uso
+GO_557,-52.20051,-16.92013,GO,Cerrado,Caiapônia,GO-03,2018/09/03 00:00:00,,medido_completo,ua|uso
+GO_558,-52.02055,-16.92014,GO,Cerrado,Caiapônia,GO-03,2018/09/03 00:00:00,,medido_completo,ua|uso
+GO_559,-51.84017,-16.9199,GO,Cerrado,Caiapônia,GO-03,2018/09/03 00:00:00,,medido_completo,ua|uso
+GO_56,-49.14039,-13.50012,GO,Cerrado,Porangatu,GO-01,2018/05/08 00:00:00,,medido_completo,ua|uso
+GO_560,-51.6603,-16.92002,GO,Cerrado,Caiapônia,GO-03,2018/06/14 00:00:00,,medido_completo,ua|uso
+GO_561,-51.48061,-16.92029,GO,Cerrado,Caiapônia,GO-03,2018/06/12 00:00:00,,medido_completo,ua|uso
+GO_563,-51.12006,-16.91999,GO,Cerrado,Caiapônia,GO-03,2018/06/01 00:00:00,,medido_completo,ua|uso
+GO_564,-50.94019,-16.91993,GO,Cerrado,Paraúna,GO-03,2018/05/31 00:00:00,,medido_completo,ua|uso
+GO_565,-50.76022,-16.92009,GO,Cerrado,Paraúna,GO-03,2018/05/30 00:00:00,,medido_completo,ua|uso
+GO_566,-50.58023,-16.92006,GO,Cerrado,Paraúna,GO-03,2018/06/04 00:00:00,,medido_completo,ua|uso
+GO_567,-50.40037,-16.92003,GO,Cerrado,Paraúna,GO-02,2018/05/15 00:00:00,,medido_completo,ua|uso
+GO_568,-50.22028,-16.92006,GO,Cerrado,Jandaia,GO-02,2018/05/09 00:00:00,,medido_completo,ua|uso
+GO_569,-50.04035,-16.92002,GO,Cerrado,Palmeiras de Goiás,GO-02,2018/05/09 00:00:00,,medido_completo,ua|uso
+GO_57,-48.9604,-13.50022,GO,Cerrado,Santa Tereza de Goiás,GO-01,2018/05/08 00:00:00,,medido_completo,ua|uso
+GO_570,-49.86011,-16.91995,GO,Cerrado,Palmeiras de Goiás,GO-02,2018/05/16 00:00:00,,medido_completo,ua|uso
+GO_571,-49.68002,-16.92005,GO,Cerrado,Guapó,GO-02,2018/05/08 00:00:00,,medido_completo,ua|uso
+GO_572,-49.50054,-16.92018,GO,Cerrado,Guapó,GO-02,2018/05/08 00:00:00,,medido_completo,ua|uso
+GO_573,-49.3206,-16.92031,GO,Cerrado,Hidrolândia,GO-02,2018/07/06 00:00:00,,medido_completo,ua|uso
+GO_574,-49.14056,-16.92028,GO,Cerrado,Hidrolândia,GO-02,2018/07/03 00:00:00,,medido_completo,ua|uso
+GO_575,-48.96035,-16.9202,GO,Cerrado,Bela Vista de Goiás,GO-02,2018/07/04 00:00:00,,medido_completo,ua|uso
+GO_576,-48.78034,-16.92012,GO,Cerrado,São Miguel do Passa Quatro,GO-02,2018/07/18 00:00:00,,medido_completo,ua|uso
+GO_577,-48.60017,-16.92012,GO,Cerrado,Silvânia,GO-02,2018/07/20 00:00:00,,medido_completo,ua|uso
+GO_578,-48.42006,-16.92013,GO,Cerrado,Vianópolis,GO-02,2018/07/17 00:00:00,,medido_completo,ua|uso
+GO_579,-48.24011,-16.92016,GO,Cerrado,Orizona,GO-02,2018/07/18 00:00:00,,medido_completo,ua|uso
+GO_58,-48.78005,-13.49998,GO,Cerrado,Trombas,GO-01,2018/05/10 00:00:00,,medido_completo,ua|uso
+GO_580,-48.06007,-16.91996,GO,Cerrado,Luziânia,GO-02,2018/07/27 00:00:00,,medido_completo,ua|uso
+GO_581,-47.88004,-16.9201,GO,Cerrado,Cristalina,GO-02,2018/07/27 00:00:00,Solo pedregoso,medido_completo,ua|uso
+GO_582,-47.70025,-16.92016,GO,Cerrado,Ipameri,GO-02,2018/07/20 00:00:00,,medido_completo,ua|uso
+GO_583,-47.5201,-16.91991,GO,Cerrado,Cristalina,GO-02,2018/07/24 00:00:00,,medido_completo,ua|uso
+GO_584,-47.34032,-16.9201,GO,Cerrado,Cristalina,GO-02,2018/07/20 00:00:00,,medido_completo,ua|uso
+GO_585,-52.92049,-17.10012,GO,Cerrado,Mineiros,GO-03,2018/08/29 00:00:00,,medido_completo,ua|uso
+GO_586,-52.74071,-17.10022,GO,Cerrado,Mineiros,GO-03,2018/08/27 00:00:00,,medido_completo,ua|uso
+GO_587,-52.56016,-17.09989,GO,Cerrado,Mineiros,GO-03,2018/09/05 00:00:00,,medido_completo,ua|uso
+GO_588,-52.38058,-17.10027,GO,Cerrado,Caiapônia,GO-03,2018/09/04 00:00:00,,medido_completo,ua|uso
+GO_589,-52.20054,-17.10013,GO,Cerrado,Caiapônia,GO-03,2018/09/04 00:00:00,,medido_completo,ua|uso
+GO_59,-48.60008,-13.50013,GO,Cerrado,Trombas,GO-01,2018/05/09 00:00:00,,medido_completo,ua|uso
+GO_590,-52.02057,-17.10016,GO,Cerrado,Caiapônia,GO-03,2018/09/06 00:00:00,,medido_completo,ua|uso
+GO_591,-51.84044,-17.10005,GO,Cerrado,Caiapônia,GO-03,2018/09/06 00:00:00,,medido_completo,ua|uso
+GO_592,-51.66038,-17.10011,GO,Cerrado,Caiapônia,GO-03,2018/09/04 00:00:00,,medido_completo,ua|uso
+GO_593,-51.48,-17.1,GO,Cerrado,Caiapônia,GO-03,,,socioambiental,uso
+GO_594,-51.30007,-17.09995,GO,Cerrado,Caiapônia,GO-03,2018/08/28 00:00:00,,medido_completo,ua|uso
+GO_595,-51.12054,-17.10017,GO,Cerrado,Montividiu,GO-03,2018/08/28 00:00:00,,medido_completo,ua|uso
+GO_596,-50.94011,-17.09986,GO,Cerrado,Rio Verde,GO-03,2018/08/27 00:00:00,,medido_completo,ua|uso
+GO_598,-50.58025,-17.1,GO,Cerrado,Paraúna,GO-03,2018/06/07 00:00:00,,medido_completo,ua|uso
+GO_599,-50.40007,-17.10007,GO,Cerrado,Paraúna,GO-02,2018/05/11 00:00:00,,medido_completo,ua|uso
+GO_6,-48.96055,-12.96028,GO,Cerrado,Porangatu,GO-01,2018/05/07 00:00:00,,medido_completo,ua|uso
+GO_60,-48.42026,-13.50011,GO,Cerrado,Minaçu,GO-01,2018/10/08 00:00:00,,medido_completo,ua|uso
+GO_600,-50.22061,-17.10029,GO,Cerrado,Jandaia,GO-02,2018/05/07 00:00:00,,medido_completo,ua|uso
+GO_601,-50.04008,-17.09991,GO,Cerrado,Indiara,GO-02,2018/05/09 00:00:00,,medido_completo,ua|uso
+GO_602,-49.86028,-17.10008,GO,Cerrado,Indiara,GO-02,2018/05/07 00:00:00,,medido_completo,ua|uso
+GO_603,-49.68048,-17.1001,GO,Cerrado,Varjão,GO-02,2018/05/17 00:00:00,,medido_completo,ua|uso
+GO_604,-49.50027,-17.1,GO,Cerrado,Varjão,GO-02,2018/05/17 00:00:00,Solo duro com pedrisco,medido_completo,ua|uso
+GO_605,-49.32053,-17.10012,GO,Cerrado,Hidrolândia,GO-02,2018/07/02 00:00:00,,medido_completo,ua|uso
+GO_606,-49.14027,-17.10012,GO,Cerrado,Hidrolândia,GO-02,2018/07/05 00:00:00,,medido_completo,ua|uso
+GO_607,-48.96047,-17.10005,GO,Cerrado,Piracanjuba,GO-02,2018/07/02 00:00:00,,medido_completo,ua|uso
+GO_608,-48.78041,-17.10024,GO,Cerrado,Bela Vista de Goiás,GO-02,2018/07/23 00:00:00,,medido_completo,ua|uso
+GO_609,-48.60004,-17.09997,GO,Cerrado,São Miguel do Passa Quatro,GO-02,2018/07/26 00:00:00,,medido_completo,ua|uso
+GO_61,-48.24006,-13.50001,GO,Cerrado,Minaçu,,2018/10/10 00:00:00,,medido_biofisico,ua
+GO_610,-48.42051,-17.10007,GO,Cerrado,Pires do Rio,GO-02,2018/07/18 00:00:00,,medido_completo,ua|uso
+GO_611,-48.24008,-17.10019,GO,Cerrado,Orizona,GO-02,2018/07/23 00:00:00,,medido_completo,ua|uso
+GO_612,-48.06025,-17.10001,GO,Cerrado,Orizona,GO-02,2018/07/24 00:00:00,,medido_completo,ua|uso
+GO_613,-47.88059,-17.10031,GO,Cerrado,Ipameri,GO-02,2018/07/23 00:00:00,,medido_completo,ua|uso
+GO_616,-47.34036,-17.10012,GO,Cerrado,Cristalina,GO-02,2018/07/20 00:00:00,,medido_completo,ua|uso
+GO_617,-53.10009,-17.27998,GO,Cerrado,Santa Rita do Araguaia,GO-03,2018/08/31 00:00:00,,medido_completo,ua|uso
+GO_618,-52.92007,-17.27993,GO,Cerrado,Santa Rita do Araguaia,GO-03,2018/08/30 00:00:00,,medido_completo,ua|uso
+GO_62,-48.06012,-13.5,GO,Cerrado,Cavalcante,GO-01,2018/10/11 00:00:00,,medido_completo,ua|uso
+GO_620,-52.56061,-17.28028,GO,Cerrado,Mineiros,GO-03,2018/08/28 00:00:00,,medido_completo,ua|uso
+GO_621,-52.38026,-17.28002,GO,Cerrado,Mineiros,GO-03,2018/08/31 00:00:00,,medido_completo,ua|uso
+GO_622,-52.20034,-17.28001,GO,Cerrado,Caiapônia,GO-03,2018/08/31 00:00:00,,medido_completo,ua|uso
+GO_623,-52.02047,-17.27997,GO,Cerrado,Caiapônia,GO-03,2018/09/04 00:00:00,,medido_completo,ua|uso
+GO_624,-51.84057,-17.28027,GO,Cerrado,Caiapônia,GO-03,2018/09/05 00:00:00,,medido_completo,ua|uso
+GO_625,-51.66052,-17.28012,GO,Cerrado,Caiapônia,GO-03,2018/08/24 00:00:00,,medido_completo,ua|uso
+GO_626,-51.48016,-17.28004,GO,Cerrado,Caiapônia,GO-03,2018/08/29 00:00:00,,medido_completo,ua|uso
+GO_627,-51.30061,-17.28029,GO,Cerrado,Montividiu,GO-03,2018/08/27 00:00:00,,medido_completo,ua|uso
+GO_628,-51.12027,-17.28008,GO,Cerrado,Montividiu,GO-03,2018/08/30 00:00:00,,medido_completo,ua|uso
+GO_629,-50.94026,-17.27999,GO,Cerrado,Rio Verde,GO-03,2018/08/27 00:00:00,,medido_completo,ua|uso
+GO_63,-47.88004,-13.49992,GO,Cerrado,Cavalcante,GO-01,2018/10/08 00:00:00,,medido_completo,ua|uso
+GO_630,-50.7602,-17.28007,GO,Cerrado,Rio Verde,GO-03,2018/06/08 00:00:00,,medido_completo,ua|uso
+GO_631,-50.58072,-17.28018,GO,Cerrado,Paraúna,GO-03,2018/06/08 00:00:00,,medido_completo,ua|uso
+GO_633,-50.22009,-17.27999,GO,Cerrado,Jandaia,GO-02,2018/05/14 00:00:00,,medido_completo,ua|uso
+GO_634,-50.0401,-17.28004,GO,Cerrado,Indiara,GO-02,2018/05/14 00:00:00,,medido_completo,ua|uso
+GO_635,-49.86005,-17.27997,GO,Cerrado,Edéia,GO-02,2018/05/11 00:00:00,,medido_completo,ua|uso
+GO_636,-49.68028,-17.28012,GO,Cerrado,Edealina,GO-02,2018/05/09 00:00:00,,medido_completo,ua|uso
+GO_637,-49.50012,-17.27989,GO,Cerrado,Mairipotaba,GO-02,2018/05/15 00:00:00,,medido_completo,ua|uso
+GO_638,-49.32051,-17.28014,GO,Cerrado,Cromínia,GO-02,2018/07/04 00:00:00,,medido_completo,ua|uso
+GO_639,-49.14029,-17.28003,GO,Cerrado,Piracanjuba,GO-02,2018/07/05 00:00:00,,medido_completo,ua|uso
+GO_64,-47.70051,-13.50014,GO,Cerrado,Cavalcante,GO-01,2018/10/22 00:00:00,,medido_completo,ua|uso
+GO_640,-48.96054,-17.28017,GO,Cerrado,Piracanjuba,GO-02,2018/07/30 00:00:00,,medido_completo,ua|uso
+GO_641,-48.78047,-17.28007,GO,Cerrado,Cristianópolis,GO-02,2018/07/25 00:00:00,,medido_completo,ua|uso
+GO_642,-48.60047,-17.28007,GO,Cerrado,Santa Cruz de Goiás,GO-02,2018/08/02 00:00:00,,medido_completo,ua|uso
+GO_643,-48.4201,-17.27992,GO,Cerrado,Santa Cruz de Goiás,GO-02,2018/07/20 00:00:00,,medido_completo,ua|uso
+GO_644,-48.24059,-17.28032,GO,Cerrado,Pires do Rio,GO-02,2018/07/27 00:00:00,,medido_completo,ua|uso
+GO_645,-48.06017,-17.28005,GO,Cerrado,Ipameri,GO-02,2018/08/01 00:00:00,,medido_completo,ua|uso
+GO_646,-47.88008,-17.28008,GO,Cerrado,Campo Alegre de Goiás,GO-02,2018/08/03 00:00:00,,medido_completo,ua|uso
+GO_648,-47.52056,-17.28027,GO,Cerrado,Cristalina,GO-02,2018/07/31 00:00:00,,medido_completo,ua|uso
+GO_649,-53.10057,-17.46025,GO,Cerrado,Mineiros,GO-03,2018/08/31 00:00:00,,medido_completo,ua|uso
+GO_65,-47.52018,-13.49992,GO,Cerrado,Cavalcante,GO-01,2018/10/22 00:00:00,,medido_completo,ua|uso
+GO_650,-52.92032,-17.46007,GO,Cerrado,Mineiros,GO-03,2018/08/30 00:00:00,,medido_completo,ua|uso
+GO_651,-52.74004,-17.45997,GO,Cerrado,Mineiros,GO-03,2018/08/29 00:00:00,,medido_completo,ua|uso
+GO_652,-52.56061,-17.46028,GO,Cerrado,Mineiros,GO-03,2018/08/28 00:00:00,,medido_completo,ua|uso
+GO_653,-52.38025,-17.45999,GO,Cerrado,Mineiros,GO-03,2018/08/27 00:00:00,,medido_completo,ua|uso
+GO_654,-52.2,-17.46,GO,Cerrado,Perolândia,GO-03,,,socioambiental,uso
+GO_655,-52.02004,-17.45998,GO,Cerrado,Caiapônia,GO-03,2018/08/30 00:00:00,,medido_completo,ua|uso
+GO_656,-51.84023,-17.45992,GO,Cerrado,Jataí,GO-03,2018/09/03 00:00:00,,medido_completo,ua|uso
+GO_657,-51.66037,-17.46011,GO,Cerrado,Rio Verde,GO-03,2018/08/24 00:00:00,,medido_completo,ua|uso
+GO_658,-51.48018,-17.45998,GO,Cerrado,Rio Verde,GO-03,2018/08/29 00:00:00,,medido_completo,ua|uso
+GO_659,-51.30005,-17.46012,GO,Cerrado,Montividiu,GO-03,2018/08/29 00:00:00,,medido_completo,ua|uso
+GO_66,-47.34,-13.5001,GO,Cerrado,Cavalcante,GO-01,2018/10/02 00:00:00,,medido_completo,ua|uso
+GO_661,-50.94017,-17.45991,GO,Cerrado,Rio Verde,GO-03,2018/08/28 00:00:00,,medido_completo,ua|uso
+GO_662,-50.76025,-17.45998,GO,Cerrado,Rio Verde,GO-03,2018/08/31 00:00:00,,medido_completo,ua|uso
+GO_663,-50.58051,-17.46013,GO,Cerrado,Santo Antônio da Barra,GO-03,2018/08/31 00:00:00,,medido_completo,ua|uso
+GO_664,-50.40006,-17.46011,GO,Cerrado,Acreúna,GO-02,2018/05/10 00:00:00,,medido_completo,ua|uso
+GO_665,-50.22042,-17.46023,GO,Cerrado,Acreúna,GO-02,2018/05/10 00:00:00,,medido_completo,ua|uso
+GO_666,-50.04028,-17.46004,GO,Cerrado,Edéia,GO-02,2018/05/07 00:00:00,,medido_completo,ua|uso
+GO_667,-49.86024,-17.45993,GO,Cerrado,Edéia,GO-02,2018/05/07 00:00:00,,medido_completo,ua|uso
+GO_668,-49.68048,-17.46006,GO,Cerrado,Edealina,GO-02,2018/05/08 00:00:00,,medido_completo,ua|uso
+GO_669,-49.50056,-17.46027,GO,Cerrado,Pontalina,GO-02,2018/05/09 00:00:00,,medido_completo,ua|uso
+GO_67,-47.16051,-13.50011,GO,Cerrado,Teresina de Goiás,GO-01,2018/10/01 00:00:00,,medido_completo,ua|uso
+GO_670,-49.32004,-17.46003,GO,Cerrado,Mairipotaba,GO-02,2018/07/26 00:00:00,,medido_completo,ua|uso
+GO_671,-49.14006,-17.46012,GO,Cerrado,Piracanjuba,GO-02,2018/07/17 00:00:00,,medido_completo,ua|uso
+GO_672,-48.9604,-17.46008,GO,Cerrado,Piracanjuba,GO-02,2018/07/27 00:00:00,,medido_completo,ua|uso
+GO_673,-48.7802,-17.46007,GO,Cerrado,Piracanjuba,GO-02,2018/08/06 00:00:00,,medido_completo,ua|uso
+GO_674,-48.60008,-17.46,GO,Cerrado,Santa Cruz de Goiás,GO-02,2018/08/02 00:00:00,,medido_completo,ua|uso
+GO_675,-48.42027,-17.4601,GO,Cerrado,Pires do Rio,GO-02,2018/07/30 00:00:00,,medido_completo,ua|uso
+GO_677,-48.06037,-17.45998,GO,Cerrado,Ipameri,GO-02,2018/07/30 00:00:00,,medido_completo,ua|uso
+GO_678,-47.88059,-17.46031,GO,Cerrado,Campo Alegre de Goiás,GO-02,2018/08/03 00:00:00,,medido_completo,ua|uso
+GO_679,-47.70026,-17.46009,GO,Cerrado,Campo Alegre de Goiás,GO-02,2018/08/01 00:00:00,,medido_completo,ua|uso
+GO_68,-46.98009,-13.50014,GO,Cerrado,Monte Alegre de Goiás,GO-01,2018/10/05 00:00:00,,medido_completo,ua|uso
+GO_680,-47.52007,-17.46004,GO,Cerrado,Catalão,GO-02,2018/07/30 00:00:00,,medido_completo,ua|uso
+GO_681,-53.10006,-17.64011,GO,Cerrado,Santa Rita do Araguaia,GO-03,2018/08/30 00:00:00,,medido_completo,ua|uso
+GO_682,-52.92084,-17.64036,GO,Cerrado,Mineiros,GO-03,2018/08/27 00:00:00,,medido_completo,ua|uso
+GO_683,-52.7401,-17.64008,GO,Cerrado,Mineiros,GO-03,2018/08/29 00:00:00,,medido_completo,ua|uso
+GO_684,-52.5602,-17.63996,GO,Cerrado,Mineiros,GO-03,2018/08/29 00:00:00,,medido_completo,ua|uso
+GO_685,-52.38013,-17.63994,GO,Cerrado,Mineiros,GO-03,2018/08/29 00:00:00,,medido_completo,ua|uso
+GO_686,-52.20048,-17.64,GO,Cerrado,Jataí,GO-03,2018/08/28 00:00:00,,medido_completo,ua|uso
+GO_687,-52.02016,-17.63993,GO,Cerrado,Jataí,GO-03,2018/08/23 00:00:00,,medido_completo,ua|uso
+GO_688,-51.84009,-17.64006,GO,Cerrado,Jataí,GO-03,2018/08/23 00:00:00,,medido_completo,ua|uso
+GO_689,-51.66075,-17.64017,GO,Cerrado,Jataí,GO-03,2018/08/22 00:00:00,,medido_completo,ua|uso
+GO_69,-46.80002,-13.50011,GO,Cerrado,Monte Alegre de Goiás,GO-01,2018/10/01 00:00:00,,medido_completo,ua|uso
+GO_690,-51.48044,-17.63997,GO,Cerrado,Rio Verde,GO-03,2018/08/21 00:00:00,,medido_completo,ua|uso
+GO_692,-51.1204,-17.64013,GO,Cerrado,Rio Verde,GO-03,2018/06/01 00:00:00,,medido_completo,ua|uso
+GO_694,-50.76013,-17.64005,GO,Cerrado,Rio Verde,GO-03,2018/05/31 00:00:00,,medido_completo,ua|uso
+GO_695,-50.58003,-17.63998,GO,Cerrado,Santa Helena de Goiás,GO-03,2018/05/30 00:00:00,,medido_completo,ua|uso
+GO_696,-50.40004,-17.63998,GO,Cerrado,Turvelândia,GO-02,2018/05/28 00:00:00,,medido_completo,ua|uso
+GO_697,-50.22017,-17.64006,GO,Cerrado,Turvelândia,GO-02,2018/05/15 00:00:00,,medido_completo,ua|uso
+GO_698,-50.04003,-17.64001,GO,Cerrado,Edéia,GO-02,2018/05/29 00:00:00,,medido_completo,ua|uso
+GO_699,-49.86008,-17.63994,GO,Cerrado,Vicentinópolis,GO-02,2018/05/18 00:00:00,,medido_completo,ua|uso
+GO_7,-48.78004,-12.95998,GO,Cerrado,Montividiu do Norte,GO-01,2018/05/16 00:00:00,,medido_completo,ua|uso
+GO_70,-46.6204,-13.50013,GO,Cerrado,São Domingos,GO-01,2018/10/04 00:00:00,,medido_completo,ua|uso
+GO_700,-49.68013,-17.63993,GO,Cerrado,Pontalina,GO-02,2018/05/18 00:00:00,,medido_completo,ua|uso
+GO_701,-49.50071,-17.6402,GO,Cerrado,Pontalina,GO-02,2018/05/17 00:00:00,,medido_completo,ua|uso
+GO_702,-49.32031,-17.64001,GO,Cerrado,Morrinhos,GO-02,2018/07/25 00:00:00,,medido_completo,ua|uso
+GO_703,-49.14033,-17.64002,GO,Cerrado,Morrinhos,GO-02,2018/07/23 00:00:00,,medido_completo,ua|uso
+GO_704,-48.96038,-17.64013,GO,Cerrado,Morrinhos,GO-02,2018/07/18 00:00:00,,medido_completo,ua|uso
+GO_705,-48.78033,-17.64001,GO,Cerrado,Caldas Novas,GO-02,2018/08/06 00:00:00,,medido_completo,ua|uso
+GO_706,-48.60015,-17.64007,GO,Cerrado,Caldas Novas,GO-02,2018/08/08 00:00:00,,medido_completo,ua|uso
+GO_707,-48.4204,-17.64012,GO,Cerrado,Ipameri,GO-02,2018/08/10 00:00:00,,medido_completo,ua|uso
+GO_708,-48.24027,-17.64011,GO,Cerrado,Ipameri,GO-02,2018/07/31 00:00:00,,medido_completo,ua|uso
+GO_709,-48.06023,-17.63997,GO,Cerrado,Ipameri,GO-02,2018/08/01 00:00:00,,medido_completo,ua|uso
+GO_71,-46.44003,-13.49998,GO,Cerrado,São Domingos,GO-01,2018/09/28 00:00:00,,medido_completo,ua|uso
+GO_710,-47.88019,-17.63988,GO,Cerrado,Campo Alegre de Goiás,GO-02,2018/08/03 00:00:00,,medido_completo,ua|uso
+GO_711,-47.7001,-17.63999,GO,Cerrado,Campo Alegre de Goiás,GO-02,2018/07/31 00:00:00,,medido_completo,ua|uso
+GO_712,-47.52018,-17.63998,GO,Cerrado,Catalão,GO-02,2018/08/02 00:00:00,,medido_completo,ua|uso
+GO_713,-47.34031,-17.64009,GO,Cerrado,Catalão,GO-02,2018/07/30 00:00:00,,medido_completo,ua|uso
+GO_714,-53.10009,-17.81991,GO,Cerrado,Mineiros,GO-03,2018/08/30 00:00:00,,medido_completo,ua|uso
+GO_715,-52.92049,-17.82002,GO,Cerrado,Mineiros,GO-03,2018/08/30 00:00:00,,medido_completo,ua|uso
+GO_716,-52.74055,-17.82015,GO,Cerrado,Mineiros,GO-03,2018/08/28 00:00:00,,medido_completo,ua|uso
+GO_717,-52.56006,-17.82005,GO,Cerrado,Mineiros,GO-03,2018/08/29 00:00:00,,medido_completo,ua|uso
+GO_718,-52.38054,-17.82016,GO,Cerrado,Mineiros,GO-03,2018/08/31 00:00:00,,medido_completo,ua|uso
+GO_719,-52.20047,-17.82005,GO,Cerrado,Jataí,GO-03,2018/08/28 00:00:00,,medido_completo,ua|uso
+GO_71_C,-46.35004,-13.59,GO,Cerrado,São Domingos,GO-01,2018/10/03 00:00:00,,medido_completo,ua|uso
+GO_71_M,-46.39524,-13.63518,GO,Cerrado,São Domingos,GO-01,2018/10/02 00:00:00,,medido_completo,ua|uso
+GO_71_P18,-46.4175,-13.5675,GO,Cerrado,São Domingos,GO-01,,,socioambiental,uso
+GO_71_P22,-46.32805,-13.56779,GO,Cerrado,São Domingos,GO-01,2018/10/05 00:00:00,,medido_completo,ua|uso
+GO_72,-46.26057,-13.5003,GO,Cerrado,São Domingos,,2018/09/25 00:00:00,,medido_biofisico,ua
+GO_720,-52.02006,-17.81998,GO,Cerrado,Jataí,GO-03,2018/08/22 00:00:00,,medido_completo,ua|uso
+GO_721,-51.84028,-17.82001,GO,Cerrado,Jataí,GO-03,2018/08/21 00:00:00,,medido_completo,ua|uso
+GO_722,-51.6602,-17.82008,GO,Cerrado,Jataí,GO-03,2018/08/22 00:00:00,,medido_completo,ua|uso
+GO_723,-51.48048,-17.82004,GO,Cerrado,Jataí,GO-03,2018/08/21 00:00:00,,medido_completo,ua|uso
+GO_724,-51.30045,-17.81995,GO,Cerrado,Rio Verde,GO-03,2018/05/28 00:00:00,,medido_completo,ua|uso
+GO_725,-51.12007,-17.81999,GO,Cerrado,Rio Verde,GO-03,2018/05/28 00:00:00,,medido_completo,ua|uso
+GO_726,-50.94056,-17.82016,GO,Cerrado,Rio Verde,GO-03,2018/05/29 00:00:00,,medido_completo,ua|uso
+GO_727,-50.76011,-17.82006,GO,Cerrado,Rio Verde,GO-03,2018/06/01 00:00:00,,medido_completo,ua|uso
+GO_729,-50.4001,-17.82005,GO,Cerrado,Turvelândia,GO-02,2018/05/14 00:00:00,,medido_completo,ua|uso
+GO_73,-50.76013,-13.68005,GO,Cerrado,Nova Crixás,GO-03,2018/05/25 00:00:00,,medido_completo,ua|uso
+GO_730,-50.22005,-17.81998,GO,Cerrado,Porteirão,GO-02,2018/05/18 00:00:00,,medido_completo,ua|uso
+GO_731,-50.04023,-17.82014,GO,Cerrado,Goiatuba,,2018/05/16 00:00:00,,medido_biofisico,ua
+GO_732,-49.8606,-17.8203,GO,Cerrado,Vicentinópolis,GO-02,2018/05/16 00:00:00,,medido_completo,ua|uso
+GO_733,-49.68023,-17.82007,GO,Cerrado,Joviânia,GO-02,2018/05/18 00:00:00,,medido_completo,ua|uso
+GO_734,-49.50006,-17.82012,GO,Cerrado,Joviânia,GO-02,2018/05/21 00:00:00,,medido_completo,ua|uso
+GO_735,-49.32042,-17.81999,GO,Cerrado,Morrinhos,GO-02,2018/07/31 00:00:00,,medido_completo,ua|uso
+GO_736,-49.14004,-17.81999,GO,Cerrado,Morrinhos,GO-02,2018/07/24 00:00:00,,medido_completo,ua|uso
+GO_737,-48.96011,-17.82004,GO,Cerrado,Morrinhos,GO-02,2018/07/17 00:00:00,,medido_completo,ua|uso
+GO_738,-48.78057,-17.82026,GO,Cerrado,Rio Quente,GO-02,2018/08/08 00:00:00,,medido_completo,ua|uso
+GO_739,-48.60004,-17.82003,GO,Cerrado,Caldas Novas,GO-02,2018/08/09 00:00:00,,medido_completo,ua|uso
+GO_74,-50.58015,-13.67996,GO,Cerrado,Nova Crixás,GO-03,2018/05/23 00:00:00,,medido_completo,ua|uso
+GO_740,-48.42034,-17.82002,GO,Cerrado,Ipameri,GO-02,2018/08/07 00:00:00,,medido_completo,ua|uso
+GO_741,-48.2406,-17.82032,GO,Cerrado,Ipameri,GO-02,2018/08/01 00:00:00,,medido_completo,ua|uso
+GO_742,-48.05996,-17.82012,GO,Cerrado,Ipameri,GO-02,2018/08/01 00:00:00,,medido_completo,ua|uso
+GO_743,-47.88006,-17.82013,GO,Cerrado,Campo Alegre de Goiás,GO-02,2018/08/02 00:00:00,,medido_completo,ua|uso
+GO_744,-47.70056,-17.82028,GO,Cerrado,Campo Alegre de Goiás,GO-02,2018/07/31 00:00:00,,medido_completo,ua|uso
+GO_745,-47.52048,-17.82006,GO,Cerrado,Catalão,GO-02,2018/08/02 00:00:00,,medido_completo,ua|uso
+GO_746,-52.92057,-18.00025,GO,Cerrado,Mineiros,,2018/10/15 00:00:00,,medido_biofisico,ua
+GO_747,-52.74057,-18.00012,GO,Cerrado,Mineiros,GO-03,2018/08/28 00:00:00,,medido_completo,ua|uso
+GO_748,-52.56029,-17.99986,GO,Cerrado,Serranópolis,GO-03,2018/08/27 00:00:00,,medido_completo,ua|uso
+GO_749,-52.38027,-18.00001,GO,Cerrado,Serranópolis,GO-03,2018/08/27 00:00:00,,medido_completo,ua|uso
+GO_75,-50.40035,-13.67995,GO,Cerrado,Mundo Novo,GO-03,2018/05/30 00:00:00,,medido_completo,ua|uso
+GO_750,-52.20044,-18.00022,GO,Cerrado,Serranópolis,GO-03,2018/08/24 00:00:00,,medido_completo,ua|uso
+GO_751,-52.02057,-18.00013,GO,Cerrado,Jataí,GO-03,2018/08/21 00:00:00,,medido_completo,ua|uso
+GO_752,-51.84056,-18.00015,GO,Cerrado,Jataí,GO-03,2018/08/23 00:00:00,,medido_completo,ua|uso
+GO_753,-51.66009,-18.00012,GO,Cerrado,Jataí,GO-03,2018/08/20 00:00:00,,medido_completo,ua|uso
+GO_754,-51.48034,-18.0001,GO,Cerrado,Jataí,GO-03,2018/08/20 00:00:00,,medido_completo,ua|uso
+GO_755,-51.30005,-18.00011,GO,Cerrado,Jataí,GO-03,2018/08/21 00:00:00,,medido_completo,ua|uso
+GO_756,-51.12008,-17.99992,GO,Cerrado,Rio Verde,GO-03,2018/05/30 00:00:00,,medido_completo,ua|uso
+GO_757,-50.94008,-17.99992,GO,Cerrado,Rio Verde,GO-03,2018/05/30 00:00:00,,medido_completo,ua|uso
+GO_758,-50.76049,-18.00009,GO,Cerrado,Rio Verde,GO-03,2018/05/30 00:00:00,,medido_completo,ua|uso
+GO_759,-50.58018,-17.99996,GO,Cerrado,Rio Verde,GO-03,2018/06/01 00:00:00,,medido_completo,ua|uso
+GO_76,-50.2202,-13.68006,GO,Cerrado,Mundo Novo,GO-01,2018/10/08 00:00:00,,medido_completo,ua|uso
+GO_761,-50.2205,-18.00004,GO,Cerrado,Turvelândia,GO-02,2018/05/18 00:00:00,,medido_completo,ua|uso
+GO_762,-50.04012,-17.99999,GO,Cerrado,Goiatuba,GO-02,2018/05/17 00:00:00,,medido_completo,ua|uso
+GO_763,-49.86041,-18.00026,GO,Cerrado,Goiatuba,GO-02,2018/05/23 00:00:00,,medido_completo,ua|uso
+GO_764,-49.68014,-17.99999,GO,Cerrado,Goiatuba,GO-02,2018/05/21 00:00:00,,medido_completo,ua|uso
+GO_765,-49.50028,-18.00003,GO,Cerrado,Goiatuba,GO-02,2018/05/21 00:00:00,,medido_completo,ua|uso
+GO_766,-49.32018,-17.99989,GO,Cerrado,Goiatuba,GO-02,2018/08/06 00:00:00,,medido_completo,ua|uso
+GO_767,-49.14041,-18.00024,GO,Cerrado,Buriti Alegre,GO-02,2018/08/06 00:00:00,,medido_completo,ua|uso
+GO_768,-48.96009,-18.00004,GO,Mata Atlântica,Buriti Alegre,GO-02,2018/08/02 00:00:00,,medido_completo,ua|uso
+GO_769,-48.78035,-17.99986,GO,Mata Atlântica,Água Limpa,GO-02,2018/08/08 00:00:00,,medido_completo,ua|uso
+GO_770,-48.60023,-17.99999,GO,Cerrado,Caldas Novas,GO-02,2018/07/20 00:00:00,,medido_completo,ua|uso
+GO_771,-48.42055,-18.00016,GO,Cerrado,Corumbaíba,GO-02,2018/08/10 00:00:00,,medido_completo,ua|uso
+GO_773,-48.06005,-18.00013,GO,Cerrado,Catalão,GO-02,2018/08/07 00:00:00,,medido_completo,ua|uso
+GO_774,-47.88019,-18.00016,GO,Cerrado,Catalão,GO-02,2018/08/07 00:00:00,,medido_completo,ua|uso
+GO_776,-47.5202,-18.00007,GO,Cerrado,Catalão,GO-02,2018/08/06 00:00:00,Solo pedregoso,medido_completo,ua|uso
+GO_777,-47.34023,-17.99999,GO,Cerrado,Catalão,GO-02,2018/08/06 00:00:00,,medido_completo,ua|uso
+GO_778,-53.10002,-18.17998,GO,Cerrado,Mineiros,GO-03,2018/08/24 00:00:00,,medido_completo,ua|uso
+GO_779,-52.92025,-18.18016,GO,Cerrado,Mineiros,,2018/10/16 00:00:00,,medido_biofisico,ua
+GO_78,-49.86053,-13.68016,GO,Cerrado,Bonópolis,GO-01,2018/05/07 00:00:00,,medido_completo,ua|uso
+GO_780,-52.7402,-18.17996,GO,Cerrado,Chapadão do Céu,GO-03,2018/10/17 00:00:00,,medido_completo,ua|uso
+GO_781,-52.56028,-18.17998,GO,Cerrado,Serranópolis,GO-03,2018/08/23 00:00:00,,medido_completo,ua|uso
+GO_782,-52.38035,-18.17996,GO,Cerrado,Serranópolis,GO-03,2018/08/22 00:00:00,,medido_completo,ua|uso
+GO_783,-52.20057,-18.18014,GO,Cerrado,Serranópolis,GO-03,2018/08/24 00:00:00,,medido_completo,ua|uso
+GO_784,-52.02025,-18.17995,GO,Cerrado,Serranópolis,GO-03,2018/08/20 00:00:00,,medido_completo,ua|uso
+GO_785,-51.84047,-18.18003,GO,Cerrado,Serranópolis,GO-03,2018/08/21 00:00:00,,medido_completo,ua|uso
+GO_786,-51.66056,-18.18013,GO,Cerrado,Jataí,GO-03,2018/08/20 00:00:00,,medido_completo,ua|uso
+GO_787,-51.48018,-18.18004,GO,Cerrado,Jataí,GO-03,2018/08/20 00:00:00,,medido_completo,ua|uso
+GO_788,-51.30047,-18.17997,GO,Cerrado,Aparecida do Rio Doce,GO-03,2018/08/13 00:00:00,,medido_completo,ua|uso
+GO_789,-51.12042,-18.1802,GO,Cerrado,Rio Verde,GO-03,2018/08/10 00:00:00,,medido_completo,ua|uso
+GO_79,-49.68053,-13.68014,GO,Cerrado,Porangatu,GO-01,2018/05/10 00:00:00,,medido_completo,ua|uso
+GO_790,-50.94011,-18.17996,GO,Cerrado,Rio Verde,GO-03,2018/08/14 00:00:00,,medido_completo,ua|uso
+GO_791,-50.76008,-18.18007,GO,Cerrado,Rio Verde,GO-03,2018/08/16 00:00:00,,medido_completo,ua|uso
+GO_792,-50.58061,-18.1803,GO,Cerrado,Quirinópolis,GO-03,2018/08/14 00:00:00,,medido_completo,ua|uso
+GO_793,-50.40051,-18.18005,GO,Cerrado,Rio Verde,GO-02,2018/05/29 00:00:00,,medido_completo,ua|uso
+GO_794,-50.22005,-18.18011,GO,Cerrado,Quirinópolis,GO-02,2018/05/17 00:00:00,,medido_completo,ua|uso
+GO_795,-50.04052,-18.18013,GO,Cerrado,Bom Jesus de Goiás,GO-02,2018/05/23 00:00:00,,medido_completo,ua|uso
+GO_796,-49.86005,-18.17996,GO,Cerrado,Bom Jesus de Goiás,GO-02,2018/05/23 00:00:00,,medido_completo,ua|uso
+GO_797,-49.68027,-18.18,GO,Cerrado,Bom Jesus de Goiás,GO-02,2018/05/21 00:00:00,,medido_completo,ua|uso
+GO_798,-49.50055,-18.18031,GO,Cerrado,Panamá,GO-02,2018/05/24 00:00:00,,medido_completo,ua|uso
+GO_799,-49.32059,-18.18029,GO,Cerrado,Panamá,GO-02,2018/08/09 00:00:00,,medido_completo,ua|uso
+GO_8,-46.44018,-12.95991,GO,Cerrado,Campos Belos,GO-01,2018/10/05 00:00:00,,medido_completo,ua|uso
+GO_80,-49.50013,-13.67993,GO,Cerrado,Porangatu,GO-01,2018/05/15 00:00:00,,medido_completo,ua|uso
+GO_800,-49.14034,-18.17986,GO,Cerrado,Itumbiara,GO-02,2018/08/09 00:00:00,,medido_completo,ua|uso
+GO_801,-48.96005,-18.18012,GO,Mata Atlântica,Buriti Alegre,GO-02,2018/08/08 00:00:00,,medido_completo,ua|uso
+GO_802,-48.78026,-18.17985,GO,Mata Atlântica,Água Limpa,GO-02,2018/08/08 00:00:00,,medido_completo,ua|uso
+GO_803,-48.60026,-18.17983,GO,Mata Atlântica,Corumbaíba,GO-02,2018/08/03 00:00:00,,medido_completo,ua|uso
+GO_804,-48.42015,-18.18004,GO,Cerrado,Corumbaíba,GO-02,2018/08/07 00:00:00,,medido_completo,ua|uso
+GO_805,-48.24081,-18.1804,GO,Cerrado,Goiandira,GO-02,2018/08/06 00:00:00,,medido_completo,ua|uso
+GO_806,-48.06002,-18.18002,GO,Cerrado,Goiandira,GO-02,2018/08/08 00:00:00,,medido_completo,ua|uso
+GO_807,-47.88011,-18.1801,GO,Cerrado,Catalão,GO-02,2018/08/09 00:00:00,,medido_completo,ua|uso
+GO_808,-47.70006,-18.18013,GO,Cerrado,Ouvidor,GO-02,2018/08/09 00:00:00,,medido_completo,ua|uso
+GO_81,-49.32072,-13.6802,GO,Cerrado,Porangatu,GO-01,2018/05/18 00:00:00,,medido_completo,ua|uso
+GO_810,-52.74049,-18.36004,GO,Cerrado,Chapadão do Céu,GO-03,2018/08/21 00:00:00,,medido_completo,ua|uso
+GO_811,-52.56034,-18.35999,GO,Cerrado,Chapadão do Céu,GO-03,2018/08/28 00:00:00,,medido_completo,ua|uso
+GO_812,-52.38056,-18.36025,GO,Cerrado,Serranópolis,GO-03,2018/08/20 00:00:00,,medido_completo,ua|uso
+GO_813,-52.20004,-18.3601,GO,Cerrado,Serranópolis,GO-03,2018/08/22 00:00:00,,medido_completo,ua|uso
+GO_814,-52.02011,-18.35997,GO,Cerrado,Serranópolis,GO-03,2018/08/24 00:00:00,,medido_completo,ua|uso
+GO_815,-51.84036,-18.36,GO,Cerrado,Serranópolis,GO-03,2018/08/20 00:00:00,,medido_completo,ua|uso
+GO_816,-51.66004,-18.35999,GO,Cerrado,Jataí,GO-03,2018/08/22 00:00:00,,medido_completo,ua|uso
+GO_817,-51.48036,-18.36019,GO,Cerrado,Jataí,GO-03,2018/08/16 00:00:00,,medido_completo,ua|uso
+GO_818,-51.30022,-18.36008,GO,Cerrado,Caçu,GO-03,2018/08/15 00:00:00,,medido_completo,ua|uso
+GO_819,-51.12033,-18.36,GO,Cerrado,Cachoeira Alta,GO-03,2018/08/10 00:00:00,,medido_completo,ua|uso
+GO_82,-49.1403,-13.6801,GO,Cerrado,Mutunópolis,GO-01,2018/05/17 00:00:00,,medido_completo,ua|uso
+GO_820,-50.94052,-18.36014,GO,Cerrado,Cachoeira Alta,GO-03,2018/08/15 00:00:00,,medido_completo,ua|uso
+GO_821,-50.76038,-18.36023,GO,Cerrado,Quirinópolis,GO-03,2018/08/15 00:00:00,,medido_completo,ua|uso
+GO_822,-50.58055,-18.36027,GO,Cerrado,Quirinópolis,GO-03,2018/08/13 00:00:00,,medido_completo,ua|uso
+GO_823,-50.40011,-18.35989,GO,Cerrado,Quirinópolis,GO-02,2018/05/25 00:00:00,,medido_completo,ua|uso
+GO_824,-50.22026,-18.35997,GO,Cerrado,Gouvelândia,GO-02,2018/05/21 00:00:00,,medido_completo,ua|uso
+GO_825,-50.04035,-18.36003,GO,Cerrado,Bom Jesus de Goiás,GO-02,2018/05/22 00:00:00,,medido_completo,ua|uso
+GO_826,-49.86029,-18.36019,GO,Cerrado,Itumbiara,GO-02,2018/05/24 00:00:00,,medido_completo,ua|uso
+GO_827,-49.68001,-18.35996,GO,Cerrado,Itumbiara,GO-02,2018/05/24 00:00:00,,medido_completo,ua|uso
+GO_828,-49.50017,-18.3599,GO,Cerrado,Itumbiara,GO-02,2018/05/22 00:00:00,,medido_completo,ua|uso
+GO_829,-49.32027,-18.35992,GO,Cerrado,Itumbiara,GO-02,2018/08/07 00:00:00,,medido_completo,ua|uso
+GO_83,-48.96016,-13.68002,GO,Cerrado,Formoso,GO-01,2018/05/15 00:00:00,,medido_completo,ua|uso
+GO_830,-49.14035,-18.35985,GO,Mata Atlântica,Itumbiara,GO-02,2018/08/07 00:00:00,,medido_completo,ua|uso
+GO_832,-48.06012,-18.36004,GO,Cerrado,Cumari,GO-02,2018/08/08 00:00:00,,medido_completo,ua|uso
+GO_833,-47.88059,-18.36025,GO,Cerrado,Catalão,GO-02,2018/08/10 00:00:00,,medido_completo,ua|uso
+GO_834,-47.70006,-18.35998,GO,Cerrado,Três Ranchos,GO-02,2018/08/11 00:00:00,,medido_completo,ua|uso
+GO_835,-52.92013,-18.54006,GO,Cerrado,Mineiros,GO-03,2018/08/21 00:00:00,,medido_completo,ua|uso
+GO_836,-52.74052,-18.54004,GO,Cerrado,Chapadão do Céu,GO-03,2018/08/21 00:00:00,,medido_completo,ua|uso
+GO_837,-52.56025,-18.53994,GO,Cerrado,Chapadão do Céu,GO-03,2018/08/22 00:00:00,,medido_completo,ua|uso
+GO_838,-52.38048,-18.54004,GO,Cerrado,Chapadão do Céu,GO-03,2018/08/23 00:00:00,,medido_completo,ua|uso
+GO_839,-52.20008,-18.53999,GO,Cerrado,Aporé,GO-03,2018/08/23 00:00:00,,medido_completo,ua|uso
+GO_84,-48.78011,-13.68004,GO,Cerrado,Formoso,GO-01,2018/05/17 00:00:00,,medido_completo,ua|uso
+GO_840,-52.02039,-18.54004,GO,Cerrado,Serranópolis,GO-03,2018/08/23 00:00:00,,medido_completo,ua|uso
+GO_841,-51.84007,-18.54003,GO,Cerrado,Serranópolis,GO-03,2018/08/24 00:00:00,,medido_completo,ua|uso
+GO_842,-51.66038,-18.54003,GO,Cerrado,Itarumã,GO-03,2018/08/23 00:00:00,,medido_completo,ua|uso
+GO_843,-51.4803,-18.54,GO,Cerrado,Caçu,GO-03,2018/08/16 00:00:00,,medido_completo,ua|uso
+GO_844,-51.30005,-18.54018,GO,Cerrado,Caçu,GO-03,2018/08/13 00:00:00,,medido_completo,ua|uso
+GO_845,-51.12026,-18.53984,GO,Cerrado,Cachoeira Alta,GO-03,2018/08/15 00:00:00,,medido_completo,ua|uso
+GO_846,-50.94017,-18.53986,GO,Cerrado,Quirinópolis,GO-03,2018/08/15 00:00:00,,medido_completo,ua|uso
+GO_847,-50.76052,-18.54008,GO,Cerrado,Quirinópolis,GO-03,2018/08/13 00:00:00,,medido_completo,ua|uso
+GO_848,-50.58025,-18.53985,GO,Cerrado,Quirinópolis,GO-03,2018/08/17 00:00:00,,medido_completo,ua|uso
+GO_849,-50.40036,-18.53985,GO,Cerrado,Quirinópolis,GO-02,2018/05/23 00:00:00,,medido_completo,ua|uso
+GO_85,-48.60017,-13.67994,GO,Cerrado,Campinaçu,GO-01,2018/05/18 00:00:00,,medido_completo,ua|uso
+GO_850,-50.22024,-18.53998,GO,Mata Atlântica,Gouvelândia,GO-02,2018/05/21 00:00:00,,medido_completo,ua|uso
+GO_851,-50.04035,-18.53985,GO,Cerrado,Gouvelândia,GO-02,2018/05/22 00:00:00,,medido_completo,ua|uso
+GO_852,-49.86034,-18.53984,GO,Cerrado,Inaciolândia,GO-02,2018/05/22 00:00:00,,medido_completo,ua|uso
+GO_853,-49.68,-18.54,GO,Cerrado,Cachoeira Dourada,GO-02,,,socioambiental,uso
+GO_855,-52.38014,-18.72005,GO,Cerrado,Aporé,GO-03,2018/08/21 00:00:00,,medido_completo,ua|uso
+GO_856,-52.20056,-18.72015,GO,Cerrado,Aporé,GO-03,2018/08/21 00:00:00,,medido_completo,ua|uso
+GO_857,-52.02013,-18.72007,GO,Cerrado,Aporé,GO-03,2018/08/23 00:00:00,,medido_completo,ua|uso
+GO_858,-51.84051,-18.72004,GO,Cerrado,Aporé,GO-03,2018/08/23 00:00:00,,medido_completo,ua|uso
+GO_859,-51.6602,-18.72007,GO,Cerrado,Itarumã,GO-03,2018/08/14 00:00:00,,medido_completo,ua|uso
+GO_86,-48.42062,-13.68014,GO,Cerrado,Minaçu,GO-01,2018/10/10 00:00:00,,medido_completo,ua|uso
+GO_860,-51.48009,-18.71991,GO,Cerrado,Itarumã,GO-03,2018/08/17 00:00:00,,medido_completo,ua|uso
+GO_861,-51.30056,-18.72014,GO,Cerrado,Itarumã,GO-03,2018/08/17 00:00:00,,medido_completo,ua|uso
+GO_862,-51.1202,-18.72003,GO,Cerrado,Caçu,GO-03,2018/08/15 00:00:00,,medido_completo,ua|uso
+GO_863,-50.94017,-18.71989,GO,Cerrado,Cachoeira Alta,GO-03,2018/08/16 00:00:00,,medido_completo,ua|uso
+GO_864,-50.76034,-18.72003,GO,Cerrado,Paranaiguara,GO-03,2018/08/17 00:00:00,,medido_completo,ua|uso
+GO_865,-50.58021,-18.71982,GO,Mata Atlântica,Paranaiguara,GO-03,2018/08/17 00:00:00,,medido_completo,ua|uso
+GO_867,-52.02035,-18.89994,GO,Cerrado,Aporé,GO-03,2018/08/15 00:00:00,,medido_completo,ua|uso
+GO_868,-51.84007,-18.9,GO,Cerrado,Aporé,GO-03,2018/08/15 00:00:00,,medido_completo,ua|uso
+GO_869,-51.66035,-18.89999,GO,Cerrado,Itajá,GO-03,2018/08/13 00:00:00,,medido_completo,ua|uso
+GO_87,-48.23999,-13.68009,GO,Cerrado,Minaçu,GO-01,2018/10/09 00:00:00,afloramento rochoso,medido_completo,ua|uso
+GO_870,-51.48025,-18.89998,GO,Cerrado,Itajá,GO-03,2018/08/17 00:00:00,,medido_completo,ua|uso
+GO_871,-51.30058,-18.90026,GO,Cerrado,Itarumã,GO-03,2018/08/13 00:00:00,,medido_completo,ua|uso
+GO_872,-51.12052,-18.90006,GO,Cerrado,Itarumã,GO-03,2018/08/14 00:00:00,,medido_completo,ua|uso
+GO_873,-50.93997,-18.9,GO,Cerrado,Caçu,GO-03,2018/08/14 00:00:00,,medido_completo,ua|uso
+GO_874,-50.76002,-18.89992,GO,Cerrado,Paranaiguara,GO-03,2018/08/16 00:00:00,,medido_completo,ua|uso
+GO_875,-50.5803,-18.89991,GO,Mata Atlântica,Paranaiguara,GO-02,2018/05/22 00:00:00,,medido_completo,ua|uso
+GO_876,-51.66061,-19.08028,GO,Cerrado,Itajá,GO-03,2018/08/13 00:00:00,,medido_completo,ua|uso
+GO_877,-51.48058,-19.08014,GO,Cerrado,Itajá,GO-03,2018/08/14 00:00:00,,medido_completo,ua|uso
+GO_878,-51.30077,-19.08018,GO,Cerrado,Itajá,GO-03,2018/08/16 00:00:00,,medido_completo,ua|uso
+GO_879,-51.12051,-19.08005,GO,Cerrado,Itarumã,GO-03,2018/08/17 00:00:00,,medido_completo,ua|uso
+GO_88,-48.06,-13.68,GO,Cerrado,Cavalcante,GO-01,,,socioambiental,uso
+GO_880,-50.94026,-19.08007,GO,Cerrado,Itarumã,GO-03,2018/08/17 00:00:00,,medido_completo,ua|uso
+GO_881,-50.76025,-19.07983,GO,Cerrado,Caçu,GO-03,2018/08/16 00:00:00,,medido_completo,ua|uso
+GO_882,-50.58005,-19.08001,GO,Mata Atlântica,São Simão,GO-02,2018/05/24 00:00:00,,medido_completo,ua|uso
+GO_883,-51.12021,-19.25993,GO,Cerrado,Lagoa Santa,GO-03,2018/08/17 00:00:00,,medido_completo,ua|uso
+GO_884,-50.94009,-19.25995,GO,Cerrado,Itajá,GO-02,2018/05/23 00:00:00,,medido_completo,ua|uso
+GO_885,-50.94019,-19.43984,GO,Cerrado,Itajá,GO-02,2018/05/23 00:00:00,,medido_completo,ua|uso
+GO_89,-47.88045,-13.68001,GO,Cerrado,Cavalcante,GO-01,2018/10/24 00:00:00,,medido_completo,ua|uso
+GO_9,-50.58058,-13.1403,GO,Cerrado,São Miguel do Araguaia,GO-03,2018/10/09 00:00:00,,medido_completo,ua|uso
+GO_90,-47.7001,-13.67991,GO,Cerrado,Cavalcante,GO-01,2018/10/26 00:00:00,,medido_completo,ua|uso
+GO_91,-47.52006,-13.6801,GO,Cerrado,Cavalcante,GO-01,2018/10/19 00:00:00,,medido_completo,ua|uso
+GO_92,-47.34057,-13.6803,GO,Cerrado,Cavalcante,GO-01,2018/10/03 00:00:00,,medido_completo,ua|uso
+GO_93,-47.16007,-13.67997,GO,Cerrado,Teresina de Goiás,GO-01,2018/10/01 00:00:00,,medido_completo,ua|uso
+GO_94,-46.98012,-13.68,GO,Cerrado,Nova Roma,GO-01,2018/10/03 00:00:00,,medido_completo,ua|uso
+GO_95,-46.80012,-13.68004,GO,Cerrado,São Domingos,GO-01,2018/09/25 00:00:00,,medido_completo,ua|uso
+GO_96,-46.62026,-13.68001,GO,Cerrado,São Domingos,GO-01,2018/09/28 00:00:00,,medido_completo,ua|uso
+GO_97,-46.44008,-13.67999,GO,Cerrado,São Domingos,GO-01,2018/10/01 00:00:00,,medido_completo,ua|uso
+GO_98,-46.26007,-13.6801,GO,Cerrado,São Domingos,GO-01,2018/09/24 00:00:00,,medido_completo,ua|uso
+GO_99,-50.76024,-13.86014,GO,Cerrado,Nova Crixás,GO-03,2018/05/24 00:00:00,,medido_completo,ua|uso

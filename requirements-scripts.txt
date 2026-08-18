@@ -1,0 +1,5 @@
+# Extras for the offline preparation scripts in scripts/ only.
+# fetch_ifn.py itself is standard-library, so this is needed only if the
+# .xlsx-backed IFN products are ingested later.
+geopandas>=0.14.0
+openpyxl>=3.1.0

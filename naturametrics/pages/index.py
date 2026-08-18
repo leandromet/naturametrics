@@ -23,6 +23,7 @@ def map_pane() -> rx.Component:
             center=AppState.map_center,
             zoom=AppState.map_zoom,
             bounds=AppState.map_bounds,
+            swipe=AppState.compare_enabled,
             layers=AppState.map_layers,
             overlays=AppState.buffer_overlays,
             on_map_click=AppState.set_study_point,

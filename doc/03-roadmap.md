@@ -83,18 +83,64 @@ in a few seconds, and clicking the same spot again is instant.
 
 ---
 
-## Phase 2 — Seeing it on the map
+## Phase 2 — Seeing it on the map 🚧 **in progress**
 
 **Goal:** the land cover behind the chart, and the ability to move through time.
 
-- [ ] MapBiomas raster layer clipped to the active buffer, toggleable against full-extent.
-- [ ] **Year control in the legend**: slider + play/pause step-through + year label.
-      This is only pleasant if Phase 0's persistent map and Phase 1's prefetch both
-      landed — if either regressed, fix it here rather than shipping a laggy slider.
-- [ ] Interactive legend: MapBiomas classes present in the current view, with areas;
-      clicking a class isolates/highlights it.
-- [ ] Layer opacity control; layer ordering.
-- [ ] Chart ↔ map linkage: hovering a year in the chart previews that year on the map.
+- [x] MapBiomas raster layer with an opacity control.
+- [x] **Year control** — slider over 1985–2024, instant because all 40 tile URLs are
+      prefetched on startup (window first, then the rest).
+- [x] **Swipe comparison** — two MapBiomas years on screen at once, split by a
+      draggable vertical divider. See §"Swipe" below.
+- [x] **Natural-vegetation change mask** — see §"Change mask" below.
+- [ ] Buffer-clipped MapBiomas (currently full extent only).
+- [ ] Interactive legend listing only the classes present in view, with areas;
+      clicking a class isolates it.
+- [ ] Chart ↔ map linkage: hovering a year in the chart previews it on the map.
+- [ ] Play/pause step-through of the year series.
+
+### Change mask — candidates for recovery projects
+
+`services/change_mask.py`. Classifies every pixel between a baseline year and the
+latest as **natural lost** (restoration candidate), **regrowth**, or **stable natural**.
+
+The baseline defaults to **2008 because that is the Forest Code milestone**: native
+vegetation cleared before 22 July 2008 can be regularised as *área consolidada*, while
+clearing after it carries a restoration obligation. So "natural in 2008, not natural
+today" approximates the legally-obligated restoration set. It is also the year of the
+SPOT mosaic (Phase 4), which gives 5 m imagery to check a candidate by eye — not a
+coincidence, since Google built that mosaic for the Forest Code programme.
+
+⚠️ **Screening, not a legal finding.** MapBiomas is annual and 30 m; the Forest Code
+operates on a date, on CAR parcels, with APP/Reserva Legal distinctions, small-holding
+exemptions and authorised-clearing permits. The UI carries this caveat inline and must
+keep doing so.
+
+Measured at Machadinho d'Oeste, RO (10 km buffer, 2008→2024): 4 451 ha natural lost,
+274 ha regrowth, 9 778 ha stable natural.
+
+### Swipe — two years at once
+
+The divider is dragged and the clip recomputed entirely in the browser; the split
+position is a viewing preference with no analytical meaning, so the backend never learns
+about it and there is no per-mouse-move round-trip.
+
+**Two non-obvious things this cost:**
+
+1. **`clip-path: inset(%)` does not work on a Leaflet layer.** A `.leaflet-layer`
+   container has no intrinsic size — Leaflet leaves it 0×0 and positions tiles as
+   absolutely-placed children outside it — so percentage insets resolve against a 0×0
+   box and clip the layer away entirely. Both halves vanish while the tiles sit in the
+   DOM fully loaded, which looks like a data problem. The fix is the legacy
+   `clip: rect(...)` in **layer-pixel** coordinates via `containerPointToLayerPoint`,
+   recomputed on every `move`/`zoom` — the approach `leaflet-side-by-side` uses.
+2. **The divider must not swallow map clicks.** It lives inside the Leaflet container,
+   so without `L.DomEvent.disableClickPropagation` every grab of the divider also drops
+   a new study point underneath the cursor. Its grab area is 24 px wide around a 2 px
+   visual line; 2 px is unusable with a mouse and impossible on touch.
+
+Verified seamless: with both sides set to the same year, each half is **pixel-identical
+(RMSE 0)** to the unclipped single layer.
 
 **Done when:** a user can scrub 1985→2024 and watch the buffer repaint without stutter.
 

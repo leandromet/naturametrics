@@ -125,6 +125,20 @@ Concretely:
   tile URL is warm — the JS swaps the layer, the viewport never moves. Pre-warming the
   tile URLs for the years around the current one is a cheap follow-up.
 
+**Three traps found while building it**, all recorded so they are not rediscovered:
+
+1. Injected JS runs inside Reflex's generated module, which imports React hooks as
+   **named bindings**. There is no `React` namespace — `React.useRef` throws
+   *"React is not defined"* at render. Use bare hook names and declare them in
+   `add_imports`.
+2. A Reflex **event-handler signature mismatch is a build-time error that kills the
+   backend worker**. The frontend keeps serving, so the symptom is a grey map and a
+   failed WebSocket, which looks nothing like a type error.
+   `tests/test_app_builds.py` catches it.
+3. The view-following effect must compare against the **previous config**, not against
+   the map's current position — otherwise any unrelated config change (toggling the
+   swipe divider, say) re-centres the map and breaks constraint C1.
+
 **Fallback:** if the custom component turns out to fight Reflex's rendering in practice,
 the escape hatch is the Yvynation route (Folium → `rx.html`) with the year control
 degraded to a discrete select instead of a slider. This is a real fallback, not a

@@ -142,6 +142,10 @@ function useNaturametricsMap(containerRef, config, layers, overlays, onMapClick)
             existing.layer.setZIndex(zIndex);
             existing.zIndex = zIndex;
           }
+          if (existing.clip !== (spec.clip || null)) {
+            existing.clip = spec.clip || null;
+            applyClips();
+          }
           return;
         }
 
@@ -166,8 +170,11 @@ function useNaturametricsMap(containerRef, config, layers, overlays, onMapClick)
           url: spec.url,
           opacity: spec.opacity,
           zIndex: zIndex,
+          clip: spec.clip || null,
         });
       });
+
+      applyClips();
     };
 
     if (readyRef.current) {
@@ -191,6 +198,168 @@ function useNaturametricsMap(containerRef, config, layers, overlays, onMapClick)
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [layerKey]);
+
+  // --- 2b. Swipe comparison ------------------------------------------------
+  // Two MapBiomas years on screen at once, split by a draggable vertical line.
+  // The divider is dragged and the clip recomputed entirely in the browser: a
+  // round-trip to Python per mouse-move would make it lag, and the split
+  // position is a viewing preference with no analytical meaning, so the backend
+  // does not need to know about it.
+  const swipeRef = useRef(0.5);
+
+  // Clipping is done with the legacy `clip: rect(...)` in LAYER-PIXEL space, not
+  // with `clip-path: inset(%)`.
+  //
+  // The reason is subtle: a `.leaflet-layer` container has no intrinsic size.
+  // Leaflet leaves it at 0x0 and positions tiles as absolutely-placed children
+  // that extend well outside it. Percentages in `clip-path: inset()` resolve
+  // against that 0x0 reference box, so ANY inset clips the entire layer away -
+  // both halves simply vanish, with the tiles still in the DOM and fully
+  // loaded, which looks like a data problem rather than a CSS one.
+  //
+  // `clip: rect()` takes absolute pixel offsets in the element's own coordinate
+  // system (the tile-layer origin), so it is unaffected by the empty box. The
+  // coordinates therefore have to be recomputed whenever the map moves or
+  // zooms - see the map event bindings below. Same approach as
+  // leaflet-side-by-side.
+  const applyClips = () => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const size = map.getSize();
+    const nw = map.containerPointToLayerPoint([0, 0]);
+    const se = map.containerPointToLayerPoint([size.x, size.y]);
+    const frac = Math.max(0, Math.min(1, swipeRef.current));
+    const splitX = nw.x + size.x * frac;
+
+    layerRegistry.current.forEach((entry) => {
+      const el = entry.layer.getContainer && entry.layer.getContainer();
+      if (!el) return;
+      el.style.clipPath = "";
+      if (entry.clip === "left") {
+        el.style.clip = `rect(${nw.y}px, ${splitX}px, ${se.y}px, ${nw.x}px)`;
+      } else if (entry.clip === "right") {
+        el.style.clip = `rect(${nw.y}px, ${se.x}px, ${se.y}px, ${splitX}px)`;
+      } else {
+        el.style.clip = "";
+      }
+    });
+
+    const handle = map.getContainer().querySelector(".nm-swipe-handle");
+    if (handle) handle.style.left = `${frac * 100}%`;
+  };
+
+  const swipeEnabled = !!(config && config.swipe);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      const map = mapRef.current;
+      if (!map) return;
+      const container = map.getContainer();
+      let handle = container.querySelector(".nm-swipe-handle");
+
+      if (!swipeEnabled) {
+        if (handle) {
+          if (handle._nmCleanup) handle._nmCleanup();
+          handle.remove();
+        }
+        applyClips();
+        return;
+      }
+      if (handle) { applyClips(); return; }
+
+      const mod = await import("leaflet");
+      const L = mod.default || mod;
+      if (cancelled || !mapRef.current) return;
+
+      // The handle lives INSIDE the Leaflet container, so without this every
+      // grab of the divider also reaches the map's own click handler and drops
+      // a new study point underneath the cursor.
+      handle = L.DomUtil.create("div", "nm-swipe-handle", container);
+      // 24px of transparent grab area around a 2px visual line: a 2px target is
+      // unusable with a mouse and impossible on touch.
+      handle.style.cssText = [
+        "position:absolute", "top:0", "bottom:0", "width:24px",
+        "margin-left:-12px", "cursor:ew-resize", "z-index:700", "left:50%",
+        "background:transparent", "touch-action:none",
+      ].join(";");
+
+      const line = L.DomUtil.create("div", "", handle);
+      line.style.cssText = [
+        "position:absolute", "top:0", "bottom:0", "left:11px", "width:2px",
+        "background:#ffffff", "box-shadow:0 0 6px rgba(0,0,0,.6)",
+        "pointer-events:none",
+      ].join(";");
+
+      const grip = L.DomUtil.create("div", "", handle);
+      grip.style.cssText = [
+        "position:absolute", "top:50%", "left:0", "width:24px", "height:32px",
+        "transform:translateY(-50%)", "border-radius:4px", "background:#ffffff",
+        "box-shadow:0 1px 6px rgba(0,0,0,.5)", "display:flex",
+        "align-items:center", "justify-content:center",
+        "font:600 12px system-ui", "color:#333", "user-select:none",
+        "pointer-events:none",
+      ].join(";");
+      grip.textContent = "\u2551";
+
+      // Stops mousedown/click/dblclick/touchstart from reaching the map, which
+      // is what keeps a drag of the divider from registering as a map click.
+      L.DomEvent.disableClickPropagation(handle);
+      L.DomEvent.disableScrollPropagation(handle);
+
+      let dragging = false;
+      const setFromClientX = (clientX) => {
+        const rect = container.getBoundingClientRect();
+        swipeRef.current = (clientX - rect.left) / rect.width;
+        applyClips();
+      };
+      const onDown = (e) => {
+        dragging = true;
+        map.dragging.disable();
+        L.DomEvent.stop(e);
+      };
+      const onMove = (e) => {
+        if (!dragging) return;
+        setFromClientX(e.touches ? e.touches[0].clientX : e.clientX);
+        if (e.cancelable) e.preventDefault();
+      };
+      const onUp = () => {
+        if (!dragging) return;
+        dragging = false;
+        map.dragging.enable();
+      };
+
+      handle.addEventListener("mousedown", onDown);
+      handle.addEventListener("touchstart", onDown, {passive: false});
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("touchmove", onMove, {passive: false});
+      document.addEventListener("mouseup", onUp);
+      document.addEventListener("touchend", onUp);
+
+      // The clip rect is in layer pixels, so panning or zooming invalidates it.
+      // Without this the split drifts across the screen as the map moves.
+      const onMapMove = () => applyClips();
+      map.on("move zoom zoomend moveend resize viewreset", onMapMove);
+
+      handle._nmCleanup = () => {
+        document.removeEventListener("mousemove", onMove);
+        document.removeEventListener("touchmove", onMove);
+        document.removeEventListener("mouseup", onUp);
+        document.removeEventListener("touchend", onUp);
+        map.off("move zoom zoomend moveend resize viewreset", onMapMove);
+        if (dragging) map.dragging.enable();
+      };
+
+      applyClips();
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [swipeEnabled, layerKey]);
 
   // --- 3. Vector overlays: study point + buffer rings ----------------------
   // Redrawn wholesale rather than diffed: an overlay set is a handful of
@@ -248,19 +417,29 @@ function useNaturametricsMap(containerRef, config, layers, overlays, onMapClick)
   }, [overlayKey]);
 
   // --- 4. Follow programmatic view changes from Python ---------------------
+  // Only when Python actually asks for a DIFFERENT view. Comparing against the
+  // map's current position instead would re-centre on every unrelated config
+  // change - toggling the swipe divider, for instance - yanking the user back
+  // to the default framing and breaking the "viewport is never disturbed"
+  // guarantee this component exists to provide.
+  //
+  // Bounds are initial framing only and are deliberately not re-applied here.
+  const lastViewRef = useRef(null);
+
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !config || !config.center) return;
-    // Bounds are an initial framing only; re-fitting on every config change
-    // would fight the user's own pan and zoom.
-    const current = map.getCenter();
-    const moved =
-      Math.abs(current.lat - config.center[0]) > 1e-6 ||
-      Math.abs(current.lng - config.center[1]) > 1e-6 ||
-      map.getZoom() !== config.zoom;
-    if (moved) {
-      map.setView(config.center, config.zoom);
+
+    const desired = JSON.stringify([config.center, config.zoom]);
+    if (lastViewRef.current === null) {
+      // First run: the map was already framed at construction.
+      lastViewRef.current = desired;
+      return;
     }
+    if (lastViewRef.current === desired) return;
+
+    lastViewRef.current = desired;
+    map.setView(config.center, config.zoom);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(config)]);
 }

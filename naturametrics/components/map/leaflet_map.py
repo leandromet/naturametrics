@@ -50,6 +50,9 @@ class LeafletMap(rx.el.Div):
     #: Optional ``[[south, west], [north, east]]``. When set, the initial view is
     #: fitted to it and ``center``/``zoom`` are ignored for framing.
     bounds: Var[Sequence[Sequence[float]]] = Var.create([])
+    #: When true the map shows a draggable vertical divider; layers whose spec
+    #: carries ``clip: "left"`` / ``"right"`` are clipped to their side of it.
+    swipe: Var[bool] = Var.create(False)
     layers: Var[Sequence[dict[str, Any]]] = Var.create([])
     #: GeoJSON FeatureCollection drawn above the tiles: the study point and its
     #: buffer outlines. Features carry a ``role`` property that drives styling.
@@ -60,8 +63,8 @@ class LeafletMap(rx.el.Div):
     def _exclude_props(self) -> list[str]:
         # These drive the hook, not DOM attributes. React would warn about all
         # of them and Leaflet would never see them.
-        return [*super()._exclude_props(), "center", "zoom", "bounds", "layers",
-                "overlays", "on_map_click"]
+        return [*super()._exclude_props(), "center", "zoom", "bounds", "swipe",
+                "layers", "overlays", "on_map_click"]
 
     def add_imports(self) -> dict[str, Any]:
         """Leaflet's stylesheet, and the React hooks the injected code calls.
@@ -95,7 +98,8 @@ class LeafletMap(rx.el.Div):
 
         config = (
             f"{{center: {self.center!s}, zoom: {self.zoom!s}, "
-            f"bounds: ({self.bounds!s}).length ? {self.bounds!s} : null}}"
+            f"bounds: ({self.bounds!s}).length ? {self.bounds!s} : null, "
+            f"swipe: {self.swipe!s}}}"
         )
         expr = (
             f"useNaturametricsMap({ref}, {config}, {self.layers!s}, "

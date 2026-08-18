@@ -17,6 +17,7 @@ import reflex as rx
 from ..config import datasets as ds
 from ..config import mapbiomas as mb
 from ..config import settings as st
+from ..services import change_mask as cm
 from ..services import layers as layer_service
 
 logger = logging.getLogger(__name__)
@@ -36,6 +37,16 @@ class LayersMixin(rx.State, mixin=True):
     show_mapbiomas: bool = False
     mapbiomas_year: int = mb.MAPBIOMAS_YEAR_END
     mapbiomas_opacity: float = 0.75
+
+    #: Swipe comparison: a second MapBiomas year, split by a draggable divider.
+    compare_enabled: bool = False
+    compare_year: int = cm.FOREST_CODE_BASELINE_YEAR
+
+    #: Change mask: natural vegetation lost / regrown since the baseline year.
+    show_change_mask: bool = False
+    change_from_year: int = cm.FOREST_CODE_BASELINE_YEAR
+    change_include_stable: bool = False
+    change_mask_url: str = ""
 
     # --- what the map component receives ----------------------------------
     #: Seeded with the default basemap at class-definition time, so the map has
@@ -82,7 +93,35 @@ class LayersMixin(rx.State, mixin=True):
                     "attribution": "MapBiomas Collection 10.1",
                     "z_index": 10,
                     "max_native_zoom": 15,
+                    # In compare mode the active year takes the RIGHT half; the
+                    # baseline year sits underneath on the left.
+                    "clip": "right" if self.compare_enabled else None,
                 })
+
+            if self.compare_enabled:
+                url_b = self._mb_urls.get(self.compare_year)
+                if url_b:
+                    specs.append({
+                        "id": f"mapbiomas:{mb.MAPBIOMAS_DEFAULT_COLLECTION}:{self.compare_year}:cmp",
+                        "url": url_b,
+                        "opacity": self.mapbiomas_opacity,
+                        "attribution": "MapBiomas Collection 10.1",
+                        "z_index": 11,
+                        "max_native_zoom": 15,
+                        "clip": "left",
+                    })
+
+        if self.show_change_mask and self.change_mask_url:
+            specs.append({
+                "id": (f"change:{self.change_from_year}-{mb.MAPBIOMAS_YEAR_END}"
+                       f":{'stable' if self.change_include_stable else 'nostable'}"),
+                "url": self.change_mask_url,
+                "opacity": 0.85,
+                "attribution": (f"MapBiomas mudança {self.change_from_year}"
+                                f"\u2192{mb.MAPBIOMAS_YEAR_END}"),
+                "z_index": 20,
+                "max_native_zoom": 15,
+            })
         return specs
 
     def _refresh_layers(self) -> None:
@@ -102,6 +141,95 @@ class LayersMixin(rx.State, mixin=True):
         raw = value[0] if isinstance(value, (list, tuple)) else value
         self.mapbiomas_opacity = round(float(raw) / 100.0, 2)
         self._refresh_layers()
+
+    @rx.event(background=True)
+    async def toggle_compare(self, checked: bool):
+        """Show two MapBiomas years side by side, split by a draggable divider."""
+        async with self:
+            self.compare_enabled = checked
+            if not checked:
+                self._refresh_layers()
+                return
+            if not self.show_mapbiomas:
+                self.show_mapbiomas = True
+            needed = self.compare_year not in self._mb_urls
+            if not needed:
+                self._refresh_layers()
+                return
+            self.layer_busy = True
+        await self._ensure_year(self.compare_year)
+
+    @rx.event(background=True)
+    async def set_compare_year(self, value: list[int | float] | int | str):
+        raw = value[0] if isinstance(value, (list, tuple)) else value
+        try:
+            year = int(raw)
+        except (TypeError, ValueError):
+            return
+        async with self:
+            self.compare_year = year
+            if not self.compare_enabled or year in self._mb_urls:
+                self._refresh_layers()
+                return
+            self.layer_busy = True
+        await self._ensure_year(year)
+
+    @rx.event(background=True)
+    async def toggle_change_mask(self, checked: bool):
+        """Natural vegetation lost or regrown since the Forest Code baseline."""
+        async with self:
+            self.show_change_mask = checked
+            if not checked:
+                self._refresh_layers()
+                return
+            if self.change_mask_url:
+                self._refresh_layers()
+                return
+            self.layer_busy = True
+
+        loop = asyncio.get_running_loop()
+        try:
+            spec = await loop.run_in_executor(
+                None, cm.change_mask_spec, self.change_from_year,
+                mb.MAPBIOMAS_YEAR_END, 0.85, self.change_include_stable,
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Change mask failed: %s", exc)
+            spec = None
+
+        async with self:
+            self.change_mask_url = spec["url"] if spec else ""
+            self.layer_busy = False
+            self._refresh_layers()
+
+    @rx.event(background=True)
+    async def set_change_from_year(self, value: list[int | float] | int | str):
+        raw = value[0] if isinstance(value, (list, tuple)) else value
+        try:
+            year = int(raw)
+        except (TypeError, ValueError):
+            return
+        async with self:
+            self.change_from_year = year
+            self.change_mask_url = ""
+            if not self.show_change_mask:
+                return
+            self.layer_busy = True
+
+        loop = asyncio.get_running_loop()
+        try:
+            spec = await loop.run_in_executor(
+                None, cm.change_mask_spec, year, mb.MAPBIOMAS_YEAR_END, 0.85,
+                self.change_include_stable,
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Change mask failed: %s", exc)
+            spec = None
+
+        async with self:
+            self.change_mask_url = spec["url"] if spec else ""
+            self.layer_busy = False
+            self._refresh_layers()
 
     @rx.event(background=True)
     async def initialise(self):

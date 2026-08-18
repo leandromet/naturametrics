@@ -177,6 +177,10 @@ data/*
 data/raw/
 data/cache/
 
+# Screenshots for the README are small and belong in git
+!doc/img/*.png
+!doc/img/*.jpg
+
 # Bulk geospatial / tabular formats, wherever they land
 *.tif
 *.tiff

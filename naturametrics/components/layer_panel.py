@@ -11,6 +11,7 @@ import reflex as rx
 
 from ..config import datasets as ds
 from ..config import mapbiomas as mb
+from ..services import change_mask as cm
 from ..state import AppState
 
 
@@ -105,6 +106,94 @@ def mapbiomas_control() -> rx.Component:
     )
 
 
+def compare_control() -> rx.Component:
+    """Two MapBiomas years at once, split by a draggable vertical divider."""
+    return _section(
+        "Comparar dois anos",
+        rx.hstack(
+            rx.switch(checked=AppState.compare_enabled,
+                      on_change=AppState.toggle_compare),
+            rx.text("Cortina deslizante", size="2"),
+            width="100%", align="center", spacing="2",
+        ),
+        rx.cond(
+            AppState.compare_enabled,
+            rx.vstack(
+                rx.hstack(
+                    rx.text("Ano à esquerda", size="1", color_scheme="gray"),
+                    rx.spacer(),
+                    rx.badge(AppState.compare_year.to_string(),
+                             color_scheme="amber", variant="solid"),
+                    width="100%",
+                ),
+                rx.slider(
+                    min=mb.MAPBIOMAS_YEAR_START, max=mb.MAPBIOMAS_YEAR_END, step=1,
+                    default_value=[cm.FOREST_CODE_BASELINE_YEAR],
+                    on_change=AppState.set_compare_year, width="100%",
+                ),
+                rx.text(
+                    "Arraste a linha branca no mapa. À direita fica o ano "
+                    "selecionado acima em «Cobertura do solo».",
+                    size="1", color_scheme="gray",
+                ),
+                spacing="2", width="100%", padding_top="0.25rem",
+            ),
+            rx.fragment(),
+        ),
+    )
+
+
+def change_mask_control() -> rx.Component:
+    """Natural vegetation lost or regrown since the Forest Code baseline."""
+    return _section(
+        "Mudança na vegetação natural",
+        rx.hstack(
+            rx.switch(checked=AppState.show_change_mask,
+                      on_change=AppState.toggle_change_mask),
+            rx.text("Candidatos a recuperação", size="2"),
+            width="100%", align="center", spacing="2",
+        ),
+        rx.cond(
+            AppState.show_change_mask,
+            rx.vstack(
+                rx.hstack(
+                    rx.text("Ano base", size="1", color_scheme="gray"),
+                    rx.spacer(),
+                    rx.badge(AppState.change_from_year.to_string(),
+                             color_scheme="red", variant="solid"),
+                    width="100%",
+                ),
+                rx.slider(
+                    min=mb.MAPBIOMAS_YEAR_START, max=mb.MAPBIOMAS_YEAR_END - 1, step=1,
+                    default_value=[cm.FOREST_CODE_BASELINE_YEAR],
+                    on_change=AppState.set_change_from_year, width="100%",
+                ),
+                rx.hstack(
+                    rx.box(width="10px", height="10px", border_radius="2px",
+                           background=cm.CHANGE_COLORS[cm.CHANGE_LOSS]),
+                    rx.text("Perda de vegetação natural", size="1"),
+                    spacing="2", align="center", width="100%",
+                ),
+                rx.hstack(
+                    rx.box(width="10px", height="10px", border_radius="2px",
+                           background=cm.CHANGE_COLORS[cm.CHANGE_GAIN]),
+                    rx.text("Regeneração", size="1"),
+                    spacing="2", align="center", width="100%",
+                ),
+                rx.callout(
+                    "2008 é o marco do Código Florestal: vegetação nativa suprimida "
+                    "depois dessa data tem obrigação de recomposição. Esta camada é "
+                    "uma triagem, não um laudo — não considera CAR, APP/RL, porte do "
+                    "imóvel nem autorizações.",
+                    icon="info", size="1", color_scheme="gray", width="100%",
+                ),
+                spacing="2", width="100%", padding_top="0.25rem",
+            ),
+            rx.fragment(),
+        ),
+    )
+
+
 def status_line() -> rx.Component:
     return rx.hstack(
         rx.cond(
@@ -157,6 +246,10 @@ def layer_panel() -> rx.Component:
         basemap_control(),
         rx.divider(),
         mapbiomas_control(),
+        rx.divider(),
+        compare_control(),
+        rx.divider(),
+        change_mask_control(),
         rx.spacer(),
         rx.divider(),
         status_line(),

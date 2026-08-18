@@ -86,7 +86,14 @@ def mapbiomas_control() -> rx.Component:
                     width="100%",
                 ),
                 rx.hstack(
-                    rx.text("Opacidade", size="1", color_scheme="gray"),
+                    rx.text(
+                        rx.cond(
+                            AppState.compare_enabled,
+                            "Opacidade — ano à direita",
+                            "Opacidade",
+                        ),
+                        size="1", color_scheme="gray",
+                    ),
                     rx.spacer(),
                     rx.text(AppState.opacity_pct.to_string() + "%", size="1"),
                     width="100%",
@@ -130,6 +137,20 @@ def compare_control() -> rx.Component:
                     min=mb.MAPBIOMAS_YEAR_START, max=mb.MAPBIOMAS_YEAR_END, step=1,
                     default_value=[cm.FOREST_CODE_BASELINE_YEAR],
                     on_change=AppState.set_compare_year, width="100%",
+                ),
+                rx.hstack(
+                    rx.text("Opacidade — ano à esquerda", size="1",
+                            color_scheme="gray"),
+                    rx.spacer(),
+                    rx.text(AppState.compare_opacity_pct.to_string() + "%",
+                            size="1"),
+                    width="100%",
+                ),
+                rx.slider(
+                    min=0, max=100, step=5,
+                    default_value=[75],
+                    on_change=AppState.set_compare_opacity,
+                    width="100%",
                 ),
                 rx.text(
                     "Arraste a linha branca no mapa. À direita fica o ano "

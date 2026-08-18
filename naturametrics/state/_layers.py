@@ -39,8 +39,12 @@ class LayersMixin(rx.State, mixin=True):
     mapbiomas_opacity: float = 0.75
 
     #: Swipe comparison: a second MapBiomas year, split by a draggable divider.
+    #: The two sides carry independent opacity — the point of the comparison is
+    #: often to fade one side against the basemap while keeping the other solid,
+    #: which a single shared control cannot express.
     compare_enabled: bool = False
     compare_year: int = cm.FOREST_CODE_BASELINE_YEAR
+    compare_opacity: float = 0.75
 
     #: Change mask: natural vegetation lost / regrown since the baseline year.
     show_change_mask: bool = False
@@ -104,7 +108,7 @@ class LayersMixin(rx.State, mixin=True):
                     specs.append({
                         "id": f"mapbiomas:{mb.MAPBIOMAS_DEFAULT_COLLECTION}:{self.compare_year}:cmp",
                         "url": url_b,
-                        "opacity": self.mapbiomas_opacity,
+                        "opacity": self.compare_opacity,
                         "attribution": "MapBiomas Collection 10.1",
                         "z_index": 11,
                         "max_native_zoom": 15,
@@ -140,6 +144,12 @@ class LayersMixin(rx.State, mixin=True):
         """Slider gives a list; Reflex sliders are range-capable."""
         raw = value[0] if isinstance(value, (list, tuple)) else value
         self.mapbiomas_opacity = round(float(raw) / 100.0, 2)
+        self._refresh_layers()
+
+    def set_compare_opacity(self, value: list[int | float]):
+        """Opacity of the left (baseline) year in swipe comparison."""
+        raw = value[0] if isinstance(value, (list, tuple)) else value
+        self.compare_opacity = round(float(raw) / 100.0, 2)
         self._refresh_layers()
 
     @rx.event(background=True)
@@ -347,6 +357,10 @@ class LayersMixin(rx.State, mixin=True):
     @rx.var
     def opacity_pct(self) -> int:
         return int(round(self.mapbiomas_opacity * 100))
+
+    @rx.var
+    def compare_opacity_pct(self) -> int:
+        return int(round(self.compare_opacity * 100))
 
     @rx.var
     def ee_status_label(self) -> str:

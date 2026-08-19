@@ -12,6 +12,7 @@ import reflex as rx
 
 from ..config import datasets as ds
 from ..config import mapbiomas as mb
+from ..config import settings as st
 from ..services import change_mask as cm
 from ..state import AppState
 
@@ -108,6 +109,38 @@ def mapbiomas_control() -> rx.Component:
                 spacing="2",
                 width="100%",
                 padding_top="0.25rem",
+            ),
+            rx.fragment(),
+        ),
+    )
+
+
+def buffer_preview_control() -> rx.Component:
+    """MapBiomas shown only inside the buffer of the point under the cursor."""
+    return _section(
+        "Uso no buffer",
+        rx.hstack(
+            rx.switch(checked=AppState.show_buffer_preview,
+                      on_change=AppState.toggle_buffer_preview),
+            rx.text("Mostrar Uso no Buffer", size="2"),
+            rx.spacer(),
+            rx.badge(f"{st.BUFFER_PREVIEW_RADIUS_KM:g} km", size="1",
+                     variant="soft", color_scheme="gray"),
+            width="100%", align="center", spacing="2",
+        ),
+        rx.text(
+            "Ao passar o cursor sobre um conglomerado — ou ao escolher um ponto "
+            "— o MapBiomas aparece só dentro do raio de análise, no ano "
+            "selecionado acima. Não consulta o Earth Engine: usa os mesmos "
+            "blocos já pré-carregados.",
+            size="1", color_scheme="gray",
+        ),
+        rx.cond(
+            AppState.show_mapbiomas,
+            rx.text(
+                "Oculta enquanto «MapBiomas 10.1» está ligado — a cobertura já "
+                "aparece no mapa inteiro.",
+                size="1", color_scheme="amber",
             ),
             rx.fragment(),
         ),
@@ -410,6 +443,8 @@ def layer_panel() -> rx.Component:
         basemap_control(),
         rx.divider(),
         mapbiomas_control(),
+        rx.divider(),
+        buffer_preview_control(),
         rx.divider(),
         compare_control(),
         rx.divider(),

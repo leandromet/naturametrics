@@ -39,6 +39,8 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
   const dynamicKey = useRef(new Map());
   //: When a conglomerado was last clicked. See the click handler below.
   const pointClickAt = useRef(0);
+  //: The Leaflet module, so helpers outside the async effects can use L.
+  const leafletRef = useRef(null);
   const overlayRef = useRef(null);
   const clickRef = useRef(onMapClick);
   const readyRef = useRef(false);
@@ -97,8 +99,17 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
         }
       });
 
+      leafletRef.current = L;
       mapRef.current = map;
       readyRef.current = true;
+
+      // The buffer preview is clipped in LAYER-PIXEL space, so panning or
+      // zooming invalidates it. Bound here rather than inside the swipe effect
+      // (which binds the same handler for its own divider) because the preview
+      // has to track the map whether or not the swipe is on.
+      const onClipUpdate = () => applyClips();
+      map.on("move zoom zoomend moveend resize viewreset", onClipUpdate);
+      map._nmClipUpdate = onClipUpdate;
 
       // Expose the instance on the container: an imperative handle for fly-to
       // (jumping to an IFN point or a pasted coordinate), and it makes the map
@@ -119,6 +130,8 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
       const map = mapRef.current;
       if (map) {
         if (map._nmSettle) window.removeEventListener("resize", map._nmSettle);
+        if (map._nmClipUpdate) map.off("move zoom zoomend moveend resize viewreset",
+                                       map._nmClipUpdate);
         if (containerRef.current) containerRef.current._nmMap = null;
         map.remove();
         mapRef.current = null;
@@ -182,6 +195,13 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
             existing.clip = spec.clip || null;
             applyClips();
           }
+          // The preview follows the cursor from conglomerado to conglomerado, so
+          // the circle moves far more often than the tile source changes.
+          const nextCircle = JSON.stringify(spec.clip_circle || null);
+          if (JSON.stringify(existing.clipCircle || null) !== nextCircle) {
+            existing.clipCircle = spec.clip_circle || null;
+            applyClips();
+          }
           return;
         }
 
@@ -207,6 +227,7 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
           opacity: spec.opacity,
           zIndex: zIndex,
           clip: spec.clip || null,
+          clipCircle: spec.clip_circle || null,
         });
       });
 
@@ -258,6 +279,27 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
   // coordinates therefore have to be recomputed whenever the map moves or
   // zooms - see the map event bindings below. Same approach as
   // leaflet-side-by-side.
+  // A buffer's centre and radius, in the same layer-pixel space the clips use.
+  //
+  // The radius is measured by projecting a point due east of the centre rather
+  // than from a metres-per-pixel constant: Web Mercator's scale factor varies
+  // with latitude, and a circle drawn with the equator's scale would be visibly
+  // too small in Rio Grande do Sul. Mercator is conformal, so a small circle on
+  // the ground stays a circle on screen and one radius is enough.
+  const bufferClipGeometry = (map, circle) => {
+    const L = leafletRef.current;
+    if (!L || !circle) return null;
+    const centre = map.latLngToLayerPoint(L.latLng(circle.lat, circle.lon));
+    const metresPerDegreeLon = 111320 * Math.cos(circle.lat * Math.PI / 180);
+    if (!(metresPerDegreeLon > 1)) return null;
+    const edge = map.latLngToLayerPoint(
+      L.latLng(circle.lat, circle.lon + (circle.radius_km * 1000) / metresPerDegreeLon)
+    );
+    const radius = Math.abs(edge.x - centre.x);
+    if (!(radius > 0) || !isFinite(radius)) return null;
+    return {x: centre.x, y: centre.y, r: radius};
+  };
+
   const applyClips = () => {
     const map = mapRef.current;
     if (!map) return;
@@ -271,13 +313,34 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
     layerRegistry.current.forEach((entry) => {
       const el = entry.layer.getContainer && entry.layer.getContainer();
       if (!el) return;
+      // Both properties are reset every pass: a layer that used to be clipped
+      // and no longer is must lose the clip, and the two mechanisms must never
+      // be left set at the same time (clip-path wins and `clip` is ignored).
       el.style.clipPath = "";
+      el.style.clip = "";
+
+      if (entry.clipCircle) {
+        const g = bufferClipGeometry(map, entry.clipCircle);
+        if (!g) return;
+        if (entry.clipCircle.shape === "bbox") {
+          // rect(top, right, bottom, left) — the legacy property, which takes
+          // absolute offsets in the element's own coordinate system and is
+          // therefore immune to the 0×0 reference box explained below.
+          el.style.clip = `rect(${g.y - g.r}px, ${g.x + g.r}px, ` +
+                          `${g.y + g.r}px, ${g.x - g.r}px)`;
+        } else {
+          // Absolute lengths, not percentages: the reason `clip-path: inset(%)`
+          // fails here is that percentages resolve against a 0×0 box, and `px`
+          // values do not.
+          el.style.clipPath = `circle(${g.r}px at ${g.x}px ${g.y}px)`;
+        }
+        return;
+      }
+
       if (entry.clip === "left") {
         el.style.clip = `rect(${nw.y}px, ${splitX}px, ${se.y}px, ${nw.x}px)`;
       } else if (entry.clip === "right") {
         el.style.clip = `rect(${nw.y}px, ${se.x}px, ${se.y}px, ${splitX}px)`;
-      } else {
-        el.style.clip = "";
       }
     });
 
@@ -401,6 +464,16 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
   // Redrawn wholesale rather than diffed: an overlay set is a handful of
   // features that all change together when the user picks a new point, so
   // there is nothing to gain from diffing and a lot of state to get wrong.
+  //
+  // These live in their OWN pane, with `pointer-events: none`, and that is not
+  // cosmetic. With preferCanvas each renderer draws into its own <canvas> and
+  // binds mousemove to that element; a canvas is opaque to hit-testing, so the
+  // topmost one over a pixel takes the event and the ones beneath never see it.
+  // In the default overlayPane (z 400) this group sits above the conglomerados
+  // (nmVectors, z 350) and silently kills their hover the moment the first
+  // study point is chosen - while map clicks keep working, because those bubble
+  // to the map container. Marking the individual paths `interactive: false` does
+  // NOT prevent this; only the pane does.
   const overlayKey = JSON.stringify(overlays);
 
   useEffect(() => {
@@ -413,6 +486,12 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
       const L = mod.default || mod;
       if (cancelled || !mapRef.current) return;
 
+      if (!map.getPane("nmOverlays")) {
+        const pane = map.createPane("nmOverlays");
+        pane.style.zIndex = 450;
+        pane.style.pointerEvents = "none";
+      }
+
       if (overlayRef.current) {
         map.removeLayer(overlayRef.current);
         overlayRef.current = null;
@@ -420,6 +499,7 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
       if (!overlays || !overlays.features || !overlays.features.length) return;
 
       const group = L.geoJSON(overlays, {
+        pane: "nmOverlays",
         // Buffer outlines must never swallow map clicks - the user has to be
         // able to click a new study point straight through them.
         interactive: false,
@@ -436,6 +516,7 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
         },
         pointToLayer: (feature, latlng) =>
           L.circleMarker(latlng, {
+            pane: "nmOverlays",
             radius: 6,
             color: "#ffffff",
             weight: 2,

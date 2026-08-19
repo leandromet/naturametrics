@@ -84,8 +84,10 @@ def como_usar_dialog() -> rx.Component:
                           "região, bioma, estado e município — o mapa enquadra a "
                           "seleção sozinho. Aproximando o zoom, os pontos ficam "
                           "interativos: pare o cursor sobre um para ver a cobertura "
-                          "num raio de 10 km hoje e em 1985, e clique para rodar a "
-                          "análise completa nas coordenadas oficiais dele."),
+                          "num raio de 10 km hoje e em 1985 — e o próprio mapa mostra "
+                          "o MapBiomas só dentro desse raio, no ano escolhido. Clique "
+                          "para rodar a análise completa nas coordenadas oficiais "
+                          "dele."),
                     _step("7", "Baixe os dados",
                           "Em «Baixar dados», no topo da página. São duas planilhas "
                           "ODS independentes: a do ponto de estudo atual, com uma aba "

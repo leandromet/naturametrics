@@ -100,7 +100,26 @@ tile endpoint should trigger a silent refresh, not a broken layer.
 | **SPOT 2008 analytic** | `GOOGLE/BRAZIL_FOREST_2008/V1/ANALYTIC` | direct | `['N','R','G']`, `min:[156,62,53]`, `max:[6408,2584,2211]`, `gamma:0.9` |
 | **SPOT 2008 NDVI** | analytic | `.normalizedDifference(['N','R'])` | `-0.2–1.0`, vegetation palette |
 | **IFN conglomerados** | `projects/ee-leandromet/assets/sfb_ifn_conglomerados_pontos_bioma` (derived — see [04](04-data-sources.md) §6a.2) | `.filter(eq)` on `nm_regiao`/`sigla_uf`/`nm_mun`/`bioma`, then `.style()` | 3 px white-ringed red dots |
+| **Prévia do buffer** | the MapBiomas year already in the prefetch cache | **no new EE call** — the same tile URL, clipped in the browser to the 10 km buffer of the hovered/selected point (`clip-path: circle()` in layer-pixel space) | opacity 0.70, suppressed while the full layer is on |
 | **IBGE biomas** | `projects/ee-leandromet/assets/ibge_biome_domain_250k` | not tiled — simplified GeoJSON served at `/_biomes.geojson`, drawn by Leaflet with a hover tooltip | one hue per bioma, opacity 0–80 % |
+
+### 3a. Panes, and why the order matters
+
+With `preferCanvas: true` each Leaflet renderer draws into **its own `<canvas>`** and binds
+`mousemove` to that element. A canvas is opaque to hit-testing, so the topmost canvas over
+a pixel takes the event and every canvas beneath it is deaf — regardless of whether the
+paths inside it are `interactive: false`. Only the *pane* can prevent that.
+
+| Pane | z-index | Contents | Pointer events |
+|---|---|---|---|
+| `tilePane` | 200 | every tile layer, including the buffer preview | — |
+| `nmVectors` | 350 | IBGE biomes; interactive IFN conglomerados | **yes** — this is the layer that must be hoverable |
+| `nmOverlays` | 450 | study point marker + buffer rings | **none** |
+
+`nmOverlays` exists precisely because of the rule above: in the default `overlayPane`
+(z 400) the buffer rings sit above `nmVectors` and silently kill conglomerado hover from
+the first click onwards, while map clicks keep working because those bubble to the map
+container. That failure looks like a state bug and is not one.
 
 Both SPOT layers are gated behind the licence flag (see
 [04-data-sources.md](04-data-sources.md) §2).

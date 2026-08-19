@@ -485,12 +485,10 @@ def vector_spec(
                         "fillColor": "#e5484d", "fillOpacity": 0.95},
         "hover_style": {"radius": 8, "color": "#ffffff", "weight": 2.5,
                         "fillColor": "#ff8a00", "fillOpacity": 1.0},
-        "tooltip": [
-            {"label": "Conglomerado", "property": "conglomerado"},
-            {"label": "Município", "property": "municipio"},
-            {"label": "UF", "property": "uf"},
-            {"label": "Bioma", "property": "bioma"},
-        ],
+        # No tooltip on purpose. It named the same four fields the card in the
+        # corner already shows, and it sat directly on top of the buffer preview
+        # the hover exists to reveal. The polygons keep theirs — a biome has no
+        # card, and its label has nothing to obscure.
         "emit_hover": True,
         "emit_select": True,
     }

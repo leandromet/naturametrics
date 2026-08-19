@@ -60,6 +60,13 @@ class ConglomeradoMixin(rx.State, mixin=True):
                 self._hover_token += 1
                 self.hover_visible = False
                 self.hover_loading = False
+                # Hand the preview back to the study point rather than blanking
+                # the map: after clicking a conglomerado and moving the cursor
+                # away, its buffer is still the thing being analysed.
+                if self.has_point:
+                    self._set_preview(self.study_lat, self.study_lon)
+                else:
+                    self._clear_preview()
             return
 
         key = str(props.get("ponto_id") or props.get("conglomerado"))
@@ -67,9 +74,19 @@ class ConglomeradoMixin(rx.State, mixin=True):
             str(x) for x in (props.get("municipio"), props.get("uf")) if x
         )
 
+        try:
+            hover_lat, hover_lon = float(props["lat"]), float(props["lon"])
+        except (KeyError, TypeError, ValueError):
+            hover_lat = hover_lon = None
+
         async with self:
             self._hover_token += 1
             token = self._hover_token
+            if hover_lat is not None:
+                # Before the Earth Engine call, not after: the clip is free and
+                # showing it immediately is what makes the hover feel connected
+                # to the map rather than to a spinner.
+                self._set_preview(hover_lat, hover_lon)
             self.hover_visible = True
             self.hover_conglomerado = str(props.get("conglomerado", ""))
             self.hover_place = place
@@ -83,14 +100,19 @@ class ConglomeradoMixin(rx.State, mixin=True):
             self.hover_rows = []
             self.hover_natural = ""
 
-        try:
-            lat, lon = float(props["lat"]), float(props["lon"])
-        except (KeyError, TypeError, ValueError):
+        if hover_lat is None:
             async with self:
                 if token == self._hover_token:
                     self.hover_loading = False
                     self.hover_error = "Coordenadas do conglomerado indisponíveis."
             return
+        lat, lon = hover_lat, hover_lon
+
+        # On a cold instance the prefetch may not have reached this year yet, and
+        # the preview would silently draw nothing. Minting it here costs one call
+        # and only ever happens once per year per process.
+        if self.mapbiomas_year not in self._mb_urls:
+            await self._ensure_year(self.mapbiomas_year)
 
         loop = asyncio.get_running_loop()
         try:

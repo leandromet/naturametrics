@@ -69,6 +69,17 @@ class LayersMixin(rx.State, mixin=True):
     ifn_count: int = ifn_service.count()
     ifn_busy: bool = False
 
+    # --- Buffer land-cover preview ----------------------------------------
+    #: MapBiomas shown inside the largest buffer of the hovered or selected
+    #: point, and nowhere else. Free: the year's tile URL is already in
+    #: ``_mb_urls`` from the startup prefetch, and the restriction to the buffer
+    #: is a CSS clip in the browser. Suppressed while the full MapBiomas layer is
+    #: on, where it would only redraw what is already everywhere.
+    show_buffer_preview: bool = True
+    preview_active: bool = False
+    preview_lat: float = 0.0
+    preview_lon: float = 0.0
+
     # --- IBGE biomes ------------------------------------------------------
     #: Drawn in the browser, not by Earth Engine, so that it can name itself on
     #: hover. Nothing is minted for it and nothing here can fail.
@@ -152,6 +163,26 @@ class LayersMixin(rx.State, mixin=True):
                         "max_native_zoom": 15,
                         "clip": "left",
                     })
+
+        if (self.show_buffer_preview and self.preview_active
+                and not self.show_mapbiomas):
+            url = self._mb_urls.get(self.mapbiomas_year)
+            if url:
+                specs.append({
+                    "id": f"preview:{mb.MAPBIOMAS_DEFAULT_COLLECTION}"
+                          f":{self.mapbiomas_year}",
+                    "url": url,
+                    "opacity": st.BUFFER_PREVIEW_OPACITY,
+                    "attribution": "MapBiomas Collection 10.1",
+                    "z_index": 12,
+                    "max_native_zoom": 15,
+                    "clip_circle": {
+                        "lat": self.preview_lat,
+                        "lon": self.preview_lon,
+                        "radius_km": st.BUFFER_PREVIEW_RADIUS_KM,
+                        "shape": st.BUFFER_PREVIEW_SHAPE,
+                    },
+                })
 
         if self.show_ifn and self.ifn_url:
             specs.append({
@@ -532,6 +563,21 @@ class LayersMixin(rx.State, mixin=True):
         self.ifn_municipality = ""
         self.ifn_biome = ""
         return type(self).apply_ifn_filters
+
+    def _set_preview(self, lat: float, lon: float) -> None:
+        """Point the land-cover preview at a location. Called from other mixins."""
+        self.preview_lat = float(lat)
+        self.preview_lon = float(lon)
+        self.preview_active = True
+        self._refresh_layers()
+
+    def _clear_preview(self) -> None:
+        self.preview_active = False
+        self._refresh_layers()
+
+    def toggle_buffer_preview(self, checked: bool):
+        self.show_buffer_preview = checked
+        self._refresh_layers()
 
     def toggle_biomes(self, checked: bool):
         """No Earth Engine, no minting — the browser fetches the polygons itself."""

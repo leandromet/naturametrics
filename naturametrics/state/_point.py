@@ -77,6 +77,9 @@ class PointMixin(rx.State, mixin=True):
         self.buffer_overlays = buffer_geojson(
             p, BUFFER_RADII_KM, BUFFER_MODE_DEFAULT
         )
+        # Show the land cover inside the largest buffer straight away — it needs
+        # no Earth Engine call, so it lands well before the analysis does.
+        self._set_preview(p.lat, p.lon)
         return type(self).run_analysis(p.lat, p.lon)
 
     def clear_study_point(self):
@@ -86,6 +89,7 @@ class PointMixin(rx.State, mixin=True):
         self.buffer_overlays = {}
         self.has_result = False
         self._clear_identity()
+        self._clear_preview()
 
     @rx.var
     def point_identity_label(self) -> str:

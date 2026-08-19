@@ -106,6 +106,25 @@ IFN_POINTS_TABLE_PATH = Path(
 )
 
 # --------------------------------------------------------------------------- #
+# Buffer land-cover preview
+# --------------------------------------------------------------------------- #
+#: When a point is hovered or selected, the MapBiomas layer is shown *inside* its
+#: largest buffer and nowhere else. This costs no Earth Engine call at all: the
+#: tile URL for every year is already minted by the startup prefetch, and the
+#: restriction to the buffer is a CSS clip applied in the browser — the same
+#: technique as the swipe divider (doc/06 §5b).
+BUFFER_PREVIEW_RADIUS_KM = _float("NM_BUFFER_PREVIEW_RADIUS_KM",
+                                  max(BUFFER_RADII_KM))
+BUFFER_PREVIEW_OPACITY = _float("NM_BUFFER_PREVIEW_OPACITY", 0.70)
+
+#: 'circle' | 'bbox'. A circle is what the buffer actually is, and costs the same
+#: to draw. The bbox exists as an escape hatch: clipping in a Leaflet layer
+#: container is fiddly (its reference box is 0×0 — see leaflet_map.js), and if
+#: `clip-path: circle()` ever misbehaves on some browser, the rectangle uses the
+#: legacy `clip: rect()` path that the swipe divider has already proven.
+BUFFER_PREVIEW_SHAPE = os.environ.get("NM_BUFFER_PREVIEW_SHAPE", "circle")
+
+# --------------------------------------------------------------------------- #
 # Interactive conglomerado layer
 # --------------------------------------------------------------------------- #
 #: Below this zoom the conglomerados are tiles only — pretty, and not clickable.

@@ -42,6 +42,20 @@ def results_drawer() -> rx.Component:
                                               "inline-flex"]),
                             rx.fragment(),
                         ),
+                        # Second entry point to the same dialog as the header
+                        # button: this is where the user is looking when they
+                        # decide they want the numbers behind the chart.
+                        rx.cond(
+                            AppState.has_result,
+                            rx.button(
+                                rx.icon("download", size=13),
+                                rx.text("Baixar dados", size="1"),
+                                on_click=AppState.set_export_open(True),
+                                size="1", variant="ghost", color_scheme="jade",
+                                aria_label="Baixar dados deste ponto",
+                            ),
+                            rx.fragment(),
+                        ),
                         spacing="2", align="center",
                         # Full-width line on phone, shares the row from tablet up.
                         flex=["1 1 100%", "1 1 100%", "1 1 auto", "1 1 auto"],

@@ -122,8 +122,8 @@ def _selection_section() -> rx.Component:
         _check(
             f"Histórico dos buffers ({_RADII} km)",
             "Área por classe e por ano, para cada conglomerado — a mesma conta "
-            "que o gráfico faz. Uma aba por raio. É a parte cara: quanto menos "
-            "raios, mais conglomerados cabem.",
+            "que o gráfico faz. Uma aba por raio. É a parte cara: exportar um "
+            "raio só deixa o arquivo bem menor e mais rápido.",
             AppState.exp_buffers, AppState.toggle_exp_buffers,
             # Never disabled, even over the ceiling. Disabling it would hide the
             # radius selector below — which is the one control that makes a large
@@ -149,10 +149,17 @@ def _selection_section() -> rx.Component:
             AppState.exp_buffers,
             rx.callout(
                 AppState.export_buffer_note,
-                icon="clock",
+                # Amber is a warning about size, never a refusal: the export
+                # runs either way. There is no size limit on a spreadsheet, and
+                # inventing one would be enforcing a constraint that does not
+                # exist.
+                icon=rx.cond(AppState.export_buffer_heavy
+                             | AppState.export_buffer_over_limit,
+                             "triangle-alert", "clock"),
                 size="1",
-                color_scheme=rx.cond(AppState.export_buffers_allowed,
-                                     "gray", "amber"),
+                color_scheme=rx.cond(
+                    AppState.export_buffer_over_limit, "red",
+                    rx.cond(AppState.export_buffer_heavy, "amber", "gray")),
                 width="100%",
             ),
             rx.fragment(),
@@ -163,7 +170,10 @@ def _selection_section() -> rx.Component:
             on_click=AppState.download_selection,
             disabled=AppState.export_busy | AppState.export_nothing_selected
                      | (AppState.export_selection_count == 0)
-                     | (AppState.exp_buffers & ~AppState.export_buffers_allowed),
+                     # The only size-based refusal, and the remedy is the
+                     # sidebar filters rather than anything in this panel — so
+                     # the checkbox above stays usable and the note explains.
+                     | (AppState.exp_buffers & AppState.export_buffer_over_limit),
             size="2", color_scheme="jade", width="100%",
         ),
         spacing="2", align_items="start", width="100%",

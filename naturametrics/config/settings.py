@@ -180,10 +180,39 @@ EXPORT_ROWS_PER_POINT: dict[float, int] = {1.0: 280, 2.0: 330, 5.0: 430, 10.0: 5
 #: 1 048 576 is the hard limit in LibreOffice and Excel; this leaves headroom.
 EXPORT_ODS_ROWS_PER_SHEET = _int("NM_EXPORT_ROWS_PER_SHEET", 1_000_000)
 
-#: Ceiling on the whole file. Not a spreadsheet limit — a delivery one:
-#: ``rx.download`` carries the bytes inside the event payload at roughly 4/3 of
-#: file size, and ~1.5 M rows is already a ~35 MB file and a ~47 MB message.
-EXPORT_MAX_TOTAL_ROWS = _int("NM_EXPORT_MAX_TOTAL_ROWS", 1_500_000)
+#: Measured cost of one buffer row in the finished ODS: **46 bytes**, flat from
+#: 200 k to 1 M rows (9.2 / 23.0 / 46.0 MB). Measured with realistic values —
+#: areas rounded to 4 dp, real class and município names. Random unrounded
+#: doubles measure 61 B/row and are not what the export writes.
+EXPORT_BYTES_PER_ROW = _int("NM_EXPORT_BYTES_PER_ROW", 46)
+
+#: Hard ceiling on a **buffer** export, in conglomerados.
+#:
+#: Unlike the file-size caps this replaces, it has a reason that comes from the
+#: data rather than from feel: it clears the largest biome, so any single-biome
+#: selection fits whole. Measured against the point table —
+#:
+#:     Amazônia 5 801 · Cerrado 4 898 · Mata Atlântica 3 511
+#:     Caatinga 2 367 · Pampa 523 · Pantanal 374   (largest UF: PA, 1 884)
+#:
+#: — so 6 000 covers every biome and every state with room to spare, and costs
+#: about 12 minutes at the measured 0.12 s/conglomerado. Past that the useful
+#: unit is the whole grid, which is a batch job rather than a button.
+#:
+#: The **pixel** and **point-list** halves are deliberately NOT capped: they do
+#: all 17 479 conglomerados in about two seconds.
+EXPORT_MAX_BUFFER_POINTS = _int("NM_EXPORT_MAX_BUFFER_POINTS", 6000)
+
+#: Size at which the panel starts warning. **Advisory only — nothing is
+#: refused.** There is no size limit on an ODS file, and inventing one would be
+#: making up a constraint that does not exist; the only hard limit in the format
+#: is rows per sheet, and an oversized sheet is split rather than refused.
+#:
+#: What is real, and worth warning about: ``rx.download`` delivers the file as a
+#: base64 ``data:`` URI inside the WebSocket event, so a large export is held in
+#: memory whole — once on the server, once as base64, once again in the browser —
+#: and very large data URIs are handled poorly by some browsers.
+EXPORT_WARN_FILE_MB = _int("NM_EXPORT_WARN_FILE_MB", 25)
 
 #: For the "this will take about…" estimate. Measured between 0.06 and 0.14
 #: s/point depending on how warm Earth Engine is; the high end is quoted so the

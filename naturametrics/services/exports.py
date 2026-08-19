@@ -7,8 +7,8 @@ Two exports, deliberately separate because they answer different questions:
   the four buffers. Small, always available once an analysis has run.
 * **the conglomerado selection** — the same measurements across every IFN point
   the current filters select. The single-pixel half is cheap at any size; the
-  buffer half is not, and its ceiling depends on which radii are asked for
-  (see :func:`max_points_for`).
+  buffer half is not, and its cost depends on which radii are asked for — but it
+  is reported rather than refused (see :func:`buffer_estimate`).
 
 Both are **one ODS file with a tab per table**, not a ZIP of CSVs: a spreadsheet
 is already a compressed container, it opens on a double-click, and it keeps the
@@ -34,9 +34,9 @@ import pandas as pd
 from ..config import mapbiomas as mb
 from ..config.citation import APP_URL, CITATION_TEXT, DATA_SOURCES
 from ..config.settings import (
-    BUFFER_MODE_DEFAULT, BUFFER_RADII_KM, EXPORT_MAX_TOTAL_ROWS,
-    EXPORT_ODS_ROWS_PER_SHEET, EXPORT_POINT_TIMEOUT_S, EXPORT_ROWS_PER_POINT,
-    EXPORT_SECONDS_PER_POINT,
+    BUFFER_MODE_DEFAULT, BUFFER_RADII_KM, EXPORT_BYTES_PER_ROW,
+    EXPORT_MAX_BUFFER_POINTS, EXPORT_ODS_ROWS_PER_SHEET, EXPORT_POINT_TIMEOUT_S,
+    EXPORT_ROWS_PER_POINT, EXPORT_SECONDS_PER_POINT, EXPORT_WARN_FILE_MB,
 )
 from . import ifn, ods
 from .geo import Point, point
@@ -560,52 +560,81 @@ def rows_per_point(radii: Sequence[float]) -> int:
     return sum(EXPORT_ROWS_PER_POINT.get(float(r), 500) for r in radii) or 1
 
 
-def max_points_for(radii: Sequence[float]) -> int:
-    """How many conglomerados these radii allow.
-
-    Two independent ceilings, and the lower one wins:
-
-    * **per sheet** — each radius gets its own tab, so what matters is the
-      *largest* radius asked for, not their total;
-    * **per file** — the download travels inside a WebSocket event, so the whole
-      workbook has a budget of its own.
-    """
-    radii = [float(r) for r in radii] or list(BUFFER_RADII_KM)
-    widest = max(EXPORT_ROWS_PER_POINT.get(r, 500) for r in radii)
-    return max(1, min(EXPORT_ODS_ROWS_PER_SHEET // widest,
-                      EXPORT_MAX_TOTAL_ROWS // rows_per_point(radii)))
-
-
 def estimated_seconds(n: int) -> int:
     return max(3, int(n * EXPORT_SECONDS_PER_POINT))
+
+
+def estimated_file_mb(n: int, radii: Sequence[float]) -> float:
+    return n * rows_per_point(radii) * EXPORT_BYTES_PER_ROW / 1_000_000
 
 
 def _thousands(n: int) -> str:
     return f"{n:,}".replace(",", ".")
 
 
-def buffer_cap_message(n: int, radii: Sequence[float]) -> str:
-    """Why this many conglomerados will not fit — and what would.
+def buffer_estimate(n: int, radii: Sequence[float]) -> dict[str, Any]:
+    """What a buffer export of this size will cost — never whether it is allowed.
 
-    Names the radii that *are* within reach rather than only refusing: the
-    remedy is usually "ask for one buffer instead of four", and a message that
-    does not say so leaves the user to guess.
+    Nothing here refuses anything. The only hard limit in the format is rows per
+    sheet, and :func:`_buffer_sheets` handles that by splitting; a file-size cap
+    would be a constraint invented rather than observed. So this reports, and the
+    user decides.
+
+    ``heavy`` marks the point where the *delivery* becomes the risk rather than
+    the computation: the file travels as a base64 ``data:`` URI held whole in
+    memory at both ends. ``over_limit`` is the one thing that does refuse — see
+    ``settings.EXPORT_MAX_BUFFER_POINTS``, which is set from the size of the
+    largest biome rather than from a guess about file sizes.
     """
-    limit = max_points_for(radii)
+    radii = [float(r) for r in radii] or list(BUFFER_RADII_KM)
+    rows = n * rows_per_point(radii)
+    megabytes = estimated_file_mb(n, radii)
+    widest = max(EXPORT_ROWS_PER_POINT.get(r, 500) for r in radii)
+    return {
+        "points": n,
+        "rows": rows,
+        "megabytes": megabytes,
+        "seconds": estimated_seconds(n),
+        # One tab per radius, plus however many extra parts a radius needs.
+        "tabs": sum(max(1, -(-(n * EXPORT_ROWS_PER_POINT.get(r, 500))
+                             // EXPORT_ODS_ROWS_PER_SHEET)) for r in radii),
+        "split": n * widest > EXPORT_ODS_ROWS_PER_SHEET,
+        "heavy": megabytes > EXPORT_WARN_FILE_MB,
+        "over_limit": n > EXPORT_MAX_BUFFER_POINTS,
+    }
+
+
+def buffer_estimate_message(n: int, radii: Sequence[float]) -> str:
+    """The cost, in the user's terms. Advisory: nothing here blocks the export."""
+    est = buffer_estimate(n, radii)
+    seconds = est["seconds"]
+    when = (f"{seconds // 60} min {seconds % 60} s" if seconds >= 60
+            else f"{seconds} s")
     chosen = ", ".join(f"{r:g} km" for r in sorted(radii))
 
-    workable = [r for r in sorted(BUFFER_RADII_KM) if max_points_for([r]) >= n]
-    if workable:
-        remedy = ("Cabe escolhendo um raio só: "
-                  + ", ".join(f"{r:g} km" for r in workable) + ".")
-    else:
-        smallest = min(BUFFER_RADII_KM)
-        remedy = (f"Nem um raio isolado cabe nesta seleção — o máximo é "
-                  f"{_thousands(max_points_for([smallest]))} conglomerados a "
-                  f"{smallest:g} km. Reduza a seleção com os filtros.")
+    size = (f"~{est['megabytes']:.0f} MB" if est["megabytes"] >= 1
+            else f"~{est['megabytes'] * 1000:.0f} KB")
+    tabs = "1 aba" if est["tabs"] == 1 else f"{est['tabs']} abas"
 
-    return (
-        f"A seleção tem {_thousands(n)} conglomerados; com {chosen} o limite é "
-        f"{_thousands(limit)}. {remedy} A lista de pontos e a classe do pixel "
-        f"não têm limite."
-    )
+    if est["over_limit"]:
+        return (
+            f"A seleção tem {_thousands(n)} conglomerados; o limite para dados "
+            f"de buffer é {_thousands(EXPORT_MAX_BUFFER_POINTS)} — o suficiente "
+            f"para qualquer bioma inteiro (o maior, a Amazônia, tem 5.801). "
+            f"Reduza a seleção com os filtros. A lista de pontos e a classe do "
+            f"pixel não têm limite: saem para os 17.479 conglomerados."
+        )
+
+    text = (f"≈ {when} para {_thousands(n)} conglomerados · "
+            f"~{_thousands(est['rows'])} linhas · {size} · {tabs} ({chosen}).")
+    if est["split"]:
+        text += (" Um raio passa do máximo de linhas por aba e será dividido em "
+                 "«…_2», «…_3» — as partes são contínuas.")
+    if est["heavy"]:
+        text += (f" Arquivo grande: o download é entregue de uma vez pelo "
+                 f"navegador, e acima de ~{EXPORT_WARN_FILE_MB} MB pode ficar "
+                 f"lento ou falhar.")
+        # Only worth suggesting when there is something to drop.
+        if len(radii) > 1:
+            text += " Exportar um raio só reduz bastante."
+    return text

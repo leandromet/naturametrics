@@ -28,7 +28,7 @@ import logging
 
 import reflex as rx
 
-from ..config.settings import BUFFER_RADII_KM
+from ..config.settings import BUFFER_RADII_KM, EXPORT_MAX_BUFFER_POINTS
 from ..services import exports, ifn
 from ..services.ods import MIMETYPE
 from ._proxy import plain
@@ -158,25 +158,24 @@ class ExportMixin(rx.State, mixin=True):
             else "Todos os raios"
 
     @rx.var
-    def export_buffers_allowed(self) -> bool:
-        n = self.export_selection_count
-        return 0 < n <= exports.max_points_for(self._radii())
-
-    @rx.var
     def export_buffer_note(self) -> str:
+        """What the buffer export will cost. Advisory — nothing is refused."""
         n = self.export_selection_count
         if n == 0:
             return "Nenhum conglomerado na seleção atual."
-        radii = self._radii()
-        if n > exports.max_points_for(radii):
-            return exports.buffer_cap_message(n, radii)
-        seconds = exports.estimated_seconds(n)
-        rows = n * exports.rows_per_point(radii)
-        return (
-            f"≈ {seconds // 60} min {seconds % 60} s para {n} conglomerados, "
-            f"~{rows:,} linhas em {len(radii)} aba(s). Limite com esta escolha: "
-            f"{exports.max_points_for(radii):,}."
-        ).replace(",", ".")
+        return exports.buffer_estimate_message(n, self._radii())
+
+    @rx.var
+    def export_buffer_heavy(self) -> bool:
+        """Big enough that the *download* is the risk, not the computation."""
+        n = self.export_selection_count
+        return bool(n) and exports.buffer_estimate(n, self._radii())["heavy"]
+
+    @rx.var
+    def export_buffer_over_limit(self) -> bool:
+        """The one refusal: past the largest-biome ceiling."""
+        n = self.export_selection_count
+        return bool(n) and exports.buffer_estimate(n, self._radii())["over_limit"]
 
     @rx.var
     def export_progress_label(self) -> str:
@@ -253,18 +252,18 @@ class ExportMixin(rx.State, mixin=True):
             self.export_total = 0
             self.export_stage = "Reunindo os conglomerados"
 
+        if spec.include_buffers and len(spec.points()) > EXPORT_MAX_BUFFER_POINTS:
+            async with self:
+                self.export_busy = False
+                self.export_error = exports.buffer_estimate_message(
+                    len(spec.points()), spec.radii)
+            return
+
         points = spec.points()
         if not points:
             async with self:
                 self.export_busy = False
                 self.export_error = "Nenhum conglomerado na seleção atual."
-            return
-
-        if spec.include_buffers and len(points) > exports.max_points_for(spec.radii):
-            async with self:
-                self.export_busy = False
-                self.export_error = exports.buffer_cap_message(
-                    len(points), spec.radii)
             return
 
         loop = asyncio.get_running_loop()

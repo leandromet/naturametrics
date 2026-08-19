@@ -86,16 +86,49 @@ Row budgets are measured, not guessed — 40 conglomerados spread across MT, BA,
 because the row count tracks class diversity and a sample from one município understates
 it badly:
 
-| Radius | rows/conglomerado (mean / p90 / max) | budget | max conglomerados |
-|---|---|---|---|
-| 1 km | 158 / 249 / 341 | 280 | **3 571** |
-| 2 km | 205 / — / 368 | 330 | 3 030 |
-| 5 km | 284 / — / 480 | 430 | 2 325 |
-| 10 km | 350 / 437 / 553 | 500 | 2 000 |
-| all four | 997 / 1 406 / 1 677 | 1 540 | 974 |
+| Radius | rows/conglomerado (mean / p90 / max) | budget |
+|---|---|---|
+| 1 km | 158 / 249 / 341 | 280 |
+| 2 km | 205 / — / 368 | 330 |
+| 5 km | 284 / — / 480 | 430 |
+| 10 km | 350 / 437 / 553 | 500 |
+| all four | 997 / 1 406 / 1 677 | 1 540 |
 
-Two independent ceilings, lower wins: **per sheet** (the widest radius asked for) and
-**per file** (`EXPORT_MAX_TOTAL_ROWS`, a delivery limit — see §1d, not a spreadsheet one).
+A buffer row costs a **measured 46 bytes** in the finished ODS — flat from 200 k to 1 M
+rows (9.2 / 23.0 / 46.0 MB), measured with realistic rounded values; unrounded random
+doubles measure 61 B/row and are not what the export writes. Those two numbers are what
+the panel's estimate is built from.
+
+### 1c-bis. One limit, and it comes from the data
+
+The buffer export is capped at **6 000 conglomerados** (`EXPORT_MAX_BUFFER_POINTS`).
+The number is chosen so that **any whole biome fits**:
+
+| Amazônia | Cerrado | Mata Atlântica | Caatinga | Pampa | Pantanal | largest UF |
+|---|---|---|---|---|---|---|
+| 5 801 | 4 898 | 3 511 | 2 367 | 523 | 374 | PA, 1 884 |
+
+so every single-biome and single-state selection is within reach, at about 12 minutes.
+Past that the useful unit is the whole grid, which is a batch job rather than a button.
+`tests/test_exports.py` asserts the relationship rather than the number, so a change to
+either the point table or the limit that stops a biome fitting fails loudly.
+
+**The pixel and point-list halves are not capped at all** — they cover all 17 479
+conglomerados in about two seconds.
+
+Nothing else refuses. **The only hard limit in the ODS format is rows per sheet**, and
+`_buffer_sheets` handles it by splitting rather than failing; there is no size limit on the
+file, so none is imposed. Two earlier versions capped the selection by a row count and then
+a file size, both picked by feel — enforcing constraints that did not exist.
+
+What the panel does instead is report, before you commit: estimated time, rows, file size,
+and how many tabs it will come to. Above `EXPORT_WARN_FILE_MB` (default 25) it adds a
+warning, because one thing here *is* real — `rx.download` delivers the file as a base64
+`data:` URI inside the WebSocket event, so a large export is held whole in memory three
+times over (server bytes, server base64, browser) and very large data URIs are handled
+poorly by some browsers. That is a caution, not a refusal; the user decides.
+
+
 
 The budgets sit a little above p90 rather than at the worst case, because an underestimate
 is **not fatal**: a radius that still overflows is split into `buffer_10km_2`,

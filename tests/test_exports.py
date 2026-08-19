@@ -296,35 +296,80 @@ def test_analysis_entry_points_initialise_earth_engine(monkeypatch, entry):
 # Buffer capacity and the per-radius tabs
 # --------------------------------------------------------------------------- #
 
-def test_one_radius_allows_more_conglomerados_than_four():
-    """The whole point of a tab per radius: the sheet limit stops applying to
-    all four radii at once, so asking for one buys real capacity."""
+def test_estimate_scales_with_radii_and_points():
+    """The panel reports cost; it does not refuse. Fewer radii must mean fewer
+    rows, a smaller file and less time — that is the whole reason the radius
+    selector exists."""
     from naturametrics.services import exports
 
-    all_four = exports.max_points_for([1.0, 2.0, 5.0, 10.0])
-    smallest = exports.max_points_for([1.0])
-    widest = exports.max_points_for([10.0])
+    one = exports.buffer_estimate(1000, [1.0])
+    four = exports.buffer_estimate(1000, [1.0, 2.0, 5.0, 10.0])
 
-    assert smallest > widest > all_four
-    # A single radius is bounded by the sheet; four are bounded by the file.
-    assert smallest >= 3 * all_four
+    assert one["rows"] < four["rows"]
+    assert one["megabytes"] < four["megabytes"]
+    assert one["tabs"] == 1 and four["tabs"] == 4
+    # Time is per conglomerado, so it does not change with the radius count.
+    assert one["seconds"] == four["seconds"]
 
 
-def test_cap_message_names_a_radius_that_would_fit():
-    """Refusing without a remedy leaves the user guessing. When some radius can
-    carry the selection, the message has to say which."""
+def test_size_alone_never_refuses_below_the_point_limit():
+    """No size ceiling exists in the ODS format, so none is invented. A big but
+    permitted selection is split into more tabs and warned about, not blocked."""
+    from naturametrics.services import exports
+    from naturametrics.config import settings as st
+
+    n = st.EXPORT_MAX_BUFFER_POINTS
+    est = exports.buffer_estimate(n, [1.0, 2.0, 5.0, 10.0])
+    assert est["heavy"] and est["split"] and not est["over_limit"]
+    assert est["tabs"] > 4          # split into extra parts rather than refused
+
+    message = exports.buffer_estimate_message(n, [1.0, 2.0, 5.0, 10.0])
+    assert "dividido" in message    # says the tabs will be split
+    assert "pode ficar" in message  # warns, in the conditional
+
+
+def test_the_point_limit_clears_the_largest_biome():
+    """The ceiling has a reason from the data: it must fit any whole biome.
+
+    Amazônia is the largest at 5 801 conglomerados. If the point table or the
+    limit ever moves such that a biome no longer fits, that is a decision to
+    make deliberately, not to discover in the field.
+    """
+    from naturametrics.config import settings as st
+
+    if not ifn._load_points():
+        pytest.skip("data/ifn_points_biome.csv not built")
+
+    from collections import Counter
+    per_biome = Counter(r["bioma"] for r in ifn._load_points() if r["bioma"])
+    assert max(per_biome.values()) <= st.EXPORT_MAX_BUFFER_POINTS
+
+    # And every single state, which is the other common whole-unit selection.
+    per_uf = Counter(r["uf"] for r in ifn._load_points() if r["uf"])
+    assert max(per_uf.values()) <= st.EXPORT_MAX_BUFFER_POINTS
+
+
+def test_over_the_limit_refuses_and_points_at_the_remedy():
+    from naturametrics.services import exports
+    from naturametrics.config import settings as st
+
+    over = st.EXPORT_MAX_BUFFER_POINTS + 1
+    assert exports.buffer_estimate(over, [1.0])["over_limit"]
+
+    message = exports.buffer_estimate_message(over, [1.0])
+    assert "limite" in message
+    assert "filtros" in message              # what to do about it
+    assert "não têm limite" in message       # what still works unrestricted
+
+
+def test_heavy_flag_tracks_the_configured_warning_size(monkeypatch):
     from naturametrics.services import exports
 
-    n = exports.max_points_for([1.0])          # fits at 1 km, not at all four
-    assert n > exports.max_points_for([1.0, 2.0, 5.0, 10.0])
+    small = exports.buffer_estimate(10, [1.0])
+    assert not small["heavy"]
 
-    msg = exports.buffer_cap_message(n, [1.0, 2.0, 5.0, 10.0])
-    assert "1 km" in msg
-    assert "não têm limite" in msg  # the uncapped alternatives are still offered
-
-    # And when nothing fits, it says so instead of suggesting an impossibility.
-    huge = exports.buffer_cap_message(10 ** 7, [1.0])
-    assert "Nem um raio isolado" in huge
+    monkeypatch.setattr(exports, "EXPORT_WARN_FILE_MB", 0)
+    assert exports.buffer_estimate(10, [1.0])["heavy"]
 
 
 def test_buffer_tabs_are_split_per_radius_and_drop_the_radius_column():

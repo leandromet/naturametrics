@@ -106,7 +106,7 @@ def results_drawer() -> rx.Component:
                         rx.callout(AppState.analysis_error, icon="triangle-alert",
                                    color_scheme="amber", size="1", width="100%"),
                         rx.cond(
-                            AppState.has_result,
+                            AppState.has_result | AppState.multi_active,
                             rx.flex(
                                 rx.box(
                                     rx.plotly(

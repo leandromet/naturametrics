@@ -311,6 +311,9 @@ def selection_pixel_frame(spec: SelectionSpec) -> tuple[pd.DataFrame, Provenance
 
     import ee
 
+    from .ee_client import get_ee
+
+    get_ee()
     years = mb.MAPBIOMAS_YEARS
     bands = [mb.band_for_year(y) for y in years]
     asset = mb.MAPBIOMAS_COLLECTIONS[mb.MAPBIOMAS_DEFAULT_COLLECTION]

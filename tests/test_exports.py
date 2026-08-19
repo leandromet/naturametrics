@@ -254,3 +254,39 @@ def test_manual_selection_names_the_same_points_the_filters_would():
     assert [r["conglomerado"] for r in manual.points()] == names
     # The manual label still records what the map filters were showing.
     assert "seleção manual" in manual.filter_label()
+
+
+# --------------------------------------------------------------------------- #
+# Earth Engine initialisation
+# --------------------------------------------------------------------------- #
+
+@pytest.mark.parametrize("entry", ["land_cover_history", "point_pixel_series",
+                                   "preview_land_cover"])
+def test_analysis_entry_points_initialise_earth_engine(monkeypatch, entry):
+    """Regression: an analysis must not assume someone else initialised EE.
+
+    A browser tab left open across a backend restart never re-runs the app's
+    ``on_mount`` initialiser, so in the new process Earth Engine is
+    uninitialised. Tile layers self-heal because ``tiles.get_tile_url`` calls
+    ``get_ee()``; the analyses did not, so every call raised
+    "Earth Engine client library not initialized" and a selection of two dozen
+    conglomerados failed in full — looking like broken data rather than a stale
+    session.
+
+    Uses an out-of-Brazil coordinate so validation rejects it immediately: the
+    check is that initialisation was ensured *before* anything else, and no
+    network call is made either way.
+    """
+    from naturametrics.services import ee_client, mapbiomas_history
+    from naturametrics.services.geo import CoordinateError, point
+
+    calls = []
+    monkeypatch.setattr(ee_client, "_initialized", False)
+    monkeypatch.setattr(ee_client, "initialize_earth_engine",
+                        lambda: calls.append(entry))
+
+    fn = getattr(mapbiomas_history, entry)
+    with pytest.raises(CoordinateError):
+        fn(point(lat=48.85, lon=2.35))  # Paris
+
+    assert calls == [entry], f"{entry} must call get_ee() before doing anything"

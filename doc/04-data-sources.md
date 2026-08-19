@@ -331,6 +331,25 @@ Google Maps, Satellite, Hybrid and Terrain are offered alongside it and OSM.
 
 Overridable with `NM_BASEMAP`.
 
+**Default: `google_hybrid`.** The study points are identified by município and UF, and a
+satellite basemap with no labels makes confirming that you are where you think you are
+impossible.
+
+Two further options are **Earth Engine**, not XYZ, and so are minted per session rather
+than being a URL in config (`EE_BASEMAPS`, `services/layers.ee_basemap_spec`):
+
+| Key | Asset | Vis |
+|---|---|---|
+| `spot_2008_visual` | `GOOGLE/BRAZIL_FOREST_2008/V1/VISUAL` | `R,G,B` 0–255 |
+| `spot_2008_analytic` | `GOOGLE/BRAZIL_FOREST_2008/V1/ANALYTIC` | `N,R,G`, per-band min/max, gamma 0.9 — NIR in the red channel, so 2008 vegetation reads bright red |
+
+⚠️ The SPOT mosaic is **partial**: circa-2008 imagery over Brazil's forest areas only. It
+is therefore drawn *over* the last plain basemap rather than replacing it — otherwise
+everything outside its footprint goes blank and reads as a broken layer. Verified minting
+against this project's service account on 2026-08-19; if an account has not accepted the
+dataset licence the selection reverts and the panel says why, rather than showing a dead
+map.
+
 ⚠️ **The `mt1.google.com` endpoints are not a licensed public Google API.** They are
 the same undocumented tile servers Yvynation uses; they are fast and they work, and
 they are the chosen default. Before a public Cloud Run deployment (D10) this should

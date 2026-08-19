@@ -61,24 +61,32 @@ def como_usar_dialog() -> rx.Component:
                           "2024, com as classes do MapBiomas nas cores oficiais. Troque "
                           "o raio em 1/2/5/10 km e use o botão «%» para alternar entre "
                           "hectares e proporção da área."),
-                    _step("3", "Veja a cobertura no mapa",
+                    _step("3", "Troque o mapa base",
+                          "O padrão é o híbrido do Google, que traz nomes de "
+                          "municípios e estradas — útil para conferir onde você "
+                          "está. A lista inclui ainda o mosaico SPOT de 2008 do "
+                          "Brasil, em cor natural e em falsa-cor infravermelha: "
+                          "ele cobre só as áreas florestais do país, então há "
+                          "vazios fora desse recorte, e fica desenhado por cima "
+                          "do mapa base escolhido antes."),
+                    _step("4", "Veja a cobertura no mapa",
                           "Ligue «MapBiomas 10.1» na barra lateral. O controle «Ano» "
                           "percorre 1985–2024 — todos os anos são pré-carregados, então "
                           "a troca é imediata e o mapa não sai do lugar. «Opacidade» "
                           "controla o quanto do mapa base aparece por baixo."),
-                    _step("4", "Compare dois anos",
+                    _step("5", "Compare dois anos",
                           "«Cortina deslizante» mostra dois anos ao mesmo tempo, "
                           "separados por uma linha branca que você arrasta pelo mapa. O "
                           "ano da esquerda é escolhido no próprio painel; o da direita é "
                           "o ano selecionado em «Cobertura do solo». Cada lado tem sua "
                           "própria opacidade."),
-                    _step("5", "Encontre candidatos a recuperação",
+                    _step("6", "Encontre candidatos a recuperação",
                           "«Mudança na vegetação natural» destaca em vermelho o que era "
                           "vegetação natural no ano base e deixou de ser, e em verde o "
                           "que regenerou. O padrão é 2008, marco do Código Florestal: "
                           "supressão posterior a 22/07/2008 tem obrigação de "
                           "recomposição."),
-                    _step("6", "Trabalhe com os conglomerados do IFN",
+                    _step("7", "Trabalhe com os conglomerados do IFN",
                           "Ligue «Conglomerados» na barra lateral para ver os 17.479 "
                           "pontos do Inventário Florestal Nacional, e filtre por "
                           "região, bioma, estado e município — o mapa enquadra a "
@@ -88,15 +96,17 @@ def como_usar_dialog() -> rx.Component:
                           "o MapBiomas só dentro desse raio, no ano escolhido. Clique "
                           "para rodar a análise completa nas coordenadas oficiais "
                           "dele."),
-                    _step("7", "Some vários conglomerados",
+                    _step("8", "Some vários conglomerados",
                           "Ligue «Seleção múltipla» na barra lateral e clique nos "
-                          "conglomerados que interessam — clicar de novo remove. "
+                          "conglomerados que interessam — clicar de novo remove — "
+                          "ou segure Ctrl (Cmd no Mac) e arraste para pegar uma "
+                          "área inteira de uma vez. "
                           "O gráfico passa a mostrar a soma das áreas de cada "
                           "raio em todos eles, e o mapa desenha os buffers de "
                           "todos ao mesmo tempo. Atenção: buffers que se "
                           "sobrepõem são contados uma vez em cada conglomerado, "
                           "então o total não é a área da união."),
-                    _step("8", "Baixe os dados",
+                    _step("9", "Baixe os dados",
                           "Em «Baixar dados», no topo da página. São duas planilhas "
                           "ODS independentes: a do ponto de estudo atual, com uma aba "
                           "por raio e o pixel do próprio ponto ano a ano; e a da "

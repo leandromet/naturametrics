@@ -28,18 +28,34 @@ def _section(title: str, *children) -> rx.Component:
     )
 
 
+#: Notes shown under the select, keyed by basemap. Only the Earth Engine ones
+#: need explaining — a partial mosaic looks broken until you know it is partial.
+_BASEMAP_NOTES = {k: v["note_pt"] for k, v in ds.EE_BASEMAPS.items()}
+
+
 def basemap_control() -> rx.Component:
+    labels = {k: v["label_pt"] for k, v in ds.ALL_BASEMAPS.items()}
     return _section(
         "Mapa base",
         rx.select(
-            [ds.BASEMAPS[k]["label_pt"] for k in ds.BASEMAPS],
-            value=rx.Var.create({k: v["label_pt"] for k, v in ds.BASEMAPS.items()})[
-                AppState.basemap
-            ],
+            list(labels.values()),
+            value=rx.Var.create(labels)[AppState.basemap],
             on_change=lambda label: AppState.set_basemap(
-                rx.Var.create({v["label_pt"]: k for k, v in ds.BASEMAPS.items()})[label]
+                rx.Var.create({v: k for k, v in labels.items()})[label]
             ),
             width="100%",
+        ),
+        rx.cond(
+            rx.Var.create(_BASEMAP_NOTES).contains(AppState.basemap),
+            rx.text(rx.Var.create(_BASEMAP_NOTES)[AppState.basemap],
+                    size="1", color_scheme="gray"),
+            rx.fragment(),
+        ),
+        rx.cond(
+            AppState.basemap_error != "",
+            rx.callout(AppState.basemap_error, icon="triangle-alert",
+                       color_scheme="amber", size="1", width="100%"),
+            rx.fragment(),
         ),
     )
 
@@ -356,6 +372,11 @@ def multi_select_control() -> rx.Component:
                       on_change=AppState.toggle_multi_mode),
             rx.text("Somar vários conglomerados", size="2"),
             rx.spacer(),
+            rx.cond(
+                AppState.multi_progress != "",
+                rx.text(AppState.multi_progress, size="1", color_scheme="gray"),
+                rx.fragment(),
+            ),
             rx.cond(AppState.multi_busy, rx.spinner(size="1"), rx.fragment()),
             width="100%", align="center", spacing="2",
         ),
@@ -363,10 +384,12 @@ def multi_select_control() -> rx.Component:
             AppState.multi_mode,
             rx.vstack(
                 rx.text(
-                    "Clique nos conglomerados para incluir ou remover. O gráfico "
-                    "passa a mostrar a soma das áreas de cada raio. Cliques "
-                    "avulsos no mapa ficam desativados enquanto o modo está "
-                    "ligado.",
+                    "Clique nos conglomerados para incluir ou remover, ou "
+                    "segure Ctrl (Cmd no Mac) e arraste para selecionar uma "
+                    "área inteira. O gráfico passa a mostrar a soma das áreas "
+                    "de cada raio. Shift+arrastar continua sendo o zoom por "
+                    "área do mapa, e cliques avulsos ficam desativados enquanto "
+                    "o modo está ligado.",
                     size="1", color_scheme="gray", style={"lineHeight": "1.4"},
                 ),
                 rx.hstack(
@@ -523,9 +546,9 @@ def layer_panel() -> rx.Component:
         rx.divider(),
         change_mask_control(),
         rx.divider(),
-        ifn_control(),
-        rx.divider(),
         multi_select_control(),
+        rx.divider(),
+        ifn_control(),
         rx.divider(),
         biome_control(),
         rx.spacer(),

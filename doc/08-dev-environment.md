@@ -82,7 +82,7 @@ openpyxl>=3.1.0     # for the IFN .xlsx products
 | `EE_PRIVATE_KEY`, `EE_SERVICE_ACCOUNT_EMAIL`, `EE_PRIVATE_KEY_ID`, `EE_CLIENT_ID` | Env-var service account (auth method 1, for deployment) | unset |
 | `NM_EE_CONCURRENCY` | EE thread-pool size | 64 (partner tier) |
 | `NM_EE_TIER` | `partner` \| `contributor` — sizes the concurrency profile | `partner` |
-| `NM_SPOT_ENABLED` | Feature flag for the licence-gated SPOT layers | `false` |
+| `NM_SPOT_ENABLED` | Licence-gated SPOT 2008 basemaps. Verified granted for this project 2026-08-19 | `true` |
 | `NM_HANSEN_TREECOVER_THRESHOLD` | Default tree-cover % defining Hansen forest | `30` |
 | `NM_IFN_CATALOG` | Path to the derived IFN catalogue | `data/ifn_points.csv` |
 | `REFLEX_DB_URL` | Reflex state DB | `sqlite:///reflex.db` |

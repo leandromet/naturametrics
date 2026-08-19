@@ -30,10 +30,16 @@ LayerSpec = dict[str, Any]
 
 
 def basemap_spec(key: str, z_index: int = 0) -> LayerSpec | None:
-    """Plain XYZ basemap — no Earth Engine involved, so this never fails slowly."""
+    """Plain XYZ basemap — no Earth Engine involved, so this never fails slowly.
+
+    Earth-Engine-backed basemaps go through :func:`ee_basemap_spec` instead; this
+    function stays synchronous and infallible precisely so that the very first
+    paint never waits on a network call (see the seeding comment in
+    ``state/_layers.py``).
+    """
     conf = ds.BASEMAPS.get(key)
     if conf is None:
-        logger.warning("Unknown basemap %r", key)
+        logger.warning("Unknown XYZ basemap %r", key)
         return None
     return {
         "id": f"basemap:{key}",
@@ -42,6 +48,35 @@ def basemap_spec(key: str, z_index: int = 0) -> LayerSpec | None:
         "attribution": conf["attribution"],
         "z_index": z_index,
         "max_native_zoom": conf.get("max_native_zoom", 19),
+    }
+
+
+def ee_basemap_spec(key: str, z_index: int = 0) -> LayerSpec | None:
+    """Mint an Earth Engine basemap (the SPOT 2008 mosaics).
+
+    Blocking, so callers run it off the event loop. Cached like every other tile
+    URL, so switching back and forth costs one round-trip in total.
+    """
+    conf = ds.EE_BASEMAPS.get(key)
+    if conf is None:
+        logger.warning("Unknown Earth Engine basemap %r", key)
+        return None
+
+    def build():
+        import ee
+        return ee.Image(conf["asset"])
+
+    url = get_tile_url(f"basemap:{key}", build, conf["vis"])
+    if url is None:
+        return None
+
+    return {
+        "id": f"basemap:{key}",
+        "url": url,
+        "opacity": 1.0,
+        "attribution": conf["attribution"],
+        "z_index": z_index,
+        "max_native_zoom": conf.get("max_native_zoom", 16),
     }
 
 

@@ -28,6 +28,7 @@ import reflex as rx
 from ..config.settings import (
     BUFFER_MODE_DEFAULT, BUFFER_RADII_KM, MULTI_SELECT_MAX_POINTS,
 )
+from ..services import ifn as ifn_service
 from ..services.buffers import buffer_circles_geojson, buffer_geojson
 from ..services.mapbiomas_history import (
     aggregate_histories, land_cover_history, preview_land_cover,
@@ -64,6 +65,8 @@ class ConglomeradoMixin(rx.State, mixin=True):
     multi_mode: bool = False
     multi_busy: bool = False
     multi_error: str = ""
+    #: "12/40" while a dragged area is being measured; empty otherwise.
+    multi_progress: str = ""
     #: Display rows for the panel, in click order. Strings only — this crosses
     #: the wire, and nothing in it is used for computation.
     multi_points: list[dict[str, str]] = []
@@ -242,6 +245,10 @@ class ConglomeradoMixin(rx.State, mixin=True):
         """
         self.multi_mode = checked
         self.multi_error = ""
+        # The drawer shows analysis_error *instead of* the chart, so a failure
+        # left over from an earlier single point would hide the sum.
+        self.analysis_error = ""
+        self.point_error = ""
         if checked:
             self._apply_multi_view()
         else:
@@ -330,6 +337,133 @@ class ConglomeradoMixin(rx.State, mixin=True):
                 return  # removed again while the query was in flight
             self._multi_frames[key] = df.to_dict("records")
             self._multi_provenance = prov.to_dict()
+            self.multi_busy = False
+            self._recompute_multi()
+
+    @rx.event(background=True)
+    async def select_multi_area(self, bounds: dict):
+        """Add every conglomerado inside a dragged box.
+
+        Resolved from the local point table under the *current map filters*, so
+        the box selects what the map is showing and not the conglomerados hidden
+        by a filter — a rectangle that quietly picked up points the user cannot
+        see would be a trap.
+        """
+        if not self.multi_mode:
+            return
+        try:
+            west, south = float(bounds["west"]), float(bounds["south"])
+            east, north = float(bounds["east"]), float(bounds["north"])
+        except (KeyError, TypeError, ValueError):
+            return
+
+        async with self:
+            region, uf = self.ifn_region, self.ifn_uf
+            municipality, biome = self.ifn_municipality, self.ifn_biome
+            existing = set(self._multi_coords)
+            room = MULTI_SELECT_MAX_POINTS - len(existing)
+
+        found = ifn_service.points_in_bbox(
+            west, south, east, north, region=region, uf=uf,
+            municipality=municipality, biome=biome,
+            limit=MULTI_SELECT_MAX_POINTS,
+        )["features"]
+
+        fresh = [f["properties"] for f in found
+                 if str(f["properties"]["ponto_id"]) not in existing]
+        if not fresh:
+            async with self:
+                self.multi_error = (
+                    "Nenhum conglomerado novo nessa área."
+                    if found else "Nenhum conglomerado nessa área."
+                )
+            return
+
+        truncated = len(fresh) > room
+        fresh = fresh[:max(room, 0)]
+        if not fresh:
+            async with self:
+                self.multi_error = (
+                    f"Limite de {MULTI_SELECT_MAX_POINTS} conglomerados atingido."
+                )
+            return
+
+        async with self:
+            for props in fresh:
+                key = str(props["ponto_id"])
+                self._multi_coords[key] = [float(props["lat"]), float(props["lon"])]
+                self._multi_meta[key] = {
+                    "key": key,
+                    "conglomerado": str(props.get("conglomerado", "")),
+                    "place": " · ".join(str(x) for x in (props.get("municipio"),
+                                                         props.get("uf")) if x),
+                    "bioma": str(props.get("bioma", "")),
+                }
+            self.multi_busy = True
+            self.multi_error = (
+                f"Área com mais conglomerados que o limite — incluídos os "
+                f"primeiros {len(fresh)}." if truncated else ""
+            )
+            self._refresh_multi_rows()
+            self._apply_multi_view()
+
+        # Fanned out rather than looped: the pool is sized for this, and a box
+        # over a dense municipality is dozens of points that would otherwise be
+        # dozens of sequential round-trips.
+        from ..services.ee_concurrency import get_ee_executor
+        from ..services.geo import point
+
+        executor = get_ee_executor()
+        progress = {"done": 0}
+
+        def collect():
+            """Submit every point, then gather. One thread, not one per point.
+
+            Awaiting each future individually through ``run_in_executor`` would
+            take a thread from the default pool *per conglomerado* just to sit
+            and wait, and a box over a dense município would exhaust it. The
+            Earth Engine pool is the one doing the work; this only harvests.
+            """
+            futures = {
+                executor.submit(land_cover_history,
+                                point(lat=row["lat"], lon=row["lon"]),
+                                BUFFER_RADII_KM, BUFFER_MODE_DEFAULT):
+                str(row["ponto_id"]) for row in fresh
+            }
+            done: dict[str, Any] = {}
+            bad: list[str] = []
+            for future in futures:
+                key = futures[future]
+                try:
+                    df, prov = future.result(timeout=180)
+                    done[key] = (df.to_dict("records"), prov.to_dict())
+                except Exception as exc:  # noqa: BLE001
+                    logger.warning("Area select failed for %s: %s", key, exc)
+                    bad.append(key)
+                progress["done"] += 1
+            return done, bad
+
+        loop = asyncio.get_running_loop()
+        task = loop.run_in_executor(None, collect)
+        while not task.done():
+            await asyncio.sleep(0.4)
+            async with self:
+                self.multi_progress = f"{progress['done']}/{len(fresh)}"
+        results, failed = await task
+
+        async with self:
+            self.multi_progress = ""
+            for key, (records, prov) in results.items():
+                if key in self._multi_coords:
+                    self._multi_frames[key] = records
+                    self._multi_provenance = prov
+            for key in failed:
+                # Same rule as a single click: a point on the map but absent
+                # from the sum would understate every total.
+                self._multi_coords.pop(key, None)
+                self._multi_meta.pop(key, None)
+            if failed and not self.multi_error:
+                self.multi_error = f"{len(failed)} conglomerado(s) falharam."
             self.multi_busy = False
             self._recompute_multi()
 

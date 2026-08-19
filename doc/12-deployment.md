@@ -94,7 +94,7 @@ gcloud run deploy naturametrics \
   --max-instances 4 \
   --allow-unauthenticated \
   --cpu-boost \
-  --set-env-vars "GCP_PROJECT_ID=${PROJECT_ID},NM_EE_TIER=partner,NM_EE_CONCURRENCY=64,NM_BASEMAP=esri_imagery,NM_SPOT_ENABLED=false"
+  --set-env-vars "GCP_PROJECT_ID=${PROJECT_ID},NM_EE_TIER=partner,NM_EE_CONCURRENCY=64,NM_BASEMAP=google_hybrid,NM_SPOT_ENABLED=true"
 ```
 
 `--source .` uses `.gcloudignore` for the build context — which excludes `data/raw/` and
@@ -210,7 +210,7 @@ gcloud run services update naturametrics --region $REGION \
 gcloud run services update naturametrics --region $REGION \
   --set-env-vars NM_BASEMAP=google_maps
 gcloud run services update naturametrics --region $REGION \
-  --set-env-vars NM_SPOT_ENABLED=true        # only once the licence is granted
+  --set-env-vars NM_SPOT_ENABLED=false       # if this account lacks the licence
 
 # Previous revision
 gcloud run services update-traffic naturametrics --region $REGION --to-revisions PREVIOUS=100

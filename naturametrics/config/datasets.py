@@ -9,6 +9,8 @@ from __future__ import annotations
 import os
 from typing import Any, Dict
 
+from .settings import SPOT_ENABLED
+
 # --------------------------------------------------------------------------- #
 # Basemaps (plain XYZ, no Earth Engine involved)
 # --------------------------------------------------------------------------- #
@@ -69,8 +71,61 @@ BASEMAPS: Dict[str, Dict[str, Any]] = {
     },
 }
 
-#: Overridable with NM_BASEMAP.
-DEFAULT_BASEMAP = os.environ.get("NM_BASEMAP", "esri_imagery")
+#: Earth-Engine-backed basemaps. Unlike everything above, these are not XYZ
+#: URLs: a tile URL has to be minted per session, so they are switched on by a
+#: background event rather than a plain state write (see state/_layers.py).
+#:
+#: The Brazil Forest 2008 mosaic is a **partial** layer — circa-2008 SPOT imagery
+#: over Brazil's forest areas, not a global basemap. Gaps outside its footprint
+#: are the dataset, not a failure, and the panel says so.
+EE_BASEMAPS: Dict[str, Dict[str, Any]] = {
+    "spot_2008_visual": {
+        "label_pt": "SPOT 2008 — Visual (Brasil)",
+        "label_en": "SPOT 2008 — Visual (Brazil)",
+        "asset": "GOOGLE/BRAZIL_FOREST_2008/V1/VISUAL",
+        "vis": {"bands": ["R", "G", "B"], "min": 0, "max": 255},
+        "attribution": (
+            "Google LLC, Brazil Forest Imagery Dataset 2008 created from circa "
+            "2008 SPOT images"
+        ),
+        "max_native_zoom": 16,
+        "note_pt": "Mosaico SPOT ~2008, só sobre áreas florestais do Brasil.",
+    },
+    "spot_2008_analytic": {
+        "label_pt": "SPOT 2008 — Falsa-cor (NIR)",
+        "label_en": "SPOT 2008 — False colour (NIR)",
+        "asset": "GOOGLE/BRAZIL_FOREST_2008/V1/ANALYTIC",
+        # N,R,G puts near-infrared in the red channel: vegetation reads bright
+        # red, which is what makes 2008 forest cover legible against pasture.
+        "vis": {"bands": ["N", "R", "G"], "min": [156, 62, 53],
+                "max": [6408, 2584, 2211], "gamma": 0.9},
+        "attribution": (
+            "Google LLC, Brazil Forest Imagery Dataset 2008 created from circa "
+            "2008 SPOT images"
+        ),
+        "max_native_zoom": 16,
+        "note_pt": "Infravermelho em vermelho: vegetação de 2008 aparece realçada.",
+    },
+}
+
+#: Every basemap the panel offers, XYZ and Earth Engine alike, in display order.
+#: The SPOT entries are dropped entirely when the licence flag is off, rather
+#: than offered and then failing: an option that never works is worse than an
+#: option that is not there.
+ALL_BASEMAPS: Dict[str, Dict[str, Any]] = {
+    **BASEMAPS,
+    **(EE_BASEMAPS if SPOT_ENABLED else {}),
+}
+
+
+def is_ee_basemap(key: str) -> bool:
+    return key in EE_BASEMAPS
+
+
+#: Overridable with NM_BASEMAP. Hybrid rather than plain imagery: the study
+#: points are identified by município and UF, and a satellite basemap with no
+#: labels makes checking that you are where you think you are impossible.
+DEFAULT_BASEMAP = os.environ.get("NM_BASEMAP", "google_hybrid")
 
 # --------------------------------------------------------------------------- #
 # MapBiomas auxiliary products

@@ -76,6 +76,8 @@ class LeafletMap(rx.el.Div):
             because each call costs an Earth Engine query.
         on_point_select: called with a conglomerado's properties when one is
             clicked. Carries the point's *own* coordinates, not the click's.
+        area_select: arm Ctrl/Cmd-drag area selection.
+        on_area_select: called with ``{west, south, east, north}`` after such a drag.
     """
 
     # Leaflet itself — not imported at module scope in JS, but the package must
@@ -98,6 +100,9 @@ class LeafletMap(rx.el.Div):
     #: rather than pushed through state — for layers that must answer "what is
     #: under the cursor", which a tile cannot. See services/biomes.py.
     vectors: Var[Sequence[dict[str, Any]]] = Var.create([])
+    #: Arms Ctrl/Cmd-drag area selection. Off by default so the modifier does
+    #: nothing surprising outside multiple-selection mode.
+    area_select: Var[bool] = Var.create(False)
     #: ``[[south, west], [north, east]]``. Unlike ``bounds`` this is re-applied
     #: every time it CHANGES, so Python can frame a new selection. Set it to []
     #: to leave the view alone.
@@ -106,13 +111,15 @@ class LeafletMap(rx.el.Div):
     on_map_click: EventHandler[passthrough_event_spec(float, float)]
     on_point_hover: EventHandler[passthrough_event_spec(dict)]
     on_point_select: EventHandler[passthrough_event_spec(dict)]
+    on_area_select: EventHandler[passthrough_event_spec(dict)]
 
     def _exclude_props(self) -> list[str]:
         # These drive the hook, not DOM attributes. React would warn about all
         # of them and Leaflet would never see them.
         return [*super()._exclude_props(), "center", "zoom", "bounds", "swipe",
-                "layers", "overlays", "vectors", "fit_bounds", "on_map_click",
-                "on_point_hover", "on_point_select"]
+                "layers", "overlays", "vectors", "fit_bounds", "area_select",
+                "on_map_click", "on_point_hover", "on_point_select",
+                "on_area_select"]
 
     def add_imports(self) -> dict[str, Any]:
         """Leaflet's stylesheet, and the React hooks the injected code calls.
@@ -154,16 +161,19 @@ class LeafletMap(rx.el.Div):
         handler = _handler("on_map_click")
         hover = _handler("on_point_hover")
         select = _handler("on_point_select")
+        area = _handler("on_area_select")
 
         config = (
             f"{{center: {self.center!s}, zoom: {self.zoom!s}, "
             f"bounds: ({self.bounds!s}).length ? {self.bounds!s} : null, "
             f"fitBounds: ({self.fit_bounds!s}).length ? {self.fit_bounds!s} : null, "
+            f"areaSelect: {self.area_select!s}, "
             f"swipe: {self.swipe!s}}}"
         )
         expr = (
             f"useNaturametricsMap({ref}, {config}, {self.layers!s}, "
-            f"{self.overlays!s}, {self.vectors!s}, {handler}, {hover}, {select})"
+            f"{self.overlays!s}, {self.vectors!s}, {handler}, {hover}, {select}, "
+            f"{area})"
         )
         return [
             Var(

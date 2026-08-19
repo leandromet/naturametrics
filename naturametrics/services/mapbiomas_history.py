@@ -28,6 +28,7 @@ from ..config.settings import (
     BUFFER_RADII_KM, EE_MAX_PIXELS, EE_TILE_SCALE, EE_DEFAULT_SCALE_M,
 )
 from .buffers import BufferMode, buffer_collection
+from .ee_client import get_ee
 from .geo import Point, validate_for_analysis
 from .provenance import Provenance
 
@@ -82,6 +83,12 @@ def land_cover_history(
     import ee
     from concurrent.futures import ThreadPoolExecutor
 
+    # First statement, before validation, and idempotent: see the note in
+    # ee_client.get_ee. A browser tab that was open across a backend restart
+    # never re-runs the app's on_mount initialiser, so any path that assumes
+    # someone else initialised Earth Engine fails for every call until the page
+    # is reloaded — which looks like the data is broken, not the session.
+    get_ee()
     validate_for_analysis(p)
 
     years = years or mb.MAPBIOMAS_YEARS
@@ -211,6 +218,7 @@ def point_pixel_series(
     """
     import ee
 
+    get_ee()
     validate_for_analysis(p)
 
     years = years or mb.MAPBIOMAS_YEARS
@@ -281,6 +289,7 @@ def preview_land_cover(
     """
     import ee
 
+    get_ee()
     validate_for_analysis(p)
 
     first_year, last_year = mb.MAPBIOMAS_YEAR_START, mb.MAPBIOMAS_YEAR_END

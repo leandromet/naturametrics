@@ -33,6 +33,8 @@ def map_pane() -> rx.Component:
             on_map_click=AppState.set_study_point,
             on_point_hover=AppState.preview_conglomerado,
             on_point_select=AppState.select_conglomerado,
+            area_select=AppState.multi_mode,
+            on_area_select=AppState.select_multi_area,
             width="100%",
             height="100%",
         ),

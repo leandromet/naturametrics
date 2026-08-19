@@ -15,7 +15,7 @@
 // "React is not defined" at render. Use the bare hook names.
 
 function useNaturametricsMap(containerRef, config, layers, overlays, vectors, onMapClick,
-                             onPointHover, onPointSelect) {
+                             onPointHover, onPointSelect, onAreaSelect) {
   const mapRef = useRef(null);
   const layerRegistry = useRef(new Map());
   const vectorRegistry = useRef(new Map());
@@ -41,6 +41,8 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
   const pointClickAt = useRef(0);
   //: The Leaflet module, so helpers outside the async effects can use L.
   const leafletRef = useRef(null);
+  const areaRef = useRef(onAreaSelect);
+  const areaEnabledRef = useRef(false);
   const overlayRef = useRef(null);
   const clickRef = useRef(onMapClick);
   const readyRef = useRef(false);
@@ -50,6 +52,8 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
   vectorsRef.current = vectors;
   hoverRef.current = onPointHover;
   selectRef.current = onPointSelect;
+  areaRef.current = onAreaSelect;
+  areaEnabledRef.current = !!(config && config.areaSelect);
 
   // --- 1. Create the map exactly once -------------------------------------
   useEffect(() => {
@@ -921,6 +925,98 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
     return () => clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fitKey]);
+
+
+  // --- 3d. Ctrl/Cmd-drag to select an area --------------------------------
+  // Shift-drag is Leaflet's own box zoom and stays that way; taking it over
+  // would cost a gesture people already use to frame a region before picking
+  // points in it. Ctrl (Cmd on macOS) is free, and plain drag stays panning.
+  //
+  // Only armed while multiple selection is on, so the modifier does nothing
+  // surprising the rest of the time.
+  useEffect(() => {
+    const attach = () => {
+      const map = mapRef.current;
+      if (!map || map._nmAreaBound) return false;
+
+      const container = map.getContainer();
+      let start = null;
+      let box = null;
+
+      const cleanup = () => {
+        document.removeEventListener("mousemove", onMove);
+        document.removeEventListener("mouseup", onUp);
+        if (box) { box.remove(); box = null; }
+        start = null;
+        map.dragging.enable();
+      };
+
+      const onMove = (e) => {
+        if (!start || !box) return;
+        const p = map.mouseEventToContainerPoint(e);
+        box.style.left = `${Math.min(start.x, p.x)}px`;
+        box.style.top = `${Math.min(start.y, p.y)}px`;
+        box.style.width = `${Math.abs(p.x - start.x)}px`;
+        box.style.height = `${Math.abs(p.y - start.y)}px`;
+      };
+
+      const onUp = (e) => {
+        if (!start) { cleanup(); return; }
+        const end = map.mouseEventToContainerPoint(e);
+        const dragged = Math.abs(end.x - start.x) > 4 &&
+                        Math.abs(end.y - start.y) > 4;
+        const from = start;
+        cleanup();
+        if (!dragged) return;
+
+        const a = map.containerPointToLatLng(from);
+        const b = map.containerPointToLatLng(end);
+        // The mouseup is followed by a click on the container; without this the
+        // map would also try to drop a study point where the drag ended.
+        pointClickAt.current = Date.now();
+        if (areaRef.current) {
+          areaRef.current({
+            west: Math.min(a.lng, b.lng), east: Math.max(a.lng, b.lng),
+            south: Math.min(a.lat, b.lat), north: Math.max(a.lat, b.lat),
+          });
+        }
+      };
+
+      const onDown = (e) => {
+        if (!areaEnabledRef.current) return;
+        if (e.button !== 0 || !(e.ctrlKey || e.metaKey)) return;
+        e.preventDefault();
+        map.dragging.disable();
+        start = map.mouseEventToContainerPoint(e);
+        box = document.createElement("div");
+        box.className = "nm-area-box";
+        box.style.cssText = [
+          "position:absolute", "border:2px dashed #ff8a00",
+          "background:rgba(255,138,0,.15)", "z-index:750",
+          "pointer-events:none", "left:0", "top:0", "width:0", "height:0",
+        ].join(";");
+        container.appendChild(box);
+        document.addEventListener("mousemove", onMove);
+        document.addEventListener("mouseup", onUp);
+      };
+
+      // On macOS ctrl+click is the context-menu gesture; without this the menu
+      // opens on top of the box the user is dragging.
+      const onContextMenu = (e) => {
+        if (areaEnabledRef.current && (e.ctrlKey || e.metaKey)) e.preventDefault();
+      };
+
+      container.addEventListener("mousedown", onDown);
+      container.addEventListener("contextmenu", onContextMenu);
+      map._nmAreaBound = {onDown, onContextMenu};
+      return true;
+    };
+
+    if (attach()) return;
+    const t = setInterval(() => { if (attach()) clearInterval(t); }, 50);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // --- 4. Follow programmatic view changes from Python ---------------------
   // Only when Python actually asks for a DIFFERENT view. Comparing against the

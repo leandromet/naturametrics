@@ -45,6 +45,12 @@ class LayersMixin(rx.State, mixin=True):
 
     # --- layer selection --------------------------------------------------
     basemap: str = ds.DEFAULT_BASEMAP
+    #: The last plain XYZ basemap chosen. An Earth Engine basemap is drawn *over*
+    #: this one rather than instead of it: the SPOT 2008 mosaic covers only
+    #: Brazil's forest footprint, so replacing the basemap with it would blank
+    #: the rest of the map and read as a broken layer.
+    xyz_basemap: str = ds.DEFAULT_BASEMAP
+    basemap_error: str = ""
     show_mapbiomas: bool = False
     mapbiomas_year: int = mb.MAPBIOMAS_YEAR_END
     mapbiomas_opacity: float = 0.75
@@ -125,6 +131,9 @@ class LayersMixin(rx.State, mixin=True):
     #: out of the browser: 40 signed URLs are not something to ship to a client.
     _mb_urls: dict[int, str] = {}
 
+    #: Same, for Earth-Engine-backed basemaps.
+    _basemap_urls: dict[str, str] = {}
+
     # ---------------------------------------------------------------------- #
     # Layer assembly
     # ---------------------------------------------------------------------- #
@@ -133,9 +142,22 @@ class LayersMixin(rx.State, mixin=True):
         """Assemble the ordered layer list from current selections."""
         specs: list[dict[str, Any]] = []
 
-        base = layer_service.basemap_spec(self.basemap, z_index=0)
+        base = layer_service.basemap_spec(self.xyz_basemap, z_index=0)
         if base:
             specs.append(base)
+
+        if ds.is_ee_basemap(self.basemap):
+            url = self._basemap_urls.get(self.basemap)
+            if url:
+                conf = ds.EE_BASEMAPS[self.basemap]
+                specs.append({
+                    "id": f"basemap:{self.basemap}",
+                    "url": url,
+                    "opacity": 1.0,
+                    "attribution": conf["attribution"],
+                    "z_index": 1,
+                    "max_native_zoom": conf.get("max_native_zoom", 16),
+                })
 
         if self.show_mapbiomas:
             url = self._mb_urls.get(self.mapbiomas_year)
@@ -235,10 +257,50 @@ class LayersMixin(rx.State, mixin=True):
     # Event handlers
     # ---------------------------------------------------------------------- #
 
-    def set_basemap(self, key: str):
-        """Swap the basemap. The map instance is untouched, so the view holds."""
-        self.basemap = key
-        self._refresh_layers()
+    @rx.event(background=True)
+    async def set_basemap(self, key: str):
+        """Swap the basemap. The map instance is untouched, so the view holds.
+
+        Plain XYZ basemaps are a state write and nothing more. The Earth Engine
+        ones have to be minted first, which is why this is a background event —
+        and why a failure has to put the selection back rather than leave the
+        panel claiming a basemap that is not on screen.
+        """
+        async with self:
+            self.basemap_error = ""
+            self.basemap = key
+            if not ds.is_ee_basemap(key):
+                self.xyz_basemap = key
+                self._refresh_layers()
+                return
+            if key in self._basemap_urls:
+                self._refresh_layers()
+                return
+            self.layer_busy = True
+            self._refresh_layers()
+
+        loop = asyncio.get_running_loop()
+        try:
+            spec = await loop.run_in_executor(
+                None, layer_service.ee_basemap_spec, key)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Basemap %s failed: %s", key, exc)
+            spec = None
+
+        async with self:
+            self.layer_busy = False
+            if spec:
+                self._basemap_urls[key] = spec["url"]
+            else:
+                # Fail closed and say so (doc/04 §2): the SPOT mosaics are
+                # licence-gated, and a silent revert would look like a bug in
+                # the select rather than a permission the account lacks.
+                self.basemap = self.xyz_basemap
+                self.basemap_error = (
+                    f"«{ds.EE_BASEMAPS[key]['label_pt']}» indisponível — a conta "
+                    f"pode não ter aceitado a licença deste conjunto."
+                )
+            self._refresh_layers()
 
     def set_mapbiomas_opacity(self, value: list[int | float]):
         """Slider gives a list; Reflex sliders are range-capable."""

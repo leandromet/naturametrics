@@ -76,9 +76,12 @@ BRAZIL_BBOX = (-74.5, -34.5, -33.5, 6.5)  # min_lon, min_lat, max_lon, max_lat
 # --------------------------------------------------------------------------- #
 # Feature flags
 # --------------------------------------------------------------------------- #
-#: SPOT 2008 requires accepting a licence agreement, granted to the service
-#: account that runs the app. Fail closed with an explanation, never a traceback.
-SPOT_ENABLED = _bool("NM_SPOT_ENABLED", False)
+#: SPOT 2008 requires accepting a licence agreement, granted per service
+#: account. Verified working for this project's account on 2026-08-19 (both the
+#: VISUAL and ANALYTIC mosaics mint tile URLs), so the default is now on and the
+#: flag is the kill switch for a deployment whose account lacks the grant.
+#: Fail closed with an explanation, never a traceback.
+SPOT_ENABLED = _bool("NM_SPOT_ENABLED", True)
 
 # --------------------------------------------------------------------------- #
 # Data

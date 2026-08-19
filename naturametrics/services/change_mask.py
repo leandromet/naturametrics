@@ -27,6 +27,7 @@ from typing import Any
 
 from ..config import mapbiomas as mb
 from .ee_client import get_ee
+from .provenance import Provenance
 from .tiles import get_tile_url
 
 logger = logging.getLogger(__name__)
@@ -130,11 +131,13 @@ def change_mask_spec(
 def change_stats(p, radii_km, year_from: int = FOREST_CODE_BASELINE_YEAR,
                  year_to: int = mb.MAPBIOMAS_YEAR_END,
                  collection: str = mb.MAPBIOMAS_DEFAULT_COLLECTION,
-                 mode: str = "disc") -> dict[float, dict[str, float]]:
+                 mode: str = "disc") -> tuple[dict[float, dict[str, float]], Provenance]:
     """Area of loss / gain per buffer, in hectares.
 
     One ``reduceRegions`` for all buffers, using the same mean-pixel-area basis
-    as the history query (decision D3).
+    as the history query (decision D3). Returns ``(data, Provenance)`` like every
+    other analysis entry point (constraint C6, doc/01-premises.md) — this one did
+    not, until it needed to feed an exported sheet and C6 requires one for that.
     """
     import ee
 
@@ -155,6 +158,20 @@ def change_stats(p, radii_km, year_from: int = FOREST_CODE_BASELINE_YEAR,
 
     fc = buffer_collection(p, radii_km, mode)
     img = change_mask_image(year_from, year_to, collection, include_stable=True)
+    asset = mb.MAPBIOMAS_COLLECTIONS[collection]
+
+    prov = Provenance(
+        name="change_stats",
+        dataset_id=asset,
+        bands=[mb.band_for_year(year_from), mb.band_for_year(year_to)],
+        scale_m=30,
+        reducer="frequencyHistogram + mean(pixelArea)",
+        pixel_area_basis="mean ee.Image.pixelArea() per buffer (same basis as land-use history)",
+        tile_scale=4,
+        geometry=p.to_geojson(),
+        extra={"year_from": year_from, "year_to": year_to, "buffer_mode": mode,
+               "radii_km": list(radii_km), "point": str(p)},
+    )
 
     hist = img.reduceRegions(
         collection=fc, reducer=ee.Reducer.frequencyHistogram(), scale=30, tileScale=4
@@ -181,4 +198,5 @@ def change_stats(p, radii_km, year_from: int = FOREST_CODE_BASELINE_YEAR,
             "gain_ha": float(counts.get(str(CHANGE_GAIN), 0)) * per_ha,
             "stable_ha": float(counts.get(str(CHANGE_STABLE), 0)) * per_ha,
         }
-    return out
+    prov.extra["n_buffers"] = len(out)
+    return out, prov

@@ -74,6 +74,7 @@ class AnalysisMixin(rx.State, mixin=True):
     #: JSON-safe strings, not the float itself. Single-point only for now, same
     #: as the point-age line above: no multi-selection sum yet.
     _change_stats: dict[str, dict[str, float]] = {}
+    _change_provenance: dict[str, Any] = {}
 
     @rx.event(background=True)
     async def run_analysis(self, lat: float, lon: float):
@@ -140,8 +141,8 @@ class AnalysisMixin(rx.State, mixin=True):
             # shares this try/except rather than getting a third error channel.
             change_task = loop.run_in_executor(
                 None, change_stats, p, BUFFER_RADII_KM)
-            (age_df, age_prov), (age_buf_df, age_buf_prov), change = await asyncio.gather(
-                age_point_task, age_buffer_task, change_task)
+            (age_df, age_prov), (age_buf_df, age_buf_prov), (change, change_prov) = \
+                await asyncio.gather(age_point_task, age_buffer_task, change_task)
         except Exception as exc:  # noqa: BLE001
             logger.exception("Forest-age analysis failed")
             async with self:
@@ -158,6 +159,7 @@ class AnalysisMixin(rx.State, mixin=True):
             self._age_buffers = age_buf_df.to_dict("records")
             self._age_buffers_provenance = age_buf_prov.to_dict()
             self._change_stats = {f"{r:g}": v for r, v in change.items()}
+            self._change_provenance = change_prov.to_dict()
             self.age_running = False
             if age_buf_df.empty and age_df.empty:
                 self.age_error = "Sem dados de idade da vegetação neste ponto."

@@ -204,8 +204,36 @@ class ExportMixin(rx.State, mixin=True):
             self.export_stage = "Montando a planilha do ponto"
             self.export_error = ""
             self.export_result = ""
+
+        # The vegetation-age/change fetch (state/_analysis.py run_analysis)
+        # trails the land-cover history by a couple of seconds, so has_result
+        # can already be true while it is still in flight — a click on "Baixar
+        # dados" right after the chart appears used to ship idade_*/mudanca_*
+        # tabs with only headers and a note buried in the metadata sheet. Wait
+        # for it instead, bounded so a genuinely stuck fetch cannot hang the
+        # download forever; past the bound the export still proceeds with
+        # whatever landed, same as before.
+        waited = 0.0
+        while waited < 20.0:
+            async with self:
+                running = self.age_running
+            if not running:
+                break
+            async with self:
+                self.export_stage = "Aguardando a idade da vegetação…"
+            await asyncio.sleep(0.4)
+            waited += 0.4
+
+        async with self:
+            self.export_stage = "Montando a planilha do ponto"
             history, prov = plain(self._history), plain(self._provenance)
             pixel, pixel_prov = plain(self._pixel), plain(self._pixel_provenance)
+            age_point = plain(self._age_point)
+            age_point_prov = plain(self._age_point_provenance)
+            age_buffers = plain(self._age_buffers)
+            age_buffers_prov = plain(self._age_buffers_provenance)
+            change = plain(self._change_stats)
+            change_prov = plain(self._change_provenance)
             lat, lon = self.study_lat, self.study_lon
             identity = {
                 "source": self.point_source,
@@ -219,7 +247,8 @@ class ExportMixin(rx.State, mixin=True):
         try:
             data, name = await loop.run_in_executor(
                 None, _build_study_point, lat, lon, history, prov, pixel,
-                pixel_prov, identity)
+                pixel_prov, identity, age_point, age_point_prov, age_buffers,
+                age_buffers_prov, change, change_prov)
         except Exception as exc:  # noqa: BLE001
             logger.exception("Study-point export failed")
             async with self:
@@ -267,7 +296,7 @@ class ExportMixin(rx.State, mixin=True):
             return
 
         loop = asyncio.get_running_loop()
-        pixel = buffers = None
+        pixel = buffers = age = change = None
 
         try:
             if spec.include_pixel:
@@ -276,31 +305,46 @@ class ExportMixin(rx.State, mixin=True):
                 pixel = await loop.run_in_executor(
                     None, exports.selection_pixel_frame, spec)
 
-            if spec.include_buffers:
-                async with self:
-                    self.export_stage = "Calculando os buffers"
-                    self.export_total = len(points)
+            async def fan_out(fn, stage: str):
+                """One per-point fan-out with a live done/total counter.
 
-                # The callback runs on Earth Engine worker threads, so it cannot
-                # touch state directly; it drops the counter somewhere the async
-                # side can read, and the async side publishes it.
+                Buffers, vegetation age and the change mask are three separate
+                Earth Engine products (mapbiomas_history, vegetation_age,
+                change_mask) fanned out the same way, sequentially — this is the
+                one place that shape lives rather than three copies that could
+                drift apart. The callback itself runs on an Earth Engine worker
+                thread, so it cannot touch state directly; it drops the counter
+                somewhere this coroutine can read and publish.
+                """
+                async with self:
+                    self.export_stage = stage
+                    self.export_done = 0
+                    self.export_total = len(points)
                 counter = {"done": 0}
 
                 def progress(done: int, total: int) -> None:
                     counter["done"] = done
 
-                task = loop.run_in_executor(
-                    None, exports.selection_buffer_frame, spec, points, progress)
+                task = loop.run_in_executor(None, fn, spec, points, progress)
                 while not task.done():
                     await asyncio.sleep(0.5)
                     async with self:
                         self.export_done = counter["done"]
-                buffers = await task
+                return await task
+
+            if spec.include_buffers:
+                buffers = await fan_out(exports.selection_buffer_frame,
+                                        "Calculando o uso da terra")
+                age = await fan_out(exports.selection_age_frame,
+                                    "Calculando a idade da vegetação")
+                change = await fan_out(exports.selection_change_frame,
+                                       "Calculando a mudança 2008→2024")
 
             async with self:
                 self.export_stage = "Montando a planilha"
             data, name = await loop.run_in_executor(
-                None, exports.selection_workbook, spec, points, pixel, buffers)
+                None, exports.selection_workbook, spec, points, pixel, buffers,
+                age, change)
         except Exception as exc:  # noqa: BLE001
             logger.exception("Selection export failed")
             async with self:
@@ -313,28 +357,48 @@ class ExportMixin(rx.State, mixin=True):
             self.export_busy = False
             self.export_stage = ""
             self.export_done = self.export_total
-            failed = buffers[2] if buffers else []
+            # Union across the three passes: a point can fail land-cover history
+            # but succeed at vegetation age, or vice versa, and each row is a
+            # single conglomerado's worth of missing data either way.
+            failed = sorted(set(
+                (buffers[2] if buffers else [])
+                + (age[2] if age else [])
+                + (change[2] if change else [])
+            ))
             note = f" · {len(failed)} conglomerado(s) falharam" if failed else ""
             self.export_result = f"{name} ({len(data) // 1024} KiB){note}"
         return rx.download(data=data, filename=name, mime_type=MIMETYPE)
 
 
-def _build_study_point(lat, lon, history, prov, pixel, pixel_prov, identity):
+def _build_study_point(lat, lon, history, prov, pixel, pixel_prov, identity,
+                       age_point=None, age_point_prov=None, age_buffers=None,
+                       age_buffers_prov=None, change=None, change_prov=None):
     """Rebuild the frames and write the workbook, off the event loop."""
     import pandas as pd
 
     from ..services.geo import point
     from ..services.provenance import Provenance
 
-    def revive(d: dict) -> Provenance:
+    def revive(d: dict | None) -> Provenance | None:
         # State stores provenance as a plain dict so it can be serialised; the
         # workbook wants the dataclass back. Round-tripping through the class is
-        # what keeps the two from drifting into different shapes.
-        return Provenance(**d)
+        # what keeps the two from drifting into different shapes. Empty means the
+        # age/change fetch had not finished when the download was requested —
+        # study_point_workbook treats a missing provenance as "not available yet",
+        # not as an error.
+        return Provenance(**d) if d else None
+
+    change = {float(k): v for k, v in (change or {}).items()}
 
     return exports.study_point_workbook(
         point(lat=lat, lon=lon),
         pd.DataFrame(history), revive(prov),
         pd.DataFrame(pixel), revive(pixel_prov),
         identity=identity,
+        age_point=pd.DataFrame(age_point) if age_point else None,
+        age_point_prov=revive(age_point_prov),
+        age_buffers=pd.DataFrame(age_buffers) if age_buffers else None,
+        age_buffers_prov=revive(age_buffers_prov),
+        change=change,
+        change_prov=revive(change_prov),
     )

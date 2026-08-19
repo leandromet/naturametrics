@@ -32,16 +32,20 @@ from typing import Any, Callable, Iterable, Sequence
 import pandas as pd
 
 from ..config import mapbiomas as mb
+from ..config import vegetation_age as va
 from ..config.citation import APP_URL, CITATION_TEXT, DATA_SOURCES
 from ..config.settings import (
-    BUFFER_MODE_DEFAULT, BUFFER_RADII_KM, EXPORT_BYTES_PER_ROW,
+    BUFFER_MODE_DEFAULT, BUFFER_RADII_KM, EXPORT_AGE_ROWS_PER_POINT_PER_RADIUS,
+    EXPORT_BYTES_PER_ROW, EXPORT_CHANGE_ROWS_PER_POINT_PER_RADIUS,
     EXPORT_MAX_BUFFER_POINTS, EXPORT_ODS_ROWS_PER_SHEET, EXPORT_POINT_TIMEOUT_S,
     EXPORT_ROWS_PER_POINT, EXPORT_SECONDS_PER_POINT, EXPORT_WARN_FILE_MB,
 )
 from . import ifn, ods
+from .change_mask import FOREST_CODE_BASELINE_YEAR, change_stats
 from .geo import Point, point
 from .mapbiomas_history import land_cover_history, point_pixel_series
 from .provenance import Provenance
+from .vegetation_age import buffer_forest_age_histogram
 
 logger = logging.getLogger(__name__)
 
@@ -191,15 +195,29 @@ def study_point_workbook(
     pixel: pd.DataFrame,
     pixel_prov: Provenance,
     identity: dict[str, Any] | None = None,
+    age_point: pd.DataFrame | None = None,
+    age_point_prov: Provenance | None = None,
+    age_buffers: pd.DataFrame | None = None,
+    age_buffers_prov: Provenance | None = None,
+    change: dict[float, dict[str, float]] | None = None,
+    change_prov: Provenance | None = None,
 ) -> tuple[bytes, str]:
     """One spreadsheet for the location currently under analysis.
 
     Returns ``(bytes, filename)``. Nothing is recomputed here — the history is
     the frame already on screen, so the file and the chart cannot disagree
-    (doc/11 §5).
+    (doc/11 §5). The vegetation-age and change-mask arguments are optional and
+    default to empty: the "Baixar dados" button is reachable as soon as the
+    land-cover history has an answer (``has_result``), which can be a moment
+    before the age panel's own fetch finishes — an empty tab with its own note
+    is the honest result of asking for data that has not arrived yet, not an
+    error.
     """
     identity = identity or {}
     history = _with_shares(history)
+    age_point = age_point if age_point is not None else pd.DataFrame()
+    age_buffers = age_buffers if age_buffers is not None else pd.DataFrame()
+    change = change or {}
 
     context: list[list[Any]] = [
         ["ESCOPO", "ponto de estudo"],
@@ -217,13 +235,29 @@ def study_point_workbook(
     context += [
         ["raios dos buffers (km)", ", ".join(f"{r:g}" for r in BUFFER_RADII_KM)],
         ["modo dos buffers", BUFFER_MODE_DEFAULT],
-        ["anos", f"{mb.MAPBIOMAS_YEAR_START}–{mb.MAPBIOMAS_YEAR_END}"],
+        ["anos (uso da terra)", f"{mb.MAPBIOMAS_YEAR_START}–{mb.MAPBIOMAS_YEAR_END}"],
+        ["anos (idade da vegetação)", f"{va.DSV_YEAR_START}–{va.DSV_YEAR_END}"],
+        ["classe censurada (idade)", va.censored_label()],
         ["", ""],
         ["AVISO — abas de pixel", PIXEL_CAVEAT],
     ]
+    if age_point.empty and age_buffers.empty:
+        context.append([
+            "AVISO — abas de idade/mudança",
+            "Ainda não calculadas quando este arquivo foi gerado — tente "
+            "baixar novamente após o painel «Idade da vegetação» carregar.",
+        ])
+
+    provenances = [pixel_prov, history_prov]
+    if age_point_prov is not None:
+        provenances.append(age_point_prov)
+    if age_buffers_prov is not None:
+        provenances.append(age_buffers_prov)
+    if change_prov is not None:
+        provenances.append(change_prov)
 
     sheets = [
-        _metadata_sheet("ponto de estudo", context, [pixel_prov, history_prov]),
+        _metadata_sheet("ponto de estudo", context, provenances),
         ods.sheet_from_dataframe(
             "ponto_pixel", pixel, ["year", "class_id", "class_pt", "class_en"]),
     ]
@@ -238,6 +272,30 @@ def study_point_workbook(
 
     sheets.append(ods.sheet_from_dataframe("resumo_por_classe",
                                            _buffer_summary(history)))
+
+    sheets.append(ods.sheet_from_dataframe(
+        "ponto_idade", age_point,
+        ["year", "age", "censored", "class_id", "class_pt"]))
+
+    for radius in sorted(BUFFER_RADII_KM):
+        sub = (age_buffers[age_buffers["radius_km"] == radius]
+               if not age_buffers.empty else age_buffers)
+        sheets.append(ods.sheet_from_dataframe(
+            f"idade_{int(radius):02d}km", sub,
+            ["age", "bin", "censored", "pixels", "area_ha"]))
+
+    change_rows = [
+        {"radius_km": r, "perda_ha": round(v["loss_ha"], 4),
+         "regeneracao_ha": round(v["gain_ha"], 4),
+         "estavel_ha": round(v["stable_ha"], 4)}
+        for r, v in sorted(change.items())
+    ]
+    sheets.append(ods.sheet_from_dataframe(
+        f"mudanca_{FOREST_CODE_BASELINE_YEAR}_{mb.MAPBIOMAS_YEAR_END}",
+        pd.DataFrame.from_records(
+            change_rows, columns=["radius_km", "perda_ha", "regeneracao_ha", "estavel_ha"]),
+    ))
+
     sheets.append(_classes_sheet())
 
     label = identity.get("conglomerado") or f"{p.lat:.4f}_{p.lon:.4f}".replace("-", "s")
@@ -455,6 +513,167 @@ def selection_buffer_frame(
     return out, prov, failed
 
 
+def selection_age_frame(
+    spec: SelectionSpec,
+    points: Sequence[dict[str, Any]],
+    progress: Callable[[int, int], None] | None = None,
+) -> tuple[pd.DataFrame, Provenance, list[str]]:
+    """Vegetation-age histogram for every selected conglomerado.
+
+    Same fan-out shape as :func:`selection_buffer_frame`, over the DSV-based age
+    counter (services.vegetation_age) instead of the MapBiomas coverage series —
+    a **separate pass**, not folded into that one: different Earth Engine asset,
+    different failure mode, and one hiccup must not take the other down (the same
+    reasoning that keeps ``age_error`` separate from ``analysis_error`` on the
+    interactive side, state/_analysis.py).
+    """
+    from .ee_concurrency import get_ee_executor
+
+    executor = get_ee_executor()
+    prov = Provenance(
+        name="selection_vegetation_age",
+        dataset_id=va.DSV_ASSET,
+        bands=[va.dsv_band_for_year(va.DSV_YEAR_END)],
+        reducer="frequencyHistogram",
+        pixel_area_basis="mean ee.Image.pixelArea() per buffer",
+        extra={"filters": spec.filter_label(), "buffer_mode": BUFFER_MODE_DEFAULT,
+               "n_requested": len(points), "reference_year": va.DSV_YEAR_END,
+               "censored_age": va.CENSORED_AGE},
+    )
+
+    started = time.time()
+    radii = tuple(sorted(spec.radii)) or tuple(sorted(BUFFER_RADII_KM))
+    prov.extra["radii_km"] = list(radii)
+    futures = {
+        executor.submit(buffer_forest_age_histogram,
+                        point(lat=row["lat"], lon=row["lon"]),
+                        radii, BUFFER_MODE_DEFAULT): row
+        for row in points
+    }
+
+    frames: list[pd.DataFrame] = []
+    failed: list[str] = []
+    degraded = 0
+    done = 0
+
+    for future in futures:
+        row = futures[future]
+        try:
+            df, point_prov = future.result(timeout=EXPORT_POINT_TIMEOUT_S)
+            if point_prov.degraded:
+                degraded += 1
+            if not df.empty:
+                df = df.copy()
+                df.insert(0, "conglomerado", row["conglomerado"])
+                df.insert(1, "uf", row["uf"])
+                df.insert(2, "municipio", row["municipio"])
+                df.insert(3, "bioma", row["bioma"])
+                frames.append(df)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Age export failed for %s: %s", row["conglomerado"], exc)
+            failed.append(str(row["conglomerado"]))
+        finally:
+            done += 1
+            if progress:
+                progress(done, len(futures))
+
+    if frames:
+        out = pd.concat(frames, ignore_index=True)
+        out = out.sort_values(["conglomerado", "radius_km", "age"]).reset_index(drop=True)
+    else:
+        out = pd.DataFrame(columns=["conglomerado", "uf", "municipio", "bioma",
+                                    "radius_km", "age", "bin", "censored",
+                                    "pixels", "area_ha", "color"])
+
+    if degraded:
+        prov.degrade(
+            f"{degraded} de {len(points)} conglomerados precisaram de nova "
+            f"tentativa em escala ou tileScale maior.")
+    prov.extra["n_ok"] = len(points) - len(failed)
+    prov.extra["n_failed"] = len(failed)
+    prov.extra["n_rows"] = len(out)
+    prov.extra["elapsed_s"] = round(time.time() - started, 1)
+    logger.info("Selection age frame: %s rows from %s points in %.1f s "
+                "(%s failed)", len(out), len(points), time.time() - started,
+                len(failed))
+    return out, prov, failed
+
+
+def selection_change_frame(
+    spec: SelectionSpec,
+    points: Sequence[dict[str, Any]],
+    progress: Callable[[int, int], None] | None = None,
+) -> tuple[pd.DataFrame, Provenance, list[str]]:
+    """Natural-vegetation loss/gain since the Forest Code baseline, per point.
+
+    The cheapest of the three fan-outs: change_stats already returns every
+    requested radius from a single call, so this is one future per point, not
+    one per (point, radius).
+    """
+    from .ee_concurrency import get_ee_executor
+
+    executor = get_ee_executor()
+    prov = Provenance(
+        name="selection_change_mask",
+        dataset_id=mb.MAPBIOMAS_COLLECTIONS[mb.MAPBIOMAS_DEFAULT_COLLECTION],
+        bands=[mb.band_for_year(FOREST_CODE_BASELINE_YEAR),
+               mb.band_for_year(mb.MAPBIOMAS_YEAR_END)],
+        reducer="frequencyHistogram + mean(pixelArea)",
+        pixel_area_basis="mean ee.Image.pixelArea() per buffer",
+        extra={"filters": spec.filter_label(), "buffer_mode": BUFFER_MODE_DEFAULT,
+               "n_requested": len(points), "year_from": FOREST_CODE_BASELINE_YEAR,
+               "year_to": mb.MAPBIOMAS_YEAR_END},
+    )
+
+    started = time.time()
+    radii = tuple(sorted(spec.radii)) or tuple(sorted(BUFFER_RADII_KM))
+    prov.extra["radii_km"] = list(radii)
+    futures = {
+        executor.submit(change_stats, point(lat=row["lat"], lon=row["lon"]), radii):
+        row for row in points
+    }
+
+    records: list[dict[str, Any]] = []
+    failed: list[str] = []
+    done = 0
+
+    for future in futures:
+        row = futures[future]
+        try:
+            per_radius, _point_prov = future.result(timeout=EXPORT_POINT_TIMEOUT_S)
+            for radius, vals in per_radius.items():
+                records.append({
+                    "conglomerado": row["conglomerado"], "uf": row["uf"],
+                    "municipio": row["municipio"], "bioma": row["bioma"],
+                    "radius_km": radius,
+                    "perda_ha": round(vals["loss_ha"], 4),
+                    "regeneracao_ha": round(vals["gain_ha"], 4),
+                    "estavel_ha": round(vals["stable_ha"], 4),
+                })
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Change export failed for %s: %s", row["conglomerado"], exc)
+            failed.append(str(row["conglomerado"]))
+        finally:
+            done += 1
+            if progress:
+                progress(done, len(futures))
+
+    out = pd.DataFrame.from_records(
+        records, columns=["conglomerado", "uf", "municipio", "bioma", "radius_km",
+                          "perda_ha", "regeneracao_ha", "estavel_ha"])
+    if not out.empty:
+        out = out.sort_values(["conglomerado", "radius_km"]).reset_index(drop=True)
+
+    prov.extra["n_ok"] = len(points) - len(failed)
+    prov.extra["n_failed"] = len(failed)
+    prov.extra["n_rows"] = len(out)
+    prov.extra["elapsed_s"] = round(time.time() - started, 1)
+    logger.info("Selection change frame: %s rows from %s points in %.1f s "
+                "(%s failed)", len(out), len(points), time.time() - started,
+                len(failed))
+    return out, prov, failed
+
+
 #: Columns of a per-radius buffer tab. ``radius_km`` is absent on purpose — the
 #: tab name carries it, and dropping it saves a column across a million rows.
 _BUFFER_COLUMNS = ["conglomerado", "uf", "municipio", "bioma", "year",
@@ -490,11 +709,50 @@ def _buffer_sheets(df: pd.DataFrame, radii: Sequence[float]) -> list[ods.Sheet]:
     return sheets
 
 
+#: Columns of a per-radius age tab.
+_AGE_COLUMNS = ["conglomerado", "uf", "municipio", "bioma", "age", "bin",
+               "censored", "pixels", "area_ha"]
+
+
+def _age_sheets(df: pd.DataFrame, radii: Sequence[float]) -> list[ods.Sheet]:
+    """One tab per radius, named ``idade_XXkm`` — same shape as _buffer_sheets.
+
+    At these row counts (at most CENSORED_AGE distinct rows per point per
+    radius — config.vegetation_age) splitting essentially never triggers: even
+    6 000 points at the cap is 6000×38 ≈ 228 000 rows, well under
+    EXPORT_ODS_ROWS_PER_SHEET. The split logic is kept anyway, at negligible
+    cost, so a future change to the age model cannot silently turn a slightly
+    wrong row estimate into a failed export instead of a split sheet.
+    """
+    sheets: list[ods.Sheet] = []
+    for radius in sorted(radii):
+        name = f"idade_{int(radius):02d}km"
+        sub = df[df["radius_km"] == radius] if not df.empty else df
+        if len(sub) <= EXPORT_ODS_ROWS_PER_SHEET:
+            sheets.append(ods.sheet_from_dataframe(name, sub, _AGE_COLUMNS))
+            continue
+        for part, start in enumerate(
+                range(0, len(sub), EXPORT_ODS_ROWS_PER_SHEET), start=1):
+            chunk = sub.iloc[start:start + EXPORT_ODS_ROWS_PER_SHEET]
+            sheets.append(ods.sheet_from_dataframe(
+                name if part == 1 else f"{name}_{part}", chunk, _AGE_COLUMNS))
+    return sheets
+
+
+#: Columns of the change-mask tab. One row per (conglomerado, radius) — never
+#: split, since a selection at the cap is, at most, points × radii rows (a few
+#: tens of thousands), nowhere near the sheet limit.
+_CHANGE_COLUMNS = ["conglomerado", "uf", "municipio", "bioma", "radius_km",
+                   "perda_ha", "regeneracao_ha", "estavel_ha"]
+
+
 def selection_workbook(
     spec: SelectionSpec,
     points: Sequence[dict[str, Any]],
     pixel: tuple[pd.DataFrame, Provenance] | None,
     buffers: tuple[pd.DataFrame, Provenance, list[str]] | None,
+    age: tuple[pd.DataFrame, Provenance, list[str]] | None = None,
+    change: tuple[pd.DataFrame, Provenance, list[str]] | None = None,
 ) -> tuple[bytes, str]:
     """One spreadsheet covering every conglomerado the filters select."""
     provenances: list[Provenance] = []
@@ -538,7 +796,27 @@ def selection_workbook(
             ])
         if failed:
             # Named, not counted: "12 failed" is not actionable, a list is.
-            context.append(["conglomerados que falharam", ", ".join(failed)])
+            context.append(["conglomerados que falharam (uso da terra)", ", ".join(failed)])
+
+    if age is not None:
+        age_df, age_prov, age_failed = age
+        provenances.append(age_prov)
+        age_sheets = _age_sheets(age_df, spec.radii)
+        sheets.extend(age_sheets)
+        context.append(["classe censurada (idade)", va.censored_label()])
+        context.append(["conglomerados com idade", age_prov.extra.get("n_ok", 0)])
+        if age_failed:
+            context.append(["conglomerados que falharam (idade)", ", ".join(age_failed)])
+
+    if change is not None:
+        change_df, change_prov, change_failed = change
+        provenances.append(change_prov)
+        sheets.append(ods.sheet_from_dataframe(
+            f"mudanca_{FOREST_CODE_BASELINE_YEAR}_{mb.MAPBIOMAS_YEAR_END}",
+            change_df, _CHANGE_COLUMNS))
+        context.append(["conglomerados com mudança", change_prov.extra.get("n_ok", 0)])
+        if change_failed:
+            context.append(["conglomerados que falharam (mudança)", ", ".join(change_failed)])
 
     sheets.append(_classes_sheet())
     sheets.insert(0, _metadata_sheet("seleção de conglomerados", context,
@@ -556,8 +834,15 @@ def selection_workbook(
 # --------------------------------------------------------------------------- #
 
 def rows_per_point(radii: Sequence[float]) -> int:
-    """Budgeted rows one conglomerado contributes for these radii."""
-    return sum(EXPORT_ROWS_PER_POINT.get(float(r), 500) for r in radii) or 1
+    """Budgeted rows one conglomerado contributes for these radii, across all
+    three buffer tables — land-cover history, vegetation age and the change
+    mask — since a buffer export now always includes all three (state/_export.py
+    download_selection fans out all three together whenever ``exp_buffers`` is
+    on)."""
+    land_cover = sum(EXPORT_ROWS_PER_POINT.get(float(r), 500) for r in radii)
+    age = len(radii) * EXPORT_AGE_ROWS_PER_POINT_PER_RADIUS
+    change = len(radii) * EXPORT_CHANGE_ROWS_PER_POINT_PER_RADIUS
+    return (land_cover + age + change) or 1
 
 
 def estimated_seconds(n: int) -> int:
@@ -595,9 +880,12 @@ def buffer_estimate(n: int, radii: Sequence[float]) -> dict[str, Any]:
         "rows": rows,
         "megabytes": megabytes,
         "seconds": estimated_seconds(n),
-        # One tab per radius, plus however many extra parts a radius needs.
+        # One land-cover tab per radius (plus however many extra parts a radius
+        # needs), one age tab per radius (never splits in practice — see
+        # _age_sheets), and one combined change-mask tab.
         "tabs": sum(max(1, -(-(n * EXPORT_ROWS_PER_POINT.get(r, 500))
-                             // EXPORT_ODS_ROWS_PER_SHEET)) for r in radii),
+                             // EXPORT_ODS_ROWS_PER_SHEET)) for r in radii)
+                + len(radii) + 1,
         "split": n * widest > EXPORT_ODS_ROWS_PER_SHEET,
         "heavy": megabytes > EXPORT_WARN_FILE_MB,
         "over_limit": n > EXPORT_MAX_BUFFER_POINTS,
@@ -619,14 +907,16 @@ def buffer_estimate_message(n: int, radii: Sequence[float]) -> str:
     if est["over_limit"]:
         return (
             f"A seleção tem {_thousands(n)} conglomerados; o limite para dados "
-            f"de buffer é {_thousands(EXPORT_MAX_BUFFER_POINTS)} — o suficiente "
-            f"para qualquer bioma inteiro (o maior, a Amazônia, tem 5.801). "
-            f"Reduza a seleção com os filtros. A lista de pontos e a classe do "
-            f"pixel não têm limite: saem para os 17.479 conglomerados."
+            f"de buffer (uso da terra, idade da vegetação e mudança) é "
+            f"{_thousands(EXPORT_MAX_BUFFER_POINTS)} — o suficiente para "
+            f"qualquer bioma inteiro (o maior, a Amazônia, tem 5.801). Reduza a "
+            f"seleção com os filtros. A lista de pontos e a classe do pixel não "
+            f"têm limite: saem para os 17.479 conglomerados."
         )
 
-    text = (f"≈ {when} para {_thousands(n)} conglomerados · "
-            f"~{_thousands(est['rows'])} linhas · {size} · {tabs} ({chosen}).")
+    text = (f"≈ {when} para {_thousands(n)} conglomerados (uso da terra, idade "
+            f"da vegetação e mudança) · ~{_thousands(est['rows'])} linhas · "
+            f"{size} · {tabs} ({chosen}).")
     if est["split"]:
         text += (" Um raio passa do máximo de linhas por aba e será dividido em "
                  "«…_2», «…_3» — as partes são contínuas.")

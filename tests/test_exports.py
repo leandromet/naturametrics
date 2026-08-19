@@ -307,7 +307,9 @@ def test_estimate_scales_with_radii_and_points():
 
     assert one["rows"] < four["rows"]
     assert one["megabytes"] < four["megabytes"]
-    assert one["tabs"] == 1 and four["tabs"] == 4
+    # One land-cover tab and one age tab per radius, plus one shared change tab
+    # (services/exports.py buffer_estimate: land-cover + age + 1).
+    assert one["tabs"] == 3 and four["tabs"] == 9
     # Time is per conglomerado, so it does not change with the radius count.
     assert one["seconds"] == four["seconds"]
 

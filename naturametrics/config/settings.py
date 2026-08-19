@@ -11,6 +11,8 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from .vegetation_age import CENSORED_AGE
+
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 load_dotenv(REPO_ROOT / ".env")
 
@@ -174,6 +176,21 @@ IFN_VIEWPORT_LIMIT = _int("NM_IFN_VIEWPORT_LIMIT", 1500)
 #: a usable ceiling rather than for the worst landscape in Brazil.
 EXPORT_ROWS_PER_POINT: dict[float, int] = {1.0: 280, 2.0: 330, 5.0: 430, 10.0: 500}
 
+#: Rows per point *per radius* for the vegetation-age tabs (services.vegetation_
+#: age), exported alongside the buffer tabs above. Unlike EXPORT_ROWS_PER_POINT
+#: this is not an empirical budget — it is the structural ceiling: a histogram
+#: over an age counter that tops out at CENSORED_AGE (config.vegetation_age) can
+#: never have more than CENSORED_AGE distinct rows, one per possible age value,
+#: no matter how varied the landscape. Measured max across 150 real points was
+#: exactly that ceiling (38 as of the current DSV record), so this tracks the
+#: data rather than a separate guess.
+EXPORT_AGE_ROWS_PER_POINT_PER_RADIUS = CENSORED_AGE
+
+#: Each conglomerado contributes exactly one row per radius to the change-mask
+#: tab (services.change_mask.change_stats returns one loss/gain/stable row per
+#: buffer) — no ceiling to derive, it is just this.
+EXPORT_CHANGE_ROWS_PER_POINT_PER_RADIUS = 1
+
 #: Each radius gets **its own tab**, so the spreadsheet's row limit applies per
 #: radius instead of to all four together — four times the capacity, and a tab
 #: per radius is what the study-point workbook already does.
@@ -196,8 +213,10 @@ EXPORT_BYTES_PER_ROW = _int("NM_EXPORT_BYTES_PER_ROW", 46)
 #:     Caatinga 2 367 · Pampa 523 · Pantanal 374   (largest UF: PA, 1 884)
 #:
 #: — so 6 000 covers every biome and every state with room to spare, and costs
-#: about 12 minutes at the measured 0.12 s/conglomerado. Past that the useful
-#: unit is the whole grid, which is a batch job rather than a button.
+#: about 17 minutes at the measured 0.17 s/conglomerado (land-cover history,
+#: vegetation age and the change mask, fanned out together — see
+#: EXPORT_SECONDS_PER_POINT). Past that the useful unit is the whole grid, which
+#: is a batch job rather than a button.
 #:
 #: The **pixel** and **point-list** halves are deliberately NOT capped: they do
 #: all 17 479 conglomerados in about two seconds.
@@ -214,10 +233,12 @@ EXPORT_MAX_BUFFER_POINTS = _int("NM_EXPORT_MAX_BUFFER_POINTS", 6000)
 #: and very large data URIs are handled poorly by some browsers.
 EXPORT_WARN_FILE_MB = _int("NM_EXPORT_WARN_FILE_MB", 25)
 
-#: For the "this will take about…" estimate. Measured between 0.06 and 0.14
-#: s/point depending on how warm Earth Engine is; the high end is quoted so the
-#: estimate errs towards over-promising the wait rather than under.
-EXPORT_SECONDS_PER_POINT = _float("NM_EXPORT_SECONDS_PER_POINT", 0.12)
+#: For the "this will take about…" estimate. Land-cover history alone measured
+#: 0.06–0.14 s/point; once vegetation age and the change mask were folded into
+#: the same buffer export (fanned out together per point, one future each), a
+#: 200-point pooled measurement came to 0.171 s/point. 0.18 is quoted for a
+#: little headroom, not because it was observed.
+EXPORT_SECONDS_PER_POINT = _float("NM_EXPORT_SECONDS_PER_POINT", 0.18)
 
 #: Per-point timeout inside the fan-out. One slow conglomerado must not hold the
 #: whole export.

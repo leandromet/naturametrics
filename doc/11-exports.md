@@ -31,11 +31,18 @@ take the `Provenance` records as required arguments.
 | `ponto_pixel` | The point's own 30 m pixel: `year, class_id, class_pt, class_en`, 40 rows |
 | `buffer_01km` … `buffer_10km` | One tab per radius: `year, class_id, class_pt, class_en, pixels, area_ha, area_pct` |
 | `resumo_por_classe` | Per buffer per class: first-year area, last-year area, net change in ha and % |
+| `ponto_idade` | The point's own pixel, DSV estimator (doc/10-forest-age.md E1): `year, age, censored, class_id, class_pt`, 1987–2024 |
+| `idade_01km` … `idade_10km` | One tab per radius: `age, bin, censored, pixels, area_ha` — at most CENSORED_AGE rows, since the histogram is over an age counter with a hard ceiling |
+| `mudanca_2008_2024` | One row per radius: `radius_km, perda_ha, regeneracao_ha, estavel_ha` (services.change_mask, Forest Code baseline) |
 | `classes_mapbiomas` | The code → name → colour dictionary, so no other tab is a column of bare integers |
 
-Nothing is recomputed at export time. The history written to the file is the frame
-already driving the chart, so the file and the screen cannot disagree. Measured: ~46 KiB
-and 0.04 s.
+Nothing is recomputed at export time. The land-cover and pixel tabs are the frame already
+driving the chart, so the file and the screen cannot disagree. The idade/mudança tabs are
+fetched in the same background run as the chart (state/_analysis.py `run_analysis`) but
+trail it by a couple of seconds; a download requested while that fetch is still in flight
+waits for it (bounded at 20 s) rather than shipping empty tabs with only a note in
+`metadados` — a real race hit during development, not a hypothetical one. Measured: ~46 KiB
+and 0.04 s for the original two tables; idade/mudança add a further ~2 KiB.
 
 ### 1b. A conglomerado selection
 
@@ -51,15 +58,26 @@ A selection is named in one of two ways, and everything downstream is identical:
 
 Either way the file is **point by point**: one row per conglomerado, never the aggregate.
 The sum shown in the chart is a reading of the data, not a shape for it — anyone can sum
-a column, and nobody can recover the parts from a total. The panel offers three tables,
-because they have very different costs:
+a column, and nobody can recover the parts from a total. The panel offers three checkboxes
+("pontos", "pixel", "buffers"), the third of which now writes five kinds of tab, because
+they have very different costs:
 
 | Tab | Contents | Cost |
 |---|---|---|
 | `conglomerados` | One row per point: id, região, UF, município, bioma, coordinates | free — read from `data/ifn_points_biome.csv` |
 | `pixel_por_ano` | One row per conglomerado, one column per year, holding that pixel's class | **uncapped** — one streamed Earth Engine download; measured 17 479 points × 40 years = 2.3 MB in 1.9 s |
-| `buffer_01km` … `buffer_10km` | one tab **per radius**: `conglomerado, uf, municipio, bioma, year, class_id, class_pt, class_en, pixels, area_ha, area_pct` | ~0.12 s per conglomerado and 280–500 rows *per radius* — **capped**, see §1c |
+| `buffer_01km` … `buffer_10km` | one tab **per radius**: `conglomerado, uf, municipio, bioma, year, class_id, class_pt, class_en, pixels, area_ha, area_pct` | part of the buffer fan-out — **capped**, see §1c |
+| `idade_01km` … `idade_10km` | one tab **per radius**: `conglomerado, uf, municipio, bioma, age, bin, censored, pixels, area_ha` (doc/10-forest-age.md E1) | part of the buffer fan-out — same cap |
+| `mudanca_2008_2024` | one tab, all radii: `conglomerado, uf, municipio, bioma, radius_km, perda_ha, regeneracao_ha, estavel_ha` | part of the buffer fan-out — same cap |
 | `classes_mapbiomas` | As above | free |
+
+The three buffer-fan-out tables are one checkbox, not three: `services.exports`'s
+`selection_age_frame` and `selection_change_frame` run as two further fan-out passes over
+the same conglomerado list, sequentially after the land-cover pass
+(`state/_export.py download_selection`). Combined pooled throughput measured 0.171 s per
+conglomerado for age+change alone at 200 points; `EXPORT_SECONDS_PER_POINT` (settings.py) is
+set from the sum of that and the land-cover pass, ~0.18 s, so the "≈ X min" estimate covers
+all three passes, not just the first.
 
 ### 1c. The buffer half: one tab per radius, and what that costs
 

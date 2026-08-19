@@ -25,31 +25,48 @@ def results_drawer() -> rx.Component:
             AppState.has_point | AppState.analysis_running,
             rx.vstack(
                 # --- header ---------------------------------------------- #
-                rx.hstack(
-                    rx.icon("chart-column", size=15, color="var(--jade-11)"),
-                    rx.text("História de uso da terra", size="2", weight="bold"),
-                    rx.cond(
-                        AppState.point_label != "",
-                        rx.badge(AppState.point_label, variant="soft", size="1"),
-                        rx.fragment(),
-                    ),
-                    rx.spacer(),
-                    rx.segmented_control.root(
-                        rx.foreach(
-                            AppState.radius_options,
-                            lambda opt: rx.segmented_control.item(opt, value=opt),
+                # Wraps instead of overflowing: on a phone the title, the
+                # coordinate badge and the radius control cannot share one row.
+                rx.flex(
+                    rx.hstack(
+                        rx.icon("chart-column", size=15, color="var(--jade-11)"),
+                        rx.text("História de uso da terra", size="2", weight="bold",
+                                white_space="nowrap"),
+                        # The coordinate is already shown in the side panel, so
+                        # on a phone it is dropped rather than allowed to collide
+                        # with the radius control.
+                        rx.cond(
+                            AppState.point_label != "",
+                            rx.badge(AppState.point_label, variant="soft", size="1",
+                                     display=["none", "none", "inline-flex",
+                                              "inline-flex"]),
+                            rx.fragment(),
                         ),
-                        value=AppState.selected_radius_label,
-                        on_change=AppState.set_selected_radius,
-                        size="1",
+                        spacing="2", align="center",
+                        # Full-width line on phone, shares the row from tablet up.
+                        flex=["1 1 100%", "1 1 100%", "1 1 auto", "1 1 auto"],
+                        min_width="0",
                     ),
                     rx.hstack(
-                        rx.switch(checked=AppState.normalise_chart,
-                                  on_change=AppState.toggle_normalise, size="1"),
-                        rx.text("%", size="1", color_scheme="gray"),
-                        spacing="1", align="center",
+                        rx.segmented_control.root(
+                            rx.foreach(
+                                AppState.radius_options,
+                                lambda opt: rx.segmented_control.item(opt, value=opt),
+                            ),
+                            value=AppState.selected_radius_label,
+                            on_change=AppState.set_selected_radius,
+                            size="1",
+                        ),
+                        rx.hstack(
+                            rx.switch(checked=AppState.normalise_chart,
+                                      on_change=AppState.toggle_normalise, size="1"),
+                            rx.text("%", size="1", color_scheme="gray"),
+                            spacing="1", align="center",
+                        ),
+                        spacing="2", align="center",
                     ),
-                    width="100%", align="center", spacing="3",
+                    width="100%", align="center", justify="between",
+                    wrap="wrap", gap="0.5rem",
                 ),
 
                 # --- body ------------------------------------------------ #
@@ -70,11 +87,23 @@ def results_drawer() -> rx.Component:
                                    color_scheme="amber", size="1", width="100%"),
                         rx.cond(
                             AppState.has_result,
-                            rx.hstack(
+                            rx.flex(
                                 rx.box(
-                                    rx.plotly(data=AppState.history_figure,
-                                              width="100%", height="340px"),
-                                    flex="1", min_width="0",
+                                    rx.plotly(
+                                        data=AppState.history_figure,
+                                        # The modebar is hover-revealed on desktop
+                                        # but permanently visible on touch, where
+                                        # it sits on top of the plot. Chart export
+                                        # is a planned feature of our own, so
+                                        # nothing is lost by removing it.
+                                        config={"displayModeBar": False,
+                                                "displaylogo": False,
+                                                "responsive": True},
+                                        width="100%",
+                                        height=["300px", "320px", "340px", "340px"],
+                                    ),
+                                    flex=["1 1 100%", "1 1 100%", "1 1 100%", "1 1 0"],
+                                    min_width="0", width="100%",
                                 ),
                                 rx.vstack(
                                     rx.text(
@@ -88,23 +117,50 @@ def results_drawer() -> rx.Component:
                                     rx.spacer(),
                                     rx.text(AppState.provenance_line, size="1",
                                             color_scheme="gray"),
-                                    spacing="2", width="270px", flex_shrink="0",
-                                    align_items="stretch", height="340px",
+                                    spacing="2",
+                                    width=["100%", "100%", "100%", "270px"],
+                                    flex_shrink=["1", "1", "1", "0"],
+                                    align_items="stretch",
+                                    height=["auto", "auto", "auto", "340px"],
                                 ),
-                                width="100%", spacing="4", align_items="start",
+                                width="100%",
+                                # Typed literal props need rx.breakpoints(); a
+                                # plain list only works for style props.
+                                direction=rx.breakpoints(initial="column", lg="row"),
+                                gap="1rem", align="start",
                             ),
                             rx.fragment(),
                         ),
                     ),
                 ),
-                width="100%", spacing="3", padding="0.75rem 1rem",
+                width="100%", spacing="3",
+                padding=["0.6rem 0.7rem", "0.6rem 0.75rem", "0.75rem 1rem", "0.75rem 1rem"],
             ),
-            rx.fragment(),
+            # Empty state. Without it the area under the map is blank white,
+            # which reads as a loading failure rather than "nothing chosen yet".
+            rx.center(
+                rx.vstack(
+                    rx.icon("map-pin", size=22, color="var(--gray-8)"),
+                    rx.text("Clique no mapa para escolher um ponto",
+                            size="2", weight="medium", color_scheme="gray"),
+                    rx.text(
+                        "A história de uso da terra de 1985 a 2024 será calculada "
+                        "para raios de 1, 2, 5 e 10 km em volta dele.",
+                        size="1", color_scheme="gray", text_align="center",
+                        style={"maxWidth": "34ch"},
+                    ),
+                    spacing="2", align="center",
+                ),
+                width="100%",
+                padding=["1.5rem 1rem", "1.5rem 1rem", "2rem 1rem", "2rem 1rem"],
+            ),
         ),
         width="100%",
         border_top="1px solid var(--gray-5)",
         background="var(--color-panel-solid)",
-        max_height="46vh",
-        overflow_y="auto",
+        # Only the desktop drawer is height-capped and independently scrollable;
+        # below that it is just the bottom of the page's single scroll column.
+        max_height=["none", "none", "none", "46vh"],
+        overflow_y=["visible", "visible", "visible", "auto"],
         flex_shrink="0",
     )

@@ -1,0 +1,271 @@
+"""Header panels: "Como usar" and "Como citar".
+
+Two Radix dialogs rather than Yvynation's hand-rolled overlay-plus-state-toggle:
+`rx.dialog` brings focus trapping, Escape-to-close and the backdrop for free, and
+needs no state var of its own.
+
+The citation panel also discharges constraint **C4** (doc/01-premises.md): every
+dataset the app draws must carry its required attribution somewhere the user can
+find it.
+"""
+
+from __future__ import annotations
+
+import reflex as rx
+
+APP_URL = "https://naturametrics-652582010777.us-west1.run.app"
+APP_YEAR = "2026"
+
+AUTHORS = [
+    ("Leandro Meneguelli Biondo", "University of British Columbia Okanagan (UBC Okanagan), Canadá"),
+    ("Gustavo Heringer", "Instituto Nacional da Mata Atlântica (INMA/MCTI), Brasil"),
+    ("Alex Coelho", "Universidade Federal de Viçosa (UFV), Brasil"),
+]
+
+CITATION_TEXT = (
+    "Biondo, L. M.; Heringer, G.; Coelho, A. "
+    f"({APP_YEAR}). Naturametrics: história de uso da terra e análise da paisagem. "
+    "University of British Columbia Okanagan; Instituto Nacional da Mata "
+    "Atlântica (INMA/MCTI); Universidade Federal de Viçosa. "
+    f"Disponível em: {APP_URL}"
+)
+
+BIBTEX = f"""@software{{naturametrics_{APP_YEAR},
+  title   = {{Naturametrics: história de uso da terra e análise da paisagem}},
+  author  = {{Biondo, Leandro Meneguelli and Heringer, Gustavo and Coelho, Alex}},
+  year    = {{{APP_YEAR}}},
+  organization = {{University of British Columbia Okanagan; Instituto Nacional
+                   da Mata Atlântica (INMA/MCTI); Universidade Federal de Viçosa}},
+  url     = {{{APP_URL}}}
+}}"""
+
+#: Constraint C4 — every layer the app can draw is credited here.
+DATA_SOURCES = [
+    ("MapBiomas — Coleção 10.1",
+     "Projeto MapBiomas — Mapeamento Anual de Cobertura e Uso da Terra no Brasil. "
+     "Licença CC-BY-SA.",
+     "https://mapbiomas.org"),
+    ("MapBiomas — Desmatamento e Vegetação Secundária",
+     "Base do cálculo de regeneração e do ano de referência do Código Florestal.",
+     "https://mapbiomas.org"),
+    ("Hansen Global Forest Change",
+     "Hansen, M. C. et al. (2013). High-Resolution Global Maps of 21st-Century "
+     "Forest Cover Change. Science 342, 850–853. Licença CC-BY 4.0.",
+     "https://glad.earthengine.app/view/global-forest-change"),
+    ("Inventário Florestal Nacional (IFN)",
+     "Serviço Florestal Brasileiro — dados abertos, licença CC-BY.",
+     "https://dados.florestal.gov.br"),
+    ("Google Earth Engine",
+     "Gorelick, N. et al. (2017). Google Earth Engine: Planetary-scale geospatial "
+     "analysis for everyone. Remote Sensing of Environment 202, 18–27.",
+     "https://earthengine.google.com"),
+    ("Mapas base",
+     "Esri World Imagery; OpenStreetMap contributors; Google.",
+     "https://www.openstreetmap.org/copyright"),
+]
+
+
+def _step(number: str, title: str, body: str) -> rx.Component:
+    return rx.hstack(
+        rx.badge(number, color_scheme="jade", variant="solid", size="1",
+                 style={"minWidth": "22px", "justifyContent": "center"}),
+        rx.vstack(
+            rx.text(title, size="2", weight="bold"),
+            rx.text(body, size="2", color_scheme="gray"),
+            spacing="1", align_items="start",
+        ),
+        spacing="3", align_items="start", width="100%",
+    )
+
+
+def como_usar_dialog() -> rx.Component:
+    return rx.dialog.root(
+        rx.dialog.trigger(
+            rx.button(
+                rx.icon("circle-help", size=15),
+                # Label collapses to an icon on phones — two labelled buttons do
+                # not fit beside the wordmark at 390px and get clipped.
+                rx.text("Como usar", display=["none", "none", "block", "block"]),
+                size="1", variant="soft", color_scheme="gray",
+                aria_label="Como usar",
+            )
+        ),
+        rx.dialog.content(
+            rx.dialog.title("Como usar o Naturametrics"),
+            rx.dialog.description(
+                "Análise da história de uso da terra e da paisagem em qualquer "
+                "ponto do Brasil.",
+                size="2", color_scheme="gray", margin_bottom="0.75rem",
+            ),
+            rx.scroll_area(
+                rx.vstack(
+                    _step("1", "Escolha um ponto",
+                          "Clique em qualquer lugar do mapa. Um marcador é criado e "
+                          "quatro áreas de análise (1, 2, 5 e 10 km de raio) são "
+                          "desenhadas em volta dele. Cliques fora do Brasil são "
+                          "recusados: o MapBiomas cobre apenas o território nacional."),
+                    _step("2", "Leia a história de uso da terra",
+                          "O gráfico abaixo do mapa traz uma coluna por ano, de 1985 a "
+                          "2024, com as classes do MapBiomas nas cores oficiais. Troque "
+                          "o raio em 1/2/5/10 km e use o botão «%» para alternar entre "
+                          "hectares e proporção da área."),
+                    _step("3", "Veja a cobertura no mapa",
+                          "Ligue «MapBiomas 10.1» na barra lateral. O controle «Ano» "
+                          "percorre 1985–2024 — todos os anos são pré-carregados, então "
+                          "a troca é imediata e o mapa não sai do lugar. «Opacidade» "
+                          "controla o quanto do mapa base aparece por baixo."),
+                    _step("4", "Compare dois anos",
+                          "«Cortina deslizante» mostra dois anos ao mesmo tempo, "
+                          "separados por uma linha branca que você arrasta pelo mapa. O "
+                          "ano da esquerda é escolhido no próprio painel; o da direita é "
+                          "o ano selecionado em «Cobertura do solo». Cada lado tem sua "
+                          "própria opacidade."),
+                    _step("5", "Encontre candidatos a recuperação",
+                          "«Mudança na vegetação natural» destaca em vermelho o que era "
+                          "vegetação natural no ano base e deixou de ser, e em verde o "
+                          "que regenerou. O padrão é 2008, marco do Código Florestal: "
+                          "supressão posterior a 22/07/2008 tem obrigação de "
+                          "recomposição."),
+                    rx.callout(
+                        "Esta camada é uma triagem, não um laudo. Não considera CAR, "
+                        "APP/Reserva Legal, porte do imóvel nem autorizações de "
+                        "supressão. Use-a para orientar a investigação, não para "
+                        "concluí-la.",
+                        icon="triangle-alert", color_scheme="amber", size="1",
+                        width="100%",
+                    ),
+                    rx.divider(),
+                    rx.text("Limitações que valem conhecer", size="2", weight="bold"),
+                    rx.unordered_list(
+                        rx.list_item(
+                            "Resolução de 30 m: num raio de 1 km cabem cerca de 3.500 "
+                            "pixels, então poucos pixels mal classificados já mexem nas "
+                            "porcentagens."
+                        ),
+                        rx.list_item(
+                            "A série do MapBiomas começa em 1985 — não é possível saber "
+                            "a idade de vegetação que já existia antes disso."
+                        ),
+                        rx.list_item(
+                            "As áreas são calculadas com a área real do pixel "
+                            "(ee.Image.pixelArea), que varia com a latitude; um valor "
+                            "fixo de 0,09 ha superestimaria a área."
+                        ),
+                        rx.list_item(
+                            "As classes do MapBiomas não são seguras para daltonismo — "
+                            "a legenda sempre traz o nome ao lado da cor."
+                        ),
+                        font_size="var(--font-size-2)", color="var(--gray-11)",
+                    ),
+                    spacing="4", align_items="start", width="100%",
+                ),
+                type="auto", scrollbars="vertical",
+                style={"maxHeight": "60vh", "paddingRight": "1rem"},
+            ),
+            rx.flex(
+                rx.dialog.close(rx.button("Fechar", size="2", variant="soft")),
+                justify="end", margin_top="1rem",
+            ),
+            max_width=["94vw", "94vw", "640px", "640px"],
+        ),
+    )
+
+
+def _source_row(name: str, detail: str, url: str) -> rx.Component:
+    return rx.vstack(
+        rx.link(name, href=url, is_external=True, size="2", weight="bold"),
+        rx.text(detail, size="1", color_scheme="gray"),
+        spacing="1", align_items="start", width="100%",
+    )
+
+
+def como_citar_dialog() -> rx.Component:
+    return rx.dialog.root(
+        rx.dialog.trigger(
+            rx.button(
+                rx.icon("quote", size=15),
+                rx.text("Como citar", display=["none", "none", "block", "block"]),
+                size="1", variant="soft", color_scheme="gray",
+                aria_label="Como citar",
+            )
+        ),
+        rx.dialog.content(
+            rx.dialog.title("Como citar"),
+            rx.dialog.description(
+                "Se o Naturametrics contribuiu para o seu trabalho, cite-o e cite "
+                "também as bases de dados utilizadas.",
+                size="2", color_scheme="gray", margin_bottom="0.75rem",
+            ),
+            rx.scroll_area(
+                rx.vstack(
+                    rx.text("Citação sugerida", size="2", weight="bold"),
+                    rx.box(
+                        rx.text(CITATION_TEXT, size="2", style={"lineHeight": "1.6"}),
+                        padding="0.75rem", background="var(--gray-3)",
+                        border_radius="6px", width="100%",
+                    ),
+                    rx.button(
+                        rx.icon("copy", size=13), "Copiar citação",
+                        on_click=rx.set_clipboard(CITATION_TEXT),
+                        size="1", variant="soft", color_scheme="jade",
+                    ),
+
+                    rx.divider(),
+                    rx.text("BibTeX", size="2", weight="bold"),
+                    rx.code_block(BIBTEX, language="latex", show_line_numbers=False,
+                                  wrap_long_lines=True, font_size="0.75rem"),
+                    rx.button(
+                        rx.icon("copy", size=13), "Copiar BibTeX",
+                        on_click=rx.set_clipboard(BIBTEX),
+                        size="1", variant="soft", color_scheme="jade",
+                    ),
+
+                    rx.divider(),
+                    rx.text("Autores e instituições", size="2", weight="bold"),
+                    rx.vstack(
+                        *[
+                            rx.vstack(
+                                rx.text(name, size="2", weight="medium"),
+                                rx.text(inst, size="1", color_scheme="gray"),
+                                spacing="0", align_items="start",
+                            )
+                            for name, inst in AUTHORS
+                        ],
+                        spacing="3", align_items="start", width="100%",
+                    ),
+
+                    rx.divider(),
+                    rx.text("Bases de dados — cite também", size="2", weight="bold"),
+                    rx.text(
+                        "Cada base tem exigências próprias de atribuição. Ao publicar "
+                        "figuras ou números obtidos aqui, cite as que foram usadas.",
+                        size="1", color_scheme="gray",
+                    ),
+                    rx.vstack(
+                        *[_source_row(n, d, u) for n, d, u in DATA_SOURCES],
+                        spacing="3", align_items="start", width="100%",
+                    ),
+
+                    rx.divider(),
+                    rx.callout(
+                        "As imagens SPOT 2008 (Brazil Forest Imagery Dataset) exigem "
+                        "aceite de licença específica do Google e ainda não estão "
+                        "habilitadas nesta instância.",
+                        icon="info", color_scheme="gray", size="1", width="100%",
+                    ),
+                    spacing="3", align_items="start", width="100%",
+                ),
+                type="auto", scrollbars="vertical",
+                style={"maxHeight": "60vh", "paddingRight": "1rem"},
+            ),
+            rx.flex(
+                rx.dialog.close(rx.button("Fechar", size="2", variant="soft")),
+                justify="end", margin_top="1rem",
+            ),
+            max_width=["94vw", "94vw", "660px", "660px"],
+        ),
+    )
+
+
+def header_actions() -> rx.Component:
+    return rx.hstack(como_usar_dialog(), como_citar_dialog(), spacing="2")

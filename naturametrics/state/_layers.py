@@ -182,10 +182,24 @@ class LayersMixin(rx.State, mixin=True):
 
     def _refresh_layers(self) -> None:
         self.map_layers = self._build_layers()
-        self.map_vectors = (
-            [biome_service.vector_spec(opacity=self.biome_opacity)]
-            if self.show_biomes else []
-        )
+        self.map_vectors = self._build_vectors()
+
+    def _build_vectors(self) -> list[dict[str, Any]]:
+        """Layers the browser draws itself, in stacking order.
+
+        The conglomerado layer carries the same four filters as its tiles, so the
+        clickable points and the drawn points are always the same set — a filter
+        that changed one and not the other would be a trap.
+        """
+        specs: list[dict[str, Any]] = []
+        if self.show_biomes:
+            specs.append(biome_service.vector_spec(opacity=self.biome_opacity))
+        if self.show_ifn:
+            specs.append(ifn_service.vector_spec(
+                self.ifn_region, self.ifn_uf, self.ifn_municipality,
+                self.ifn_biome, min_zoom=st.IFN_INTERACTIVE_MIN_ZOOM,
+            ))
+        return specs
 
     # ---------------------------------------------------------------------- #
     # Event handlers

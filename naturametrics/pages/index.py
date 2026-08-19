@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import reflex as rx
 
+from ..components.conglomerado import conglomerado_card
 from ..components.layout import shell
 from ..components.layer_panel import layer_panel
 from ..components.map import leaflet_map
@@ -18,6 +19,7 @@ from ..state import AppState
 
 def map_pane() -> rx.Component:
     return rx.box(
+        conglomerado_card(),
         leaflet_map(
             id="nm-map",
             center=AppState.map_center,
@@ -29,6 +31,8 @@ def map_pane() -> rx.Component:
             vectors=AppState.map_vectors,
             fit_bounds=AppState.fit_bounds,
             on_map_click=AppState.set_study_point,
+            on_point_hover=AppState.preview_conglomerado,
+            on_point_select=AppState.select_conglomerado,
             width="100%",
             height="100%",
         ),

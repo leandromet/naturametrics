@@ -7,7 +7,9 @@ the session, held in server memory for as long as the session lives, and
 re-sent on every reload, none of which a static, identical-for-everyone
 FeatureCollection needs.
 
-So the biome polygons are served as an ordinary HTTP GET the browser can cache.
+So the biome polygons are served as an ordinary HTTP GET the browser can cache,
+and so are the conglomerados currently in view — which additionally change on
+every pan, and would otherwise mean a state round trip per map movement.
 """
 
 from __future__ import annotations
@@ -18,7 +20,8 @@ import logging
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
-from ..services import biomes
+from ..config.settings import IFN_VIEWPORT_LIMIT
+from ..services import biomes, ifn
 
 logger = logging.getLogger(__name__)
 
@@ -66,6 +69,51 @@ async def _run_blocking(fn):
     return await asyncio.get_running_loop().run_in_executor(None, fn)
 
 
+def _float_param(request: Request, name: str) -> float | None:
+    raw = request.query_params.get(name)
+    try:
+        return float(raw) if raw is not None else None
+    except ValueError:
+        return None
+
+
+async def ifn_points_geojson(request: Request) -> Response:
+    """The conglomerados inside a bounding box, matching the current filters.
+
+    Served over HTTP rather than pushed through state because it is re-asked on
+    every pan and zoom. Answered from the in-memory point table — a linear scan
+    of 17 479 rows, measured at 9 ms — so no Earth Engine and no database is in
+    this path, and the layer keeps up with a dragged map.
+
+    ``bbox`` is ``west,south,east,north`` in degrees. Without it the whole
+    country is returned, subject to ``limit``.
+    """
+    west = _float_param(request, "west")
+    south = _float_param(request, "south")
+    east = _float_param(request, "east")
+    north = _float_param(request, "north")
+    if None in (west, south, east, north):
+        west, south, east, north = -180.0, -90.0, 180.0, 90.0
+
+    try:
+        limit = int(request.query_params.get("limit", IFN_VIEWPORT_LIMIT))
+    except ValueError:
+        limit = IFN_VIEWPORT_LIMIT
+    limit = max(1, min(limit, IFN_VIEWPORT_LIMIT))
+
+    payload = await _run_blocking(lambda: ifn.points_in_bbox(
+        west, south, east, north,
+        region=request.query_params.get("region", ""),
+        uf=request.query_params.get("uf", ""),
+        municipality=request.query_params.get("municipality", ""),
+        biome=request.query_params.get("biome", ""),
+        limit=limit,
+    ))
+    # Deliberately not cached by the browser: the filters are in the query
+    # string, but a stale viewport response is worse than a 9 ms recompute.
+    return JSONResponse(payload, headers={"Cache-Control": "no-store"})
+
+
 def register(app) -> None:
     """Attach the routes to the Reflex app's Starlette instance."""
     api = getattr(app, "_api", None)
@@ -73,4 +121,6 @@ def register(app) -> None:
         logger.warning("Reflex app exposes no Starlette instance — routes skipped")
         return
     api.add_route(biomes.GEOJSON_PATH, biomes_geojson, methods=["GET"])
-    logger.info("Registered backend route %s", biomes.GEOJSON_PATH)
+    api.add_route(ifn.GEOJSON_PATH, ifn_points_geojson, methods=["GET"])
+    logger.info("Registered backend routes %s, %s",
+                biomes.GEOJSON_PATH, ifn.GEOJSON_PATH)

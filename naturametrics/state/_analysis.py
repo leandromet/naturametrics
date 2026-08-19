@@ -13,7 +13,7 @@ from ..components.charts import land_cover_history_figure
 from ..config.settings import BUFFER_RADII_KM
 from ..services.buffers import buffer_geojson
 from ..services.geo import CoordinateError, point
-from ..services.mapbiomas_history import land_cover_history
+from ..services.mapbiomas_history import land_cover_history, point_pixel_series
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +32,14 @@ class AnalysisMixin(rx.State, mixin=True):
     #: only the figure needs to cross the wire.
     _history: list[dict[str, Any]] = []
     _provenance: dict[str, Any] = {}
+
+    #: The study point's own 30 m pixel, one row per year. Measured alongside the
+    #: buffers rather than on demand at export time: it is a 0.5 s call issued in
+    #: parallel with a 1 s one, so it is free in wall-clock, and it means the
+    #: export never has to make the user wait for something the app could
+    #: already have known.
+    _pixel: list[dict[str, Any]] = []
+    _pixel_provenance: dict[str, Any] = {}
 
     #: Token for the in-flight run. A click that lands while an older analysis is
     #: still running must not have its result overwritten by that older run
@@ -53,9 +61,11 @@ class AnalysisMixin(rx.State, mixin=True):
         loop = asyncio.get_running_loop()
         try:
             p = point(lat=lat, lon=lon)
-            df, prov = await loop.run_in_executor(
-                None, land_cover_history, p, BUFFER_RADII_KM
-            )
+            history_task = loop.run_in_executor(
+                None, land_cover_history, p, BUFFER_RADII_KM)
+            pixel_task = loop.run_in_executor(None, point_pixel_series, p)
+            (df, prov), (pixel_df, pixel_prov) = await asyncio.gather(
+                history_task, pixel_task)
         except CoordinateError as exc:
             async with self:
                 if token == self._run_token:
@@ -78,6 +88,8 @@ class AnalysisMixin(rx.State, mixin=True):
                 return
             self._history = df.to_dict("records")
             self._provenance = prov.to_dict()
+            self._pixel = pixel_df.to_dict("records")
+            self._pixel_provenance = pixel_prov.to_dict()
             self.analysis_running = False
             self.has_result = not df.empty
             if df.empty:

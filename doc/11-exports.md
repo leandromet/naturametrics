@@ -11,124 +11,125 @@ Everything the app computes must leave the app. The rule from constraint **C6**
 
 ## 1. Shape of a data export
 
-An analysis produces results at **five nested scopes**: the study point itself, and one
-per buffer. Exports keep those **as separate groups**, never flattened into one
-undifferentiated table.
+**One ODS file per download, with a tab per table.** Not a ZIP of CSVs, and not a
+directory tree — those were the original design here, and they were wrong for this
+data. A spreadsheet is already a compressed container, it opens on a double-click, and
+it keeps the metadata *attached* to the numbers instead of in a sibling file that gets
+separated from them the first time someone forwards one sheet to a colleague.
 
-```
-naturametrics_<pointid>_<timestamp>/
-├─ README.txt                  ← human-readable provenance + what each file is
-├─ provenance.json             ← machine-readable, the same facts
-├─ point.csv                   ← the study point: coordinates, context, point-level values
-├─ buffer_01km/
-│  ├─ landuse_history.csv      ← year × class × area
-│  ├─ landuse_summary.csv      ← one row per class: first year, last year, net change
-│  ├─ vegetation_age.csv       ← age class × area, censored share, confidence
-│  └─ evi_series.csv           ← date × mean EVI  (only if MODIS was requested)
-├─ buffer_02km/  …same four…
-├─ buffer_05km/  …
-├─ buffer_10km/  …
-├─ geometry.geojson            ← the point + all four buffer polygons, one FeatureCollection
-└─ charts/                     ← only if chart export was requested
-   ├─ landuse_history_05km.png
-   └─ vegetation_age_05km.png
-```
+The first tab of every export is `metadados`. There is no code path in
+`services/exports.py` that writes a sheet of numbers without one — the workbook builders
+take the `Provenance` records as required arguments.
 
-Delivered as a **single ZIP**. The user asked for "all points in separate groups"; the
-directory-per-buffer layout is what makes that legible in a file manager, in a shell, and
-to `pandas.read_csv` in a loop.
+### 1a. The study point
 
-### Also offered: one flat file
+`naturametrics_ponto_<id>_<timestamp>.ods`
 
-Some workflows want a single table. So alongside the grouped ZIP there is a **single
-long-format CSV** with a `scope` column:
-
-```csv
-scope,buffer_km,year,class_id,class_name,area_ha,area_pct
-point,,2024,3,Formação Florestal,,
-buffer,1,1985,3,Formação Florestal,238.41,75.9
-buffer,1,1986,3,Formação Florestal,236.02,75.1
-...
-buffer,10,2024,15,Pastagem,9184.33,29.2
-```
-
-Long format, not wide: 40 years × ~15 classes × 4 buffers is a natural long table, and
-wide-by-year breaks the moment the year range changes. Both forms come from the same
-in-memory DataFrame, so they cannot disagree.
-
----
-
-## 2. File-by-file
-
-### `point.csv`
-One row. The study point and everything that is a property *of the point* rather than of
-an area.
-
-| Column | |
+| Tab | Contents |
 |---|---|
-| `point_id` | Stable id — `ua` when an IFN point, else `lat_lon` rounded |
-| `longitude`, `latitude` | WGS84, 6 dp |
-| `source` | `map_click` \| `ifn` \| `coordinate_entry` |
-| `ifn_ua`, `ifn_uf`, `ifn_bioma`, `ifn_municipio`, `ifn_status_derivado` | Populated only for IFN points; `status_derivado` carries its "derived, not official" note in `README.txt` |
-| `mapbiomas_class_<year>` | The class **at the point pixel** for each requested year |
-| `vegetation_age_years` | Age at the point pixel, or `CENSORED` |
-| `establishment_year` | or empty when censored |
-| `age_confidence` | `high` \| `medium` \| `low` |
-| `hansen_lossyear` | Raw Hansen loss year at the pixel, `0` = none |
+| `metadados` | Scope, coordinates, point origin (map click or conglomerado), buffer radii and mode, a provenance block per Earth Engine query, the citation, and the required attributions |
+| `ponto_pixel` | The point's own 30 m pixel: `year, class_id, class_pt, class_en`, 40 rows |
+| `buffer_01km` … `buffer_10km` | One tab per radius: `year, class_id, class_pt, class_en, pixels, area_ha, area_pct` |
+| `resumo_por_classe` | Per buffer per class: first-year area, last-year area, net change in ha and % |
+| `classes_mapbiomas` | The code → name → colour dictionary, so no other tab is a column of bare integers |
 
-A single 30 m pixel is a noisy thing; `README.txt` says so explicitly next to this file.
+Nothing is recomputed at export time. The history written to the file is the frame
+already driving the chart, so the file and the screen cannot disagree. Measured: ~46 KiB
+and 0.04 s.
 
-### `buffer_XXkm/landuse_history.csv`
-The signature table — the data behind the stacked columns.
+### 1b. A conglomerado selection
 
-```csv
-year,class_id,class_name_pt,class_name_en,area_ha,area_pct,pixel_count
-1985,3,Formação Florestal,Forest Formation,238.41,75.90,2649
-1985,15,Pastagem,Pasture,52.17,16.61,580
-```
+`naturametrics_conglomerados_<timestamp>.ods`
 
-Long format. `pixel_count` is included because it is what was actually measured — area is
-derived from it, and constraint **C6** means the reader should be able to see both.
+Driven by **the same four filters as the map layer** (região / bioma / estado /
+município), so "what will I get" is answered by looking at the sidebar. The panel offers
+three parts, because they have very different costs:
 
-### `buffer_XXkm/landuse_summary.csv`
-One row per class: `area_first_year`, `area_last_year`, `net_change_ha`, `net_change_pct`,
-`year_of_max`, `year_of_min`. Convenience only — fully derivable from the history file.
+| Tab | Contents | Cost |
+|---|---|---|
+| `conglomerados` | One row per point: id, região, UF, município, bioma, coordinates | free — read from `data/ifn_points_biome.csv` |
+| `pixel_por_ano` | One row per conglomerado, one column per year, holding that pixel's class | **uncapped** — one streamed Earth Engine download; measured 17 479 points × 40 years = 2.3 MB in 1.9 s |
+| `buffers` | `conglomerado, uf, municipio, bioma, radius_km, year, class_id, class_pt, class_en, pixels, area_ha, area_pct` | ~0.11 s and ~600 rows per conglomerado — **capped**, see §1c |
+| `classes_mapbiomas` | As above | free |
 
-### `buffer_XXkm/vegetation_age.csv`
-Two blocks in one file, separated by a blank line and a comment header, because the
-headline statistics are not the same shape as the distribution:
+### 1c. Why the buffer half is capped
 
-```csv
-# distribution
-age_class,label,area_ha,area_pct,pixel_count,confidence_high_pct,burned_pct
-0-5,0–5 years,44.10,2.1,490,88.0,12.4
-...
-censored,No conversion observed since 1985,1298.55,62.0,14428,94.1,18.0
+The buffer tab is built by fanning the *same* per-point analysis the interactive view
+uses out across the Earth Engine pool — not by building one enormous `reduceRegions`.
+Two reasons, and the second is the important one:
 
-# summary
-metric,value
-median_age_dated_years,14
-censored_share_pct,62.0
-total_natural_ha,2094.3
-...
-```
+* **It is faster.** Measured 0.11 s/point fanned out against 0.39 s/point batched
+  (140 points: 11 s vs 55 s).
+* **It is the same code path as the screen.** A user can click one conglomerado, read the
+  chart, and find those exact numbers in the file. A separate batch reducer would be a
+  second implementation of the same measurement, free to drift.
 
-**`censored_share_pct` is mandatory in every age export.** An age table without it invites
-exactly the misreading that [10-forest-age.md](10-forest-age.md) §5.1 exists to prevent.
-Forest formations and natural non-forest are written as separate rows with a `class_group`
-column — never silently pooled.
+The cap is `settings.EXPORT_BUFFER_MAX_POINTS`, default **1 500**, and it comes from the
+spreadsheet, not from us: a sheet holds 1 048 576 rows, so ~1 750 conglomerados is the
+most that can be written without silently losing the tail. The whole grid would be
+~10.5 M rows and about half an hour — that is a batch job, not a button, and the panel
+says so instead of hanging.
 
-### `geometry.geojson`
-Point + four buffer polygons in one FeatureCollection, each with `radius_km`,
-`buffer_mode` (`disc`/`ring`) and its area. Lets anyone re-run the analysis elsewhere, which
-is the real test of whether an export is honest.
+Partial failure does not abort the export. A conglomerado whose query fails is named in
+the `metadados` tab and the rest of the file is written; three bad points out of five
+hundred should cost three points, not the download.
+
+### 1d. Delivery
+
+`rx.download` carries the bytes inside the event payload, so a file costs roughly 4/3 of
+its size on the WebSocket. That is fine at the sizes the cap allows (~14 MB at 1 500
+conglomerados) and is a second reason not to simply raise it: past this scale the
+*delivery* becomes the problem, and the answer there is a background job writing to
+object storage.
 
 ---
+
+## 2. The ODS writer
+
+`services/ods.py`, ~150 lines, no dependency.
+
+The obvious choice — `pandas.to_excel(engine="odf")` — builds the whole document as an
+in-memory DOM and degrades superlinearly:
+
+| Rows | odfpy | `services/ods.py` |
+|---|---|---|
+| 5 000 | 1.3 s | — |
+| 20 000 | 7.1 s | 0.1 s |
+| 60 000 | 41.9 s | — |
+| 600 000 | (not attempted) | **3.9 s, 14 MB** |
+
+An ODS file is a ZIP holding a few XML parts, and a table of plain values is a trivial
+subset of the schema, so `content.xml` is streamed straight into the archive. Linear,
+constant-rate, and no intermediate structure held in memory.
+
+It supports strings, numbers and blanks. No styling, no formulas, no dates-as-dates. If
+that ever needs to change, that is the moment to reach for a real library rather than to
+grow this one. `tests/test_exports.py` reads every assertion back with **odfpy**, an
+independent implementation — a hand-rolled format is exactly the kind of thing that works
+on the author's machine and produces a file LibreOffice refuses to open.
+
+---
+
+## 2b. File-by-file field notes
+
+### `ponto_pixel` / `pixel_por_ano`
+A single 30 m pixel is a noisy thing: one misclassified year reads as a transition that
+never happened. Every export carrying a pixel tab repeats that warning in `metadados`,
+next to a pointer at the buffer tabs, which aggregate thousands of pixels.
+
+### `buffer_XXkm` / `buffers`
+Long format, not wide-by-year: 40 years × ~15 classes × 4 buffers is a natural long
+table, and wide-by-year breaks the moment the year range changes. `pixels` is included
+alongside `area_ha` because it is what was actually measured — area is derived from it
+via decision D3, and constraint **C6** means the reader should be able to see both.
 
 ## 3. Provenance
 
-`provenance.json` is the `Provenance` dataclass from [02-architecture.md](02-architecture.md)
-§5, serialised, one entry per analysis:
+The `metadados` tab is the `Provenance` dataclass from
+[02-architecture.md](02-architecture.md) §5, flattened to key/value rows — prose and pairs
+rather than raw JSON, because this is the sheet somebody reads six months later to decide
+whether they can defend the numbers beside it, and JSON in a spreadsheet cell is not
+readable. The underlying record is still exactly this:
 
 ```json
 {
@@ -162,13 +163,16 @@ is the real test of whether an export is honest.
 }
 ```
 
-`README.txt` is the same information in prose, plus the **required attributions** for every
-dataset used (MapBiomas, Hansen et al. 2013, SFB/IFN, and the SPOT licence text when those
-layers contributed) — constraint **C4**.
+The same tab carries the **required attributions** for every dataset used (MapBiomas,
+Hansen et al. 2013, SFB/IFN, and the SPOT licence text when those layers contributed) —
+constraint **C4** — and the suggested citation. Those facts live in
+`config/citation.py` so the "Como citar" dialog and every export read one source; two
+copies drift.
 
 `degraded: true` appears whenever the retry ladder in [06-ee-layers.md](06-ee-layers.md) §4
 had to coarsen `scale` or raise `tileScale`. **A degraded result is exportable but must say
-so**, both in the JSON and as a line in `README.txt`.
+so** — it is a row in `metadados`, and for a selection export the count of conglomerados
+that needed a retry is recorded too.
 
 ---
 
@@ -202,21 +206,37 @@ light or dark background, and title/caption on or off. Filenames are determinist
 
 ## 5. Interaction
 
-- Export panel in the sidebar, plus a save icon on each chart.
-- The user chooses **which buffers** and **which analyses** go into the ZIP; default is
-  everything computed so far. Nothing is recomputed at export time — if it is not on
-  screen, it is not in the file, and the panel says which analyses are available.
-- ZIP is assembled server-side and delivered via `rx.download`; large exports stream
-  rather than buffering whole.
-- A progress indicator for anything over a second, and an explicit success state with the
-  filename — a silent download is indistinguishable from a failure.
+The export panel is a **dialog in the header**, beside "Como usar" and "Como citar" —
+not another sidebar section. The sidebar already carries five layer controls and a
+four-level filter cascade; a checklist below them would push everything else off screen.
+
+- The study-point download is one button and needs no options: everything in it was
+  already computed to draw the chart.
+- The selection download has a three-item checklist, each labelled with what it costs.
+  The buffer item disables itself above the cap and the panel explains why, with the
+  numbers, rather than failing after the user has waited.
+- Progress is reported as `done/total` conglomerados during the fan-out, and the result
+  line names the file and its size — a silent download is indistinguishable from a
+  failure.
+- Nothing is recomputed for the study-point export. If it is not on screen, it is not in
+  the file.
 
 ---
 
 ## 6. Deliberately deferred
 
-Multi-point / batch export (one ZIP covering many points, or a combined table across an
-IFN filter selection) is **Phase 7**, alongside batch mode. The single-point layout above
-is designed so that a batch export is the same tree one level deeper
-(`<point_id>/buffer_XXkm/…`) plus a combined long-format CSV with a `point_id` column —
-so choosing this structure now does not have to be revisited then.
+**Chart images** (§4) are still to build; the data behind every chart is already
+exportable.
+
+**The whole grid at buffer resolution** — all 17 479 conglomerados × 4 buffers × 40 years,
+~10.5 M rows — remains out of scope for an interactive download, for the two independent
+reasons in §1c and §1d: it exceeds what a spreadsheet can hold, and it exceeds what an
+event payload should carry. The shape it would take is clear enough (a background job
+writing to object storage, and a link when it is done), and nothing built here has to be
+revisited to add it: the fan-out in `selection_buffer_frame` already produces the rows,
+and only the sink would change.
+
+This does not reopen the "no batch processing" non-goal in
+[01-premises.md](01-premises.md) §3. A bounded, synchronous fan-out over a filtered
+selection is still one interaction the user waits on; a batch engine is a queue, a
+scheduler and a retry policy, and none of those exist here.

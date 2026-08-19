@@ -27,6 +27,22 @@ class PointMixin(rx.State, mixin=True):
     point_label: str = ""
     point_error: str = ""
 
+    #: Where the point came from, and who it is. A map click is anonymous; a
+    #: conglomerado is a named sampling location with a published identity, and
+    #: an export that loses that distinction cannot be joined back to the IFN.
+    point_source: str = "clique no mapa"
+    point_conglomerado: str = ""
+    point_uf: str = ""
+    point_municipio: str = ""
+    point_bioma: str = ""
+
+    def _clear_identity(self) -> None:
+        self.point_source = "clique no mapa"
+        self.point_conglomerado = ""
+        self.point_uf = ""
+        self.point_municipio = ""
+        self.point_bioma = ""
+
     def set_study_point(self, lat: float, lon: float):
         """Handle a map click.
 
@@ -34,6 +50,10 @@ class PointMixin(rx.State, mixin=True):
         goes through :mod:`naturametrics.services.geo`, which is the only place
         allowed to reorder them — see that module for why.
         """
+        # A bare map click carries no identity. Cleared here rather than in the
+        # caller so that clicking away from a conglomerado cannot leave the
+        # previous one's name attached to a different coordinate.
+        self._clear_identity()
         try:
             p = point(lat=lat, lon=lon)
             validate_for_analysis(p)
@@ -65,3 +85,12 @@ class PointMixin(rx.State, mixin=True):
         self.point_error = ""
         self.buffer_overlays = {}
         self.has_result = False
+        self._clear_identity()
+
+    @rx.var
+    def point_identity_label(self) -> str:
+        """"MT_1913 · Cuiabá/MT" for a conglomerado, empty for a map click."""
+        if not self.point_conglomerado:
+            return ""
+        place = " · ".join(x for x in (self.point_municipio, self.point_uf) if x)
+        return f"{self.point_conglomerado} — {place}" if place else self.point_conglomerado

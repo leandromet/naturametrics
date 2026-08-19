@@ -42,7 +42,7 @@ import threading
 from typing import Any, Iterable
 
 from ..config import datasets as ds
-from ..config.settings import IFN_FILTER_INDEX_PATH
+from ..config.settings import IFN_FILTER_INDEX_PATH, IFN_POINTS_TABLE_PATH
 from .tiles import get_tile_url
 
 logger = logging.getLogger(__name__)
@@ -82,6 +82,17 @@ def filtered_points(
         if value:
             fc = fc.filter(ee.Filter.eq(field, value))
     return fc
+
+
+def asset_id() -> str:
+    """The Earth Engine asset the layer and the exports both read."""
+    return _CONF["asset"]
+
+
+def field_names() -> dict[str, str]:
+    """Semantic name → property name. Nothing outside this module should hard-code
+    the abbreviated shapefile column names."""
+    return dict(_F)
 
 
 def filter_key(region: str, uf: str, municipality: str, biome: str) -> str:
@@ -324,3 +335,162 @@ def biome_options(uf: str = "") -> list[str]:
 def region_of(uf: str) -> str:
     """The região a UF belongs to, so picking a UF can fill the região in."""
     return options()["region_of_uf"].get(uf, "")
+
+
+# --------------------------------------------------------------------------- #
+# The per-point table
+# --------------------------------------------------------------------------- #
+# Loaded separately from the index because it answers a different question. The
+# index says how many conglomerados a filter selects; this says which ones, and
+# where. It is what makes the interactive layer possible without a round trip per
+# pan: 17 479 rows is a linear scan of a few milliseconds, so no spatial index
+# earns its complexity here.
+
+#: Path served by the backend. Relative — the map component resolves it against
+#: the backend origin, which differs between the split dev ports and single-port
+#: production.
+GEOJSON_PATH = "/_ifn_points.geojson"
+
+_points: list[dict[str, Any]] | None = None
+_points_lock = threading.Lock()
+
+
+def _load_points() -> list[dict[str, Any]]:
+    """Read ``data/ifn_points_biome.csv`` into memory, once."""
+    global _points
+
+    with _points_lock:
+        if _points is not None:
+            return _points
+
+    rows: list[dict[str, Any]] = []
+    try:
+        with IFN_POINTS_TABLE_PATH.open(encoding="utf-8", newline="") as handle:
+            for raw in csv.DictReader(handle):
+                try:
+                    lon, lat = float(raw["lon"]), float(raw["lat"])
+                except (TypeError, ValueError):
+                    continue
+                rows.append({
+                    "ponto_id": raw["ponto_id"],
+                    "conglomerado": raw["conglomerado"],
+                    "regiao": raw["regiao"],
+                    "uf": raw["uf"],
+                    "municipio": raw["municipio"],
+                    "bioma": raw["bioma"],
+                    "lon": lon,
+                    "lat": lat,
+                })
+    except FileNotFoundError:
+        logger.warning(
+            "%s missing — run scripts/join_ifn_biomes.py. The conglomerados stay "
+            "visible as tiles but cannot be hovered, clicked or exported.",
+            IFN_POINTS_TABLE_PATH,
+        )
+    except (OSError, KeyError) as exc:
+        logger.error("IFN point table unreadable (%s)", exc)
+        rows = []
+
+    with _points_lock:
+        _points = rows
+    logger.info("IFN point table: %s conglomerados", len(rows))
+    return rows
+
+
+def _match(row: dict[str, Any], region: str, uf: str, municipality: str,
+           biome: str) -> bool:
+    return (
+        (not region or row["regiao"] == region)
+        and (not uf or row["uf"] == uf)
+        and (not municipality or row["municipio"] == municipality)
+        and (not biome or row["bioma"] == biome)
+    )
+
+
+def selected_points(region: str = "", uf: str = "", municipality: str = "",
+                    biome: str = "") -> list[dict[str, Any]]:
+    """Every conglomerado the current filter selects, in table order.
+
+    This is the export's definition of "the selection", and it must agree with
+    :func:`count` — both read tables written by the same join.
+    """
+    return [r for r in _load_points() if _match(r, region, uf, municipality, biome)]
+
+
+def points_in_bbox(
+    west: float, south: float, east: float, north: float,
+    region: str = "", uf: str = "", municipality: str = "", biome: str = "",
+    limit: int = 1500,
+) -> dict[str, Any]:
+    """Filtered conglomerados inside a viewport, as GeoJSON.
+
+    Truncation is reported in the collection's ``properties`` rather than
+    silently applied: a layer that quietly stops drawing past the 1 500th point
+    looks like missing data, and the UI says so instead.
+    """
+    features = []
+    total = 0
+    for row in _load_points():
+        if not (west <= row["lon"] <= east and south <= row["lat"] <= north):
+            continue
+        if not _match(row, region, uf, municipality, biome):
+            continue
+        total += 1
+        if len(features) >= limit:
+            continue
+        features.append({
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [row["lon"], row["lat"]]},
+            "properties": {
+                "ponto_id": row["ponto_id"],
+                "conglomerado": row["conglomerado"],
+                "uf": row["uf"],
+                "municipio": row["municipio"],
+                "bioma": row["bioma"],
+                "lat": row["lat"],
+                "lon": row["lon"],
+            },
+        })
+
+    return {
+        "type": "FeatureCollection",
+        "features": features,
+        "properties": {"total": total, "returned": len(features),
+                       "truncated": total > len(features)},
+    }
+
+
+def vector_spec(
+    region: str = "", uf: str = "", municipality: str = "", biome: str = "",
+    min_zoom: int = 8, z_index: int = 40,
+) -> dict[str, Any]:
+    """Spec for the interactive conglomerado layer.
+
+    The tiles below it stay on: they are what makes the national grid visible at
+    a glance, and they cost nothing. This layer adds *reachability* — the same
+    dots, as real geometry, wherever the user has zoomed in far enough for
+    hovering one to be a deliberate act rather than an accident. Its markers are
+    drawn slightly larger so they sit exactly over the tiled dots rather than
+    beside them.
+    """
+    return {
+        "id": "ifn_interactive",
+        "path": GEOJSON_PATH,
+        "dynamic": True,
+        "min_zoom": min_zoom,
+        "z_index": z_index,
+        "query": {"region": region, "uf": uf, "municipality": municipality,
+                  "biome": biome},
+        "point_style": {"radius": 5, "color": "#ffffff", "weight": 1.5,
+                        "fillColor": "#e5484d", "fillOpacity": 0.95},
+        "hover_style": {"radius": 8, "color": "#ffffff", "weight": 2.5,
+                        "fillColor": "#ff8a00", "fillOpacity": 1.0},
+        "tooltip": [
+            {"label": "Conglomerado", "property": "conglomerado"},
+            {"label": "Município", "property": "municipio"},
+            {"label": "UF", "property": "uf"},
+            {"label": "Bioma", "property": "bioma"},
+        ],
+        "emit_hover": True,
+        "emit_select": True,
+    }

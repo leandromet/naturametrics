@@ -192,3 +192,150 @@ def to_shares(df: pd.DataFrame, radius_km: float) -> pd.DataFrame:
     totals = sub.groupby("year")["area_ha"].transform("sum")
     sub["area_pct"] = (sub["area_ha"] / totals * 100.0).fillna(0.0)
     return sub
+
+
+def point_pixel_series(
+    p: Point,
+    collection: str = mb.MAPBIOMAS_DEFAULT_COLLECTION,
+    years: list[int] | None = None,
+) -> tuple[pd.DataFrame, Provenance]:
+    """The MapBiomas class at the point's own 30 m pixel, one row per year.
+
+    This is a different measurement from the buffer histograms, not a summary of
+    them: it is what the classifier says about *this* pixel, with no averaging
+    to hide behind. A single 30 m pixel is noisy — one misclassified year shows
+    up as a spurious transition — and every export that carries this table also
+    carries that warning (doc/11 §2).
+
+    One ``reduceRegion`` over all 40 bands, ~0.3 s.
+    """
+    import ee
+
+    validate_for_analysis(p)
+
+    years = years or mb.MAPBIOMAS_YEARS
+    bands = [mb.band_for_year(y) for y in years]
+    asset = mb.MAPBIOMAS_COLLECTIONS[collection]
+
+    prov = Provenance(
+        name="point_pixel_series",
+        dataset_id=asset,
+        bands=bands,
+        scale_m=EE_DEFAULT_SCALE_M,
+        reducer="first",
+        pixel_area_basis="n/a — single pixel, no area computed",
+        max_pixels=EE_MAX_PIXELS,
+        tile_scale=EE_TILE_SCALE,
+        geometry=p.to_geojson(),
+        extra={"collection": collection, "point": str(p)},
+    )
+
+    values = (
+        ee.Image(asset)
+        .select(bands)
+        .reduceRegion(
+            reducer=ee.Reducer.first(),
+            geometry=p.to_ee_point(),
+            scale=EE_DEFAULT_SCALE_M,
+            tileScale=EE_TILE_SCALE,
+            maxPixels=EE_MAX_PIXELS,
+        )
+        .getInfo()
+    ) or {}
+
+    records = []
+    for year in years:
+        raw = values.get(mb.band_for_year(year))
+        class_id = int(raw) if raw is not None else None
+        records.append({
+            "year": year,
+            "class_id": class_id,
+            # A pixel outside the mapped area returns None. Labelling it "sem
+            # dado" rather than dropping the row keeps the series continuous,
+            # which is what makes a gap visible instead of invisible.
+            "class_pt": mb.label(class_id, "pt") if class_id is not None else "Sem dado",
+            "class_en": mb.label(class_id, "en") if class_id is not None else "No data",
+        })
+
+    df = pd.DataFrame.from_records(records)
+    prov.extra["n_years"] = len(df)
+    prov.extra["n_missing"] = int(df["class_id"].isna().sum())
+    return df, prov
+
+
+def preview_land_cover(
+    p: Point,
+    radius_km: float = 10.0,
+    collection: str = mb.MAPBIOMAS_DEFAULT_COLLECTION,
+) -> dict[str, Any]:
+    """A quick land-cover sketch of one buffer, for the hover card.
+
+    Deliberately *not* the full analysis. It reads two bands — the first and last
+    years — over a single buffer, which measured 0.25–0.7 s and is what makes
+    showing it on hover honest rather than a promise the interface cannot keep.
+    Clicking the conglomerado runs the real thing.
+
+    Two years rather than one because the composition alone says what is there
+    now, and the question a user is actually asking while sweeping across a grid
+    of sampling points is what *changed*.
+    """
+    import ee
+
+    validate_for_analysis(p)
+
+    first_year, last_year = mb.MAPBIOMAS_YEAR_START, mb.MAPBIOMAS_YEAR_END
+    bands = [mb.band_for_year(first_year), mb.band_for_year(last_year)]
+    asset = mb.MAPBIOMAS_COLLECTIONS[collection]
+
+    raw = (
+        ee.Image(asset)
+        .select(bands)
+        .reduceRegion(
+            reducer=ee.Reducer.frequencyHistogram(),
+            geometry=p.to_ee_point().buffer(radius_km * 1000.0),
+            scale=EE_DEFAULT_SCALE_M,
+            tileScale=EE_TILE_SCALE,
+            maxPixels=EE_MAX_PIXELS,
+        )
+        .getInfo()
+    ) or {}
+
+    def shares(band: str) -> dict[int, float]:
+        hist = raw.get(band) or {}
+        counts = {int(float(k)): float(v) for k, v in hist.items() if float(v) > 0}
+        total = sum(counts.values())
+        if not total:
+            return {}
+        return {k: v / total * 100.0 for k, v in counts.items()}
+
+    first, last = shares(bands[0]), shares(bands[1])
+    if not last:
+        return {"radius_km": radius_km, "rows": [], "empty": True}
+
+    rows = [
+        {
+            "class_id": class_id,
+            "class_pt": mb.label(class_id, "pt"),
+            "color": mb.color(class_id),
+            "pct": round(pct, 1),
+            "pct_label": f"{pct:.1f}%".replace(".", ","),
+            # Percentage *points* of change, not a ratio: "+12 pp" is the
+            # comparison a share invites, and a ratio off a 0.1 % base is noise
+            # dressed up as a finding.
+            "delta": round(pct - first.get(class_id, 0.0), 1),
+        }
+        for class_id, pct in sorted(last.items(), key=lambda kv: -kv[1])[:6]
+    ]
+
+    def natural(shares_map: dict[int, float]) -> float:
+        return sum(v for k, v in shares_map.items() if k in mb.NATURAL_VEGETATION)
+
+    return {
+        "radius_km": radius_km,
+        "first_year": first_year,
+        "last_year": last_year,
+        "rows": rows,
+        "natural_first": round(natural(first), 1),
+        "natural_last": round(natural(last), 1),
+        "empty": False,
+    }

@@ -176,6 +176,10 @@ data/*
 # it at startup and a deploy cannot rebuild it (scripts/join_ifn_biomes.py needs
 # Earth Engine). The 1.3 MB per-point table it is derived from stays out.
 !data/ifn_filter_index.csv
+# 1.3 MB per-point table: the interactive hover/click layer answers "which
+# conglomerados are in view" from it, and the export enumerates it. Same
+# argument as the index — a deploy cannot rebuild it.
+!data/ifn_points_biome.csv
 
 # Explicit belt-and-braces for the bulk trees
 data/raw/

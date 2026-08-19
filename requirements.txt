@@ -13,6 +13,9 @@ google-auth-oauthlib>=1.2.1
 # Data
 pandas>=2.2.0
 numpy>=2.0.0
+# No spreadsheet library: services/ods.py writes ODS by streaming XML into a
+# ZIP. odfpy was measured at 42 s for 60 000 rows and degrading; the streaming
+# writer does 600 000 in 3.9 s. See that module's docstring.
 
 # Viz
 plotly>=6.1.1

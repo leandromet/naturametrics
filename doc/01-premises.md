@@ -40,10 +40,16 @@ The first shippable version does exactly this:
 6. **Satellite context layers** from Earth Engine can be toggled underneath: Sentinel-2,
    Landsat, MODIS EVI, Hansen/GLAD forest layers, and the **Google Brazil Forest 2008
    (SPOT) mosaic** in both its visual and analytic flavours.
-7. **National Forest Inventory (IFN) sampling points** are available as a selectable
-   layer. A point can be picked **with the mouse on the map** or **from a filterable
-   list** (filters: *estado*, *bioma*, *status*). Picking one is equivalent to clicking
-   that coordinate, so the whole buffer analysis above applies to it.
+7. **National Forest Inventory (IFN) sampling points** are a selectable layer — the full
+   national grid, 17 479 usable conglomerados. It is filterable by *região*, *bioma*,
+   *estado* and *município*, cascading, with the count and the framing answered from a
+   precomputed local index rather than a query. Zoomed in past z8 the points become
+   interactive: hovering one previews the land cover in its 10 km buffer, and clicking
+   one makes it the study point at its own published coordinates, so the whole buffer
+   analysis above applies to it.
+   *(The original plan listed a `status` filter. It is not offered: `status_derivado` is
+   derived by us, not published by the SFB — see [05-ifn.md](05-ifn.md) §4 — and a filter
+   is exactly the context where a derived field gets mistaken for an official one.)*
 8. **Everything computed can be exported** — a grouped ZIP with `point.csv` plus one
    directory per buffer, a flat long-format CSV alternative, the geometries as GeoJSON,
    and every chart saveable as PNG / SVG / interactive HTML / CSV. Every export carries

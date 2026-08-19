@@ -13,57 +13,9 @@ from __future__ import annotations
 
 import reflex as rx
 
-APP_URL = "https://naturametrics-652582010777.us-west1.run.app"
-APP_YEAR = "2026"
-
-AUTHORS = [
-    ("Leandro Meneguelli Biondo", "University of British Columbia Okanagan (UBC Okanagan), Canadá"),
-    ("Gustavo Heringer", "Instituto Nacional da Mata Atlântica (INMA/MCTI), Brasil"),
-    ("Alex Coelho", "Universidade Federal de Viçosa (UFV), Brasil"),
-]
-
-CITATION_TEXT = (
-    "Biondo, L. M.; Heringer, G.; Coelho, A. "
-    f"({APP_YEAR}). Naturametrics: história de uso da terra e análise da paisagem. "
-    "University of British Columbia Okanagan; Instituto Nacional da Mata "
-    "Atlântica (INMA/MCTI); Universidade Federal de Viçosa. "
-    f"Disponível em: {APP_URL}"
+from ..config.citation import (
+    APP_URL, APP_YEAR, AUTHORS, BIBTEX, CITATION_TEXT, DATA_SOURCES,
 )
-
-BIBTEX = f"""@software{{naturametrics_{APP_YEAR},
-  title   = {{Naturametrics: história de uso da terra e análise da paisagem}},
-  author  = {{Biondo, Leandro Meneguelli and Heringer, Gustavo and Coelho, Alex}},
-  year    = {{{APP_YEAR}}},
-  organization = {{University of British Columbia Okanagan; Instituto Nacional
-                   da Mata Atlântica (INMA/MCTI); Universidade Federal de Viçosa}},
-  url     = {{{APP_URL}}}
-}}"""
-
-#: Constraint C4 — every layer the app can draw is credited here.
-DATA_SOURCES = [
-    ("MapBiomas — Coleção 10.1",
-     "Projeto MapBiomas — Mapeamento Anual de Cobertura e Uso da Terra no Brasil. "
-     "Licença CC-BY-SA.",
-     "https://mapbiomas.org"),
-    ("MapBiomas — Desmatamento e Vegetação Secundária",
-     "Base do cálculo de regeneração e do ano de referência do Código Florestal.",
-     "https://mapbiomas.org"),
-    ("Hansen Global Forest Change",
-     "Hansen, M. C. et al. (2013). High-Resolution Global Maps of 21st-Century "
-     "Forest Cover Change. Science 342, 850–853. Licença CC-BY 4.0.",
-     "https://glad.earthengine.app/view/global-forest-change"),
-    ("Inventário Florestal Nacional (IFN)",
-     "Serviço Florestal Brasileiro — dados abertos, licença CC-BY.",
-     "https://dados.florestal.gov.br"),
-    ("Google Earth Engine",
-     "Gorelick, N. et al. (2017). Google Earth Engine: Planetary-scale geospatial "
-     "analysis for everyone. Remote Sensing of Environment 202, 18–27.",
-     "https://earthengine.google.com"),
-    ("Mapas base",
-     "Esri World Imagery; OpenStreetMap contributors; Google.",
-     "https://www.openstreetmap.org/copyright"),
-]
-
 
 def _step(number: str, title: str, body: str) -> rx.Component:
     return rx.hstack(
@@ -126,6 +78,22 @@ def como_usar_dialog() -> rx.Component:
                           "que regenerou. O padrão é 2008, marco do Código Florestal: "
                           "supressão posterior a 22/07/2008 tem obrigação de "
                           "recomposição."),
+                    _step("6", "Trabalhe com os conglomerados do IFN",
+                          "Ligue «Conglomerados» na barra lateral para ver os 17.479 "
+                          "pontos do Inventário Florestal Nacional, e filtre por "
+                          "região, bioma, estado e município — o mapa enquadra a "
+                          "seleção sozinho. Aproximando o zoom, os pontos ficam "
+                          "interativos: pare o cursor sobre um para ver a cobertura "
+                          "num raio de 10 km hoje e em 1985, e clique para rodar a "
+                          "análise completa nas coordenadas oficiais dele."),
+                    _step("7", "Baixe os dados",
+                          "Em «Baixar dados», no topo da página. São duas planilhas "
+                          "ODS independentes: a do ponto de estudo atual, com uma aba "
+                          "por raio e o pixel do próprio ponto ano a ano; e a da "
+                          "seleção de conglomerados, onde você marca o que quer — "
+                          "lista de pontos, classe do pixel ano a ano, e o histórico "
+                          "dos buffers. Toda planilha abre com uma aba «metadados» "
+                          "dizendo como cada número foi calculado."),
                     rx.callout(
                         "Esta camada é uma triagem, não um laudo. Não considera CAR, "
                         "APP/Reserva Legal, porte do imóvel nem autorizações de "
@@ -268,4 +236,10 @@ def como_citar_dialog() -> rx.Component:
 
 
 def header_actions() -> rx.Component:
-    return rx.hstack(como_usar_dialog(), como_citar_dialog(), spacing="2")
+    from .exports import exportar_dialog
+
+    # Imported inside the function: components/exports.py imports the state, and
+    # the state imports components/charts.py. At module scope that closes into a
+    # circular import; here the cycle is resolved by the time the page is built.
+    return rx.hstack(exportar_dialog(), como_usar_dialog(), como_citar_dialog(),
+                     spacing="2")

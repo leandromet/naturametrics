@@ -14,7 +14,8 @@
 // There is no `React` namespace object in scope - calling `React.useRef` here throws
 // "React is not defined" at render. Use the bare hook names.
 
-function useNaturametricsMap(containerRef, config, layers, overlays, vectors, onMapClick) {
+function useNaturametricsMap(containerRef, config, layers, overlays, vectors, onMapClick,
+                             onPointHover, onPointSelect) {
   const mapRef = useRef(null);
   const layerRegistry = useRef(new Map());
   const vectorRegistry = useRef(new Map());
@@ -27,6 +28,17 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
   // otherwise land the layer at the opacity it had when the fetch started, and
   // nothing would re-render to correct it.
   const vectorsRef = useRef(vectors);
+  // Dynamic layers refetch as the map moves, so their handlers must be current
+  // without re-registering Leaflet listeners on every render.
+  const hoverRef = useRef(onPointHover);
+  const selectRef = useRef(onPointSelect);
+  const hoverTimer = useRef(null);
+  const leaveTimer = useRef(null);
+  const moveTimer = useRef(null);
+  //: Last fetch key per dynamic layer - "same viewport, same filters, skip".
+  const dynamicKey = useRef(new Map());
+  //: When a conglomerado was last clicked. See the click handler below.
+  const pointClickAt = useRef(0);
   const overlayRef = useRef(null);
   const clickRef = useRef(onMapClick);
   const readyRef = useRef(false);
@@ -34,6 +46,8 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
   // Keep the click callback current without re-registering the Leaflet handler.
   clickRef.current = onMapClick;
   vectorsRef.current = vectors;
+  hoverRef.current = onPointHover;
+  selectRef.current = onPointSelect;
 
   // --- 1. Create the map exactly once -------------------------------------
   useEffect(() => {
@@ -71,6 +85,10 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
       L.control.scale({ imperial: false, position: "bottomleft" }).addTo(map);
 
       map.on("click", (e) => {
+        // A click that landed on a conglomerado has already been handled, with
+        // that conglomerado's own coordinates. Without this the map would then
+        // overwrite the study point with the cursor position.
+        if (Date.now() - pointClickAt.current < 150) return;
         if (clickRef.current) {
           clickRef.current(
             Math.round(e.latlng.lat * 1e6) / 1e6,
@@ -109,6 +127,11 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
         layerRegistry.current.clear();
         vectorRegistry.current.clear();
         vectorPending.current.clear();
+        dynamicKey.current.clear();
+        [hoverTimer, leaveTimer, moveTimer].forEach((t) => {
+          if (t.current) clearTimeout(t.current);
+          t.current = null;
+        });
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -432,15 +455,180 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
 
   // --- 3b. Browser-side vector layers -------------------------------------
   // Tiles cannot answer "what is under the cursor" - they are pixels. A layer
-  // that has to name itself on hover therefore needs real geometry in the
-  // browser, so these specs carry a PATH and the hook fetches the GeoJSON over
-  // plain HTTP (cacheable, gzipped, and off the WebSocket - see
-  // naturametrics/api/__init__.py).
+  // that has to name itself on hover, or be clicked, therefore needs real
+  // geometry in the browser, so these specs carry a PATH and the hook fetches
+  // the GeoJSON over plain HTTP (cacheable, gzipped, and off the WebSocket -
+  // see naturametrics/api/__init__.py).
+  //
+  // Two kinds:
+  //   * STATIC  (biomes) - fetched once, kept, never refetched.
+  //   * DYNAMIC (IFN conglomerados) - `spec.dynamic`, refetched for the current
+  //     viewport whenever the map settles, and removed entirely below
+  //     `spec.min_zoom`. 17 000 points nationwide is not something to hand the
+  //     browser as one payload, and below that zoom an individual dot is a
+  //     pixel wide - hovering one would be an accident, not a choice.
   //
   // They live in their own pane between the tiles (200) and the overlay pane
   // (400): above the imagery they contextualise, below the study point and its
   // buffers, which must never be obscured.
   const vectorKey = JSON.stringify(vectors);
+
+  const emitHover = (props) => {
+    if (hoverRef.current) hoverRef.current(props || {});
+  };
+
+  const attachPointHandlers = (L, spec, featureLayer, feature) => {
+    const props = (feature && feature.properties) || {};
+    const base = spec.point_style || {};
+    const over = spec.hover_style || base;
+
+    featureLayer.on("mouseover", () => {
+      featureLayer.setStyle(over);
+      if (featureLayer.bringToFront) featureLayer.bringToFront();
+      if (!spec.emit_hover) return;
+      if (leaveTimer.current) { clearTimeout(leaveTimer.current); leaveTimer.current = null; }
+      if (hoverTimer.current) clearTimeout(hoverTimer.current);
+      // Debounced: sweeping the cursor across a screen of conglomerados must
+      // not fire an Earth Engine query per dot. 350 ms is long enough that only
+      // a deliberate pause counts as "I want to know about this one".
+      hoverTimer.current = setTimeout(() => emitHover(props), 350);
+    });
+
+    featureLayer.on("mouseout", () => {
+      featureLayer.setStyle(base);
+      if (!spec.emit_hover) return;
+      if (hoverTimer.current) { clearTimeout(hoverTimer.current); hoverTimer.current = null; }
+      // Grace period before clearing: without it the card flickers out every
+      // time the cursor crosses the gap between two adjacent points.
+      if (leaveTimer.current) clearTimeout(leaveTimer.current);
+      leaveTimer.current = setTimeout(() => emitHover({}), 600);
+    });
+
+    featureLayer.on("click", (e) => {
+      // With preferCanvas the renderer dispatches from the map container, so
+      // stopping propagation is not reliably enough on its own to keep the
+      // map's own click handler from also dropping a study point a few metres
+      // away. The timestamp below is what actually guarantees it.
+      if (e && e.originalEvent) L.DomEvent.stop(e.originalEvent);
+      pointClickAt.current = Date.now();
+      if (spec.emit_select && selectRef.current) {
+        // The conglomerado's OWN coordinates, not the click position: the user
+        // is choosing a sampling location with a known identity, and analysing
+        // a point 40 m away from it would quietly answer a different question.
+        selectRef.current({
+          lat: props.lat, lon: props.lon,
+          conglomerado: props.conglomerado || "", uf: props.uf || "",
+          municipio: props.municipio || "", bioma: props.bioma || "",
+          ponto_id: props.ponto_id || "",
+        });
+      } else if (clickRef.current && e.latlng) {
+        clickRef.current(Math.round(e.latlng.lat * 1e6) / 1e6,
+                         Math.round(e.latlng.lng * 1e6) / 1e6);
+      }
+    });
+  };
+
+  const buildLayer = (L, spec, data) =>
+    L.geoJSON(data, {
+      pane: "nmVectors",
+      style: (feature) => (spec.point_style
+        ? {...spec.point_style}
+        : styleFor(spec, feature)),
+      pointToLayer: (feature, latlng) =>
+        L.circleMarker(latlng, {...(spec.point_style || {}), pane: "nmVectors"}),
+      onEachFeature: (feature, featureLayer) => {
+        const html = tooltipHtml(spec, feature);
+        if (html) {
+          // Points get an anchored tooltip; polygons get a sticky one that
+          // follows the cursor - anchored to the centroid of the Amazon it
+          // would be off-screen.
+          featureLayer.bindTooltip(html, {
+            sticky: !spec.point_style,
+            direction: "top",
+            offset: spec.point_style ? [0, -6] : [0, 0],
+            opacity: 0.95,
+            className: "nm-vector-tip",
+          });
+        }
+        if (spec.point_style) {
+          attachPointHandlers(L, spec, featureLayer, feature);
+        } else {
+          // An interactive polygon swallows the click that would otherwise
+          // reach the map, so the study-point selection has to be forwarded
+          // explicitly or clicking anywhere on a biome does nothing.
+          featureLayer.on("click", (e) => {
+            if (clickRef.current && e.latlng) {
+              clickRef.current(Math.round(e.latlng.lat * 1e6) / 1e6,
+                               Math.round(e.latlng.lng * 1e6) / 1e6);
+            }
+          });
+        }
+      },
+    });
+
+  const specUrl = (spec, map) => {
+    const url = new URL(spec.path, getBackendURL(env.PING));
+    Object.entries(spec.query || {}).forEach(([k, v]) => {
+      if (v) url.searchParams.set(k, v);
+    });
+    if (spec.dynamic && map) {
+      const b = map.getBounds();
+      // Rounded to 3 dp (~100 m) so that a one-pixel drag does not count as a
+      // new viewport and refetch the same points.
+      const r = (n) => Math.round(n * 1000) / 1000;
+      url.searchParams.set("west", r(b.getWest()));
+      url.searchParams.set("south", r(b.getSouth()));
+      url.searchParams.set("east", r(b.getEast()));
+      url.searchParams.set("north", r(b.getNorth()));
+    }
+    return url;
+  };
+
+  const syncDynamic = async () => {
+    const map = mapRef.current;
+    if (!map) return;
+    const mod = await import("leaflet");
+    const L = mod.default || mod;
+    if (!mapRef.current) return;
+
+    const registry = vectorRegistry.current;
+    const incoming = (Array.isArray(vectorsRef.current) ? vectorsRef.current : [])
+      .filter((s) => s.dynamic);
+
+    for (const spec of incoming) {
+      const tooFar = map.getZoom() < (spec.min_zoom || 0);
+      const existing = registry.get(spec.id);
+      if (tooFar) {
+        if (existing) { map.removeLayer(existing.layer); registry.delete(spec.id); }
+        dynamicKey.current.delete(spec.id);
+        continue;
+      }
+
+      const url = specUrl(spec, map);
+      const key = url.toString();
+      if (dynamicKey.current.get(spec.id) === key) continue;
+      dynamicKey.current.set(spec.id, key);
+
+      try {
+        const response = await fetch(key, {credentials: "omit"});
+        if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+        const data = await response.json();
+        if (!mapRef.current) return;
+        // Another move may have landed while this was in flight; its key is
+        // already stored, so this response is stale and must not be drawn.
+        if (dynamicKey.current.get(spec.id) !== key) continue;
+
+        const previous = registry.get(spec.id);
+        if (previous) map.removeLayer(previous.layer);
+        const layer = buildLayer(L, spec, data);
+        layer.addTo(map);
+        registry.set(spec.id, {layer: layer, opacity: spec.opacity, dynamic: true});
+      } catch (err) {
+        console.error(`Dynamic layer ${spec.id} failed:`, err);
+        dynamicKey.current.delete(spec.id);
+      }
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -466,10 +654,12 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
         if (!wanted.has(id)) {
           map.removeLayer(entry.layer);
           registry.delete(id);
+          dynamicKey.current.delete(id);
         }
       }
 
       for (const spec of incoming) {
+        if (spec.dynamic) continue;  // handled by syncDynamic, on map movement
         const existing = registry.get(spec.id);
         if (existing) {
           // Only the cheap properties can change; the geometry never does.
@@ -485,7 +675,7 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
         vectorPending.current.add(spec.id);
 
         try {
-          const url = new URL(spec.path, getBackendURL(env.PING)).href;
+          const url = specUrl(spec, null).toString();
           let data = vectorData.current.get(url);
           if (!data) {
             const response = await fetch(url, {credentials: "omit"});
@@ -497,35 +687,7 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
           }
           if (cancelled || !mapRef.current) return;
 
-          const layer = L.geoJSON(data, {
-            pane: "nmVectors",
-            style: (feature) => styleFor(spec, feature),
-            onEachFeature: (feature, featureLayer) => {
-              const html = tooltipHtml(spec, feature);
-              if (html) {
-                // sticky: the tooltip follows the cursor inside the polygon,
-                // which is the only sane behaviour for shapes the size of the
-                // Amazon - anchored to the centroid it would be off-screen.
-                featureLayer.bindTooltip(html, {
-                  sticky: true,
-                  direction: "top",
-                  opacity: 0.95,
-                  className: "nm-vector-tip",
-                });
-              }
-              // An interactive polygon swallows the click that would otherwise
-              // reach the map, so the study-point selection has to be forwarded
-              // explicitly or clicking anywhere on a biome does nothing.
-              featureLayer.on("click", (e) => {
-                if (clickRef.current && e.latlng) {
-                  clickRef.current(
-                    Math.round(e.latlng.lat * 1e6) / 1e6,
-                    Math.round(e.latlng.lng * 1e6) / 1e6
-                  );
-                }
-              });
-            },
-          });
+          const layer = buildLayer(L, spec, data);
           layer.addTo(map);
           if (spec.attribution) {
             map.attributionControl.addAttribution(spec.attribution);
@@ -546,6 +708,10 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
           vectorPending.current.delete(spec.id);
         }
       }
+
+      // Filters or visibility may have changed under a dynamic layer without
+      // the map moving at all, so the viewport pass has to run here too.
+      syncDynamic();
     };
 
     if (readyRef.current) {
@@ -569,6 +735,27 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [vectorKey]);
 
+  // --- 3c. Refetch dynamic layers when the map settles --------------------
+  // Bound once, on `moveend`/`zoomend` rather than `move`: a dragged map fires
+  // dozens of `move` events a second, and each would be a request.
+  useEffect(() => {
+    const attach = () => {
+      const map = mapRef.current;
+      if (!map || map._nmDynamicBound) return false;
+      const onSettle = () => {
+        if (moveTimer.current) clearTimeout(moveTimer.current);
+        moveTimer.current = setTimeout(syncDynamic, 200);
+      };
+      map.on("moveend zoomend", onSettle);
+      map._nmDynamicBound = onSettle;
+      return true;
+    };
+
+    if (attach()) return;
+    const t = setInterval(() => { if (attach()) clearInterval(t); }, 50);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // --- 4b. Frame a selection ----------------------------------------------
   // `config.bounds` is initial framing and is deliberately never re-applied.

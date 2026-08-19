@@ -67,9 +67,15 @@ class LeafletMap(rx.el.Div):
             and optionally ``opacity``, ``attribution``, ``z_index``,
             ``max_native_zoom``. List order is stacking order unless ``z_index``
             says otherwise.
-        vectors: browser-side vector layer specs (see ``services.biomes``).
+        vectors: browser-side vector layer specs (see ``services.biomes`` and
+            ``services.ifn.vector_spec``).
         fit_bounds: ``[[s, w], [n, e]]`` re-applied whenever it changes.
         on_map_click: called with ``(lat, lon)`` when the user clicks the map.
+        on_point_hover: called with a conglomerado's properties when the cursor
+            rests on one, and with ``{}`` when it leaves. Debounced in the hook,
+            because each call costs an Earth Engine query.
+        on_point_select: called with a conglomerado's properties when one is
+            clicked. Carries the point's *own* coordinates, not the click's.
     """
 
     # Leaflet itself — not imported at module scope in JS, but the package must
@@ -98,12 +104,15 @@ class LeafletMap(rx.el.Div):
     fit_bounds: Var[Sequence[Sequence[float]]] = Var.create([])
 
     on_map_click: EventHandler[passthrough_event_spec(float, float)]
+    on_point_hover: EventHandler[passthrough_event_spec(dict)]
+    on_point_select: EventHandler[passthrough_event_spec(dict)]
 
     def _exclude_props(self) -> list[str]:
         # These drive the hook, not DOM attributes. React would warn about all
         # of them and Leaflet would never see them.
         return [*super()._exclude_props(), "center", "zoom", "bounds", "swipe",
-                "layers", "overlays", "vectors", "fit_bounds", "on_map_click"]
+                "layers", "overlays", "vectors", "fit_bounds", "on_map_click",
+                "on_point_hover", "on_point_select"]
 
     def add_imports(self) -> dict[str, Any]:
         """Leaflet's stylesheet, and the React hooks the injected code calls.
@@ -133,13 +142,18 @@ class LeafletMap(rx.el.Div):
                 "LeafletMap needs a literal `id` so Reflex generates a ref for it."
             )
 
-        on_click = self.event_triggers.get("on_map_click")
-        if on_click is None:
-            handler = "null"
-        elif isinstance(on_click, EventChain):
-            handler = wrap(str(format_prop(on_click)).strip("{}"), "(")
-        else:
-            handler = str(on_click)
+        def _handler(name: str) -> str:
+            """Render one event trigger as a JS callable the hook can invoke."""
+            trigger = self.event_triggers.get(name)
+            if trigger is None:
+                return "null"
+            if isinstance(trigger, EventChain):
+                return wrap(str(format_prop(trigger)).strip("{}"), "(")
+            return str(trigger)
+
+        handler = _handler("on_map_click")
+        hover = _handler("on_point_hover")
+        select = _handler("on_point_select")
 
         config = (
             f"{{center: {self.center!s}, zoom: {self.zoom!s}, "
@@ -149,7 +163,7 @@ class LeafletMap(rx.el.Div):
         )
         expr = (
             f"useNaturametricsMap({ref}, {config}, {self.layers!s}, "
-            f"{self.overlays!s}, {self.vectors!s}, {handler})"
+            f"{self.overlays!s}, {self.vectors!s}, {handler}, {hover}, {select})"
         )
         return [
             Var(

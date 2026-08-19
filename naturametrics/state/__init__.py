@@ -14,12 +14,15 @@ from __future__ import annotations
 import reflex as rx
 
 from ._analysis import AnalysisMixin
+from ._conglomerado import ConglomeradoMixin
+from ._export import ExportMixin
 from ._layers import LayersMixin
 from ._point import PointMixin
 from ._ui import UIMixin
 
 
-class AppState(AnalysisMixin, LayersMixin, PointMixin, UIMixin, rx.State):
+class AppState(AnalysisMixin, ConglomeradoMixin, ExportMixin, LayersMixin,
+               PointMixin, UIMixin, rx.State):
     """Root application state."""
 
 

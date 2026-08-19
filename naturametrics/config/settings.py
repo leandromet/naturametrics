@@ -96,6 +96,51 @@ IFN_FILTER_INDEX_PATH = Path(
                    str(REPO_ROOT / "data" / "ifn_filter_index.csv"))
 )
 
+#: One row per conglomerado with its coordinates and biome. Backs the
+#: interactive hover/click layer (answering "what is in this viewport" locally,
+#: with no round trip) and enumerates what an export covers. Same origin and the
+#: same commit rationale as the index above.
+IFN_POINTS_TABLE_PATH = Path(
+    os.environ.get("NM_IFN_POINTS_TABLE",
+                   str(REPO_ROOT / "data" / "ifn_points_biome.csv"))
+)
+
+# --------------------------------------------------------------------------- #
+# Interactive conglomerado layer
+# --------------------------------------------------------------------------- #
+#: Below this zoom the conglomerados are tiles only — pretty, and not clickable.
+#: At or above it the points in view are also served as real geometry so they can
+#: be hovered and clicked. 8 frames roughly one state, where the count in view is
+#: in the hundreds rather than the thousands.
+IFN_INTERACTIVE_MIN_ZOOM = _int("NM_IFN_INTERACTIVE_MIN_ZOOM", 8)
+
+#: Hard ceiling on points returned for one viewport. Protects the browser from a
+#: pathological view (zoom 8 over São Paulo) rather than the server, which reads
+#: this from memory.
+IFN_VIEWPORT_LIMIT = _int("NM_IFN_VIEWPORT_LIMIT", 1500)
+
+# --------------------------------------------------------------------------- #
+# Exports
+# --------------------------------------------------------------------------- #
+#: Single-pixel export is one streamed Earth Engine download and is effectively
+#: free at any size — measured 17 479 points × 40 years = 2.3 MB in 1.9 s — so it
+#: is not capped.
+#:
+#: The buffer export is not free: it fans the full per-point analysis out across
+#: the Earth Engine pool at ~0.11 s/point (measured, Partner tier) and produces
+#: ~600 rows per conglomerado.
+#:
+#: The binding constraint is the spreadsheet, not us. A sheet holds 1 048 576
+#: rows, so ~1 750 conglomerados is the most that can be written without silently
+#: losing the tail. 1 500 leaves headroom and costs about three minutes.
+#: The whole grid (17 479) would be ~10.5 M rows and half an hour — that is a
+#: batch job, not a button, and the UI says so rather than pretending.
+EXPORT_BUFFER_MAX_POINTS = _int("NM_EXPORT_BUFFER_MAX_POINTS", 1500)
+
+#: Per-point timeout inside the fan-out. One slow conglomerado must not hold the
+#: whole export.
+EXPORT_POINT_TIMEOUT_S = _int("NM_EXPORT_POINT_TIMEOUT", 180)
+
 # --------------------------------------------------------------------------- #
 # Map defaults
 # --------------------------------------------------------------------------- #

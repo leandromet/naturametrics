@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """Join the IFN conglomerado points to the IBGE biome polygons — once.
 
-    python scripts/join_ifn_biomes.py            # build data/ifn_filter_index.csv
-    python scripts/join_ifn_biomes.py --force    # rebuild even if it exists
-    python scripts/join_ifn_biomes.py --full     # also dump the per-point table
+    python scripts/join_ifn_biomes.py            # build both CSVs under data/
+    python scripts/join_ifn_biomes.py --force    # rebuild even if they exist
     python scripts/join_ifn_biomes.py --export-asset   # write the joined EE asset
 
 **Why this exists.** The SFB point asset carries região, UF and município but no
@@ -16,14 +15,13 @@ The join runs *in Earth Engine*, against the same two assets the map reads, and
 only attributes come back. Doing it locally with geopandas would need the
 shapefiles and a GDAL stack, and would let the table drift from the assets.
 
-**What is committed is the index, not the points.** The application never needs
-to know about an individual conglomerado to drive the filter UI — it needs the
-distinct (região, UF, município, bioma) combinations and how many points sit in
-each. That is ~4 700 rows and ~250 KiB, small enough for git, and it answers the
-count for *any* combination of the four filters by summing the matching groups.
-The full 17 495-row table (``--full``) is only useful once individual points
-become selectable; it is left out of git under the data policy in
-data/README.md.
+**Two outputs, both committed.** ``ifn_filter_index.csv`` is the counted
+(região, UF, município, bioma) groups that drive the filter UI — dropdowns,
+counts and framing, with no Earth Engine round trip. ``ifn_points_biome.csv`` is
+the per-point table behind the interactive layer: it is what lets the app answer
+"which conglomerados are in the current viewport" instantly, and what the export
+enumerates. Neither can be rebuilt by a deploy — the generator needs Earth Engine
+credentials — so both go in git under the exception in data/README.md.
 """
 
 from __future__ import annotations
@@ -49,8 +47,10 @@ POINTS_PATH = REPO_ROOT / "data" / "ifn_points_biome.csv"
 
 INDEX_COLUMNS = ("regiao", "uf", "municipio", "bioma", "pontos",
                  "lon_min", "lat_min", "lon_max", "lat_max")
+#: ``cd_mun`` is deliberately absent: it is blank wherever ``nm_mun`` is, nothing
+#: reads it, and at 17 479 rows every column costs real bytes in git.
 POINT_COLUMNS = ("ponto_id", "conglomerado", "regiao", "uf", "municipio",
-                 "municipio_cod", "lon", "lat", "bioma")
+                 "lon", "lat", "bioma")
 
 
 def fetch_joined_rows() -> list[list]:
@@ -101,7 +101,7 @@ def fetch_joined_rows() -> list[list]:
         })
 
     props = ["co_pontos_", "no_conglom", "nm_regiao", "sigla_uf", "nm_mun",
-             "cd_mun", "_lon", "_lat", "_bioma"]
+             "_lon", "_lat", "_bioma"]
 
     started = time.time()
     rows = (
@@ -282,8 +282,6 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--force", action="store_true",
                         help="rebuild even if the index already exists")
-    parser.add_argument("--full", action="store_true",
-                        help="also write the per-point table (not committed)")
     parser.add_argument("--export-asset", action="store_true",
                         help="write the joined points back to Earth Engine as "
                              "an asset (this is what the map filters on)")
@@ -298,7 +296,7 @@ def main() -> int:
         initialize_earth_engine()
         return export_asset(wait=not args.no_wait)
 
-    if args.output.exists() and not (args.force or args.full):
+    if args.output.exists() and POINTS_PATH.exists() and not args.force:
         LOG.info("%s already exists — use --force to rebuild", args.output)
         return 0
 
@@ -311,8 +309,7 @@ def main() -> int:
     index = build_index(rows)
     summarise(index)
     write_index(index, args.output)
-    if args.full:
-        write_points(rows, POINTS_PATH)
+    write_points(rows, POINTS_PATH)
     return 0
 
 

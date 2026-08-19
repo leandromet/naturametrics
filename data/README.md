@@ -16,7 +16,7 @@ data/
 ├─ ifn_points.csv         ← COMMITTED — derived, deduplicated IFN point catalogue
 ├─ ifn_points.meta.json   ← COMMITTED — its provenance (source, licence, generated_at)
 ├─ ifn_filter_index.csv   ← COMMITTED — counted (região, UF, município, bioma) groups
-├─ ifn_points_biome.csv   ← GITIGNORED — the per-point table it is derived from
+├─ ifn_points_biome.csv   ← COMMITTED — one row per conglomerado, with its biome
 ├─ raw/                   ← GITIGNORED — downloaded originals, byte-for-byte
 │  └─ ifn/
 │     ├─ unidades-amostrais-por-uf-ifn/
@@ -34,7 +34,7 @@ data/
 | IFN metadata PDFs | `raw/ifn/_metadata/` | no |
 | Deduplicated IFN point catalogue | `ifn_points.csv` + `ifn_points.meta.json` | **yes** |
 | IFN filter index (counts + bboxes per group) | `ifn_filter_index.csv` | **yes** |
-| IFN per-point table with biome | `ifn_points_biome.csv` | no |
+| IFN per-point table with biome | `ifn_points_biome.csv` | **yes** |
 | Simplified biome polygons served to the browser | `cache/ibge_biomes_250k.json.gz` | no |
 | GeoJSON copy of the catalogue | `cache/ifn_points.geojson` | no |
 | Any GeoTIFF, EE export, tile dump | `cache/` | no |
@@ -70,9 +70,19 @@ lookup instead of an Earth Engine round trip. It is committed because it has to 
 present *before* the first request and a deploy has no way to build it: the generator
 needs Earth Engine credentials and ~20 s.
 
-The 17 479-row per-point table it is derived from (`ifn_points_biome.csv`, 1.3 MB) is
-only useful once individual conglomerados become selectable, so it stays out of git and
-is written on demand with `--full`.
+## `ifn_points_biome.csv` — why this one is committed too
+
+The 17 479-row per-point table (1.2 MB) is what makes a conglomerado *reachable*. The
+interactive layer answers "which conglomerados are in this viewport" from it on every pan
+— a linear scan measured at **9 ms**, with no Earth Engine and no database in the path —
+and the export enumerates it to decide what a selection covers. Serving that from Earth
+Engine instead would put a 1–2 s round trip between the user and every map movement.
+
+Same commit rationale as the index: a deploy cannot rebuild it, because the generator
+needs Earth Engine credentials.
+
+`cd_mun` is deliberately absent — it is blank wherever `nm_mun` is, nothing reads it, and
+at 17 479 rows every column is real bytes in git.
 
 | Column | Meaning |
 |---|---|
@@ -88,8 +98,8 @@ boxes — which is exact, because the four columns are the group key.
 
 ```bash
 python scripts/fetch_ifn.py --all --build-catalog     # the point catalogue
-python scripts/join_ifn_biomes.py --force             # the filter index
-python scripts/join_ifn_biomes.py --force --full      # ...and the per-point table
+python scripts/join_ifn_biomes.py --force             # both CSVs above
+python scripts/join_ifn_biomes.py --export-asset      # the joined Earth Engine asset
 ```
 
 Re-run `fetch_ifn.py` when the Serviço Florestal Brasileiro publishes a new `disp-`

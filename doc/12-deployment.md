@@ -35,7 +35,7 @@ network-bound (`getInfo` waiting on Earth Engine), so 2 vCPU is the right shape;
 
 ```
 service        naturametrics
-region         southamerica-east1     # closest to the data and the users
+region         us-west1               # matches yvynation-reflex
 cpu            2
 memory         4Gi
 concurrency    40                     # Reflex holds per-session state in-process
@@ -55,48 +55,28 @@ Cloud Run and slightly wasteful for us. Four is plenty for this workload.
 
 ---
 
-## 3. Earth Engine credentials
+## 3. Earth Engine credentials — none needed
 
-**Cloud Run has no ADC file**, so the container must use auth method 1 of
-`services/ee_client.py` — `EE_PRIVATE_KEY` + `EE_SERVICE_ACCOUNT_EMAIL`. This path is
-written and unit-covered but has **not yet been exercised against a real service
-account**; the local container test used a mounted ADC file instead. Exercise it before
-trusting the first deploy.
+> **Correction.** An earlier draft of this document claimed "Cloud Run has no ADC file,
+> so the container must use `EE_PRIVATE_KEY`". **That is wrong.** Cloud Run exposes
+> Application Default Credentials for the *attached service account* through the
+> metadata server, which is auth method 2 in `services/ee_client.py` — the same path
+> used locally. No key, no Secret Manager, no `EE_PRIVATE_KEY`.
 
-```bash
-export PROJECT_ID=ee-leandromet
-export REGION=southamerica-east1
-export SA=naturametrics@${PROJECT_ID}.iam.gserviceaccount.com
+The proof is next door: `yvynation-reflex` runs in this same project with **exactly one**
+environment variable (`GCS_EXPORT_BUCKET`) and no Earth Engine credential of any kind.
 
-# 1. Service account
-gcloud iam service-accounts create naturametrics \
-  --display-name="Naturametrics Cloud Run" --project=$PROJECT_ID
+So the whole credential setup reduces to **attaching a service account that Earth Engine
+accepts**:
 
-# 2. Register it with Earth Engine — REQUIRED, and the step most easily missed.
-#    A service account that merely authenticates against ee-leandromet is not the
-#    same as one registered to use it; without this every EE call 403s.
-#    https://console.cloud.google.com/earth-engine  →  Register service account
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:${SA}" --role="roles/earthengine.writer"
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="serviceAccount:${SA}" --role="roles/serviceusage.serviceUsageConsumer"
+| Service account | Roles | Notes |
+|---|---|---|
+| `652582010777-compute@developer.gserviceaccount.com` | `artifactregistry.writer`, `run.admin`, `logging.logWriter`, `iam.serviceAccountUser`, `editor` | **Recommended.** Already the runtime identity of `yvynation-reflex`, so it is proven to reach Earth Engine, and it already carries every role a Cloud Build → Cloud Run pipeline needs. |
+| `streamlit-ee-service@ee-leandromet.iam.gserviceaccount.com` | `earthengine.admin`, `earthengine.viewer`, `editor` | Runtime identity of the older `yvynation` service. Explicit EE roles, but lacks the CI-specific roles. |
 
-# 3. Key → Secret Manager (never into the image or the repo)
-gcloud iam service-accounts keys create /tmp/nm-key.json --iam-account=$SA
-python3 - <<'PY' > /tmp/nm-private-key.txt
-import json; print(json.load(open('/tmp/nm-key.json'))['private_key'], end='')
-PY
-gcloud secrets create nm-ee-private-key --data-file=/tmp/nm-private-key.txt
-shred -u /tmp/nm-key.json /tmp/nm-private-key.txt
-
-gcloud secrets add-iam-policy-binding nm-ee-private-key \
-  --member="serviceAccount:${SA}" --role="roles/secretmanager.secretAccessor"
-```
-
-`ee_client._init_from_env_service_account` replaces literal `\n` with real newlines, so
-the key survives a Secret Manager round-trip either way.
-
----
+`EE_PRIVATE_KEY` / `EE_SERVICE_ACCOUNT_EMAIL` remain supported in `ee_client.py` and are
+the right path for an identity that *cannot* be attached to the service — they are simply
+not needed here.
 
 ## 4. Deploy
 
@@ -113,8 +93,8 @@ gcloud run deploy naturametrics \
   --min-instances 0 \
   --max-instances 4 \
   --allow-unauthenticated \
-  --set-env-vars "GCP_PROJECT_ID=${PROJECT_ID},NM_EE_TIER=partner,NM_EE_CONCURRENCY=64,NM_BASEMAP=esri_imagery,NM_SPOT_ENABLED=false,EE_SERVICE_ACCOUNT_EMAIL=${SA}" \
-  --set-secrets "EE_PRIVATE_KEY=nm-ee-private-key:latest"
+  --cpu-boost \
+  --set-env-vars "GCP_PROJECT_ID=${PROJECT_ID},NM_EE_TIER=partner,NM_EE_CONCURRENCY=64,NM_BASEMAP=esri_imagery,NM_SPOT_ENABLED=false"
 ```
 
 `--source .` uses `.gcloudignore` for the build context — which excludes `data/raw/` and
@@ -141,21 +121,54 @@ Troubleshooting.
 
 ## 5. Continuous deployment from `main`
 
-The repo **has no git remote yet**; add it before any of this works.
+Repo: **`github.com/leandromet/naturametrics`**, branch `main`.
+
+### The trigger must use `cloudbuild.yaml`, not the Dockerfile config type
+
+A trigger created with build config type **"Dockerfile"** generates an *inline* build with
+`options: {}`. The moment such a trigger also has a build service account — which Cloud
+Build now requires, since the legacy per-project Cloud Build SA is deprecated — it fails
+before starting:
+
+```
+Failed to trigger build: invalid argument: if 'build.service_account' is specified,
+the build must either (a) specify 'build.logs_bucket', (b) use the
+REGIONAL_USER_OWNED_BUCKET build.options.default_logs_bucket_behavior option,
+or (c) use either CLOUD_LOGGING_ONLY / NONE logging options
+```
+
+There is nowhere to put the logging option in a Dockerfile-type trigger. The fix is to
+point the trigger at `cloudbuild.yaml`, which sets `options.logging: CLOUD_LOGGING_ONLY`.
 
 ```bash
-gcloud builds triggers create github \
-  --name=naturametrics-main \
-  --repo-name=naturametrics --repo-owner=<github-user> \
+# One-off: the Artifact Registry repo cloudbuild.yaml pushes to
+gcloud artifacts repositories create naturametrics \
+  --repository-format=docker --location=us-west1 --project=ee-leandromet
+
+# Repoint the existing trigger at the YAML
+gcloud builds triggers update github naturametrics-trigg \
+  --region=us-west1 --project=ee-leandromet \
+  --repo-owner=leandromet --repo-name=naturametrics \
   --branch-pattern='^main$' \
   --build-config=cloudbuild.yaml \
-  --region=$REGION
+  --service-account=projects/ee-leandromet/serviceAccounts/652582010777-compute@developer.gserviceaccount.com
+```
+
+The build service account needs `artifactregistry.writer`, `run.admin`,
+`logging.logWriter` and `iam.serviceAccountUser` (to attach the runtime SA).
+`652582010777-compute@` already has all four — which is why it is the recommended choice
+over `streamlit-ee-service@`, whose `editor` role covers most of it but not by design.
+
+### Run it
+
+```bash
+git push origin main                                   # trigger fires on push
+gcloud builds list --region=us-west1 --limit=3         # watch
+gcloud builds log <BUILD_ID> --region=us-west1
 ```
 
 Still undecided: whether `main` deploys straight to production or to a staging revision
-with traffic migration. Until that is settled, deploy manually.
-
----
+with traffic migration.
 
 ## 6. Rollback and tuning without a redeploy
 

@@ -1,0 +1,71 @@
+# Cloud Build → Artifact Registry → Cloud Run, triggered from GitHub `main`.
+#
+# ── The logging option is NOT optional ──────────────────────────────────────
+# When a build runs under a user-specified service account (which Cloud Build now
+# requires — the legacy per-project Cloud Build SA is deprecated), it may no
+# longer write logs to Google's own bucket. Omitting `options.logging` fails the
+# trigger before the build even starts, with:
+#
+#   invalid argument: if 'build.service_account' is specified, the build must
+#   either (a) specify 'build.logs_bucket', (b) use the
+#   REGIONAL_USER_OWNED_BUCKET build.options.default_logs_bucket_behavior
+#   option, or (c) use either CLOUD_LOGGING_ONLY / NONE logging options
+#
+# CLOUD_LOGGING_ONLY is the simplest of the three: logs go to Cloud Logging and
+# no bucket is needed. Use `defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET`
+# instead if you want them in a GCS bucket you own.
+
+substitutions:
+  _REGION: us-west1                      # matches yvynation-reflex and the trigger
+  _SERVICE: naturametrics
+  _AR_REPO: naturametrics
+  # Runtime identity. The default compute SA is already Earth-Engine-enabled
+  # in this project — yvynation-reflex runs on it with no EE key at all.
+  _RUNTIME_SA: 652582010777-compute@developer.gserviceaccount.com
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: E2_HIGHCPU_8      # the Reflex/bun frontend build is the slow part
+
+# Cloud Build pushes these once every step succeeds.
+images:
+  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_SERVICE}:${SHORT_SHA}
+  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_SERVICE}:latest
+
+timeout: 1800s
+
+steps:
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --tag=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_SERVICE}:${SHORT_SHA}
+      - --tag=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_SERVICE}:latest
+      - .
+
+  - id: deploy
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE}
+      - --image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_SERVICE}:${SHORT_SHA}
+      - --region=${_REGION}
+      - --service-account=${_RUNTIME_SA}
+      - --cpu=2
+      - --memory=4Gi
+      - --concurrency=40
+      - --timeout=300
+      - --min-instances=0
+      - --max-instances=4
+      - --allow-unauthenticated
+      - --cpu-boost
+      # No EE credentials here on purpose. Cloud Run exposes Application Default
+      # Credentials for the attached service account through the metadata
+      # server, which is auth method 2 in services/ee_client.py. That is how
+      # yvynation-reflex runs — it carries no EE key of any kind. Setting
+      # EE_PRIVATE_KEY would only be needed for an identity that cannot be
+      # attached to the service.
+      # PORT is injected by Cloud Run — never set it here.
+      - --set-env-vars=GCP_PROJECT_ID=${PROJECT_ID},NM_EE_TIER=partner,NM_EE_CONCURRENCY=64,NM_BASEMAP=esri_imagery,NM_SPOT_ENABLED=false

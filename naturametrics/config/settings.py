@@ -157,16 +157,38 @@ IFN_VIEWPORT_LIMIT = _int("NM_IFN_VIEWPORT_LIMIT", 1500)
 #: free at any size — measured 17 479 points × 40 years = 2.3 MB in 1.9 s — so it
 #: is not capped.
 #:
-#: The buffer export is not free: it fans the full per-point analysis out across
-#: the Earth Engine pool at ~0.11 s/point (measured, Partner tier) and produces
-#: ~600 rows per conglomerado.
+#: The buffer export fans the full per-point analysis out across the Earth Engine
+#: pool. Measured on 40 conglomerados spread over MT/BA/RS/AM — deliberately a
+#: mix of landscapes, because the row count tracks class diversity and a sample
+#: from one município badly understates it:
 #:
-#: The binding constraint is the spreadsheet, not us. A sheet holds 1 048 576
-#: rows, so ~1 750 conglomerados is the most that can be written without silently
-#: losing the tail. 1 500 leaves headroom and costs about three minutes.
-#: The whole grid (17 479) would be ~10.5 M rows and half an hour — that is a
-#: batch job, not a button, and the UI says so rather than pretending.
-EXPORT_BUFFER_MAX_POINTS = _int("NM_EXPORT_BUFFER_MAX_POINTS", 1500)
+#:     radius   rows/point  mean / p90 / max
+#:      1 km          158 /  249 /  341
+#:      2 km          205 /  ~   /  368
+#:      5 km          284 /  ~   /  480
+#:     10 km          350 /  437 /  553
+#:     all four       997 / 1406 / 1677
+#:
+#: Budget per radius, a little above p90. An underestimate is not fatal — the
+#: writer splits an oversized sheet rather than failing — so these are tuned for
+#: a usable ceiling rather than for the worst landscape in Brazil.
+EXPORT_ROWS_PER_POINT: dict[float, int] = {1.0: 280, 2.0: 330, 5.0: 430, 10.0: 500}
+
+#: Each radius gets **its own tab**, so the spreadsheet's row limit applies per
+#: radius instead of to all four together — four times the capacity, and a tab
+#: per radius is what the study-point workbook already does.
+#: 1 048 576 is the hard limit in LibreOffice and Excel; this leaves headroom.
+EXPORT_ODS_ROWS_PER_SHEET = _int("NM_EXPORT_ROWS_PER_SHEET", 1_000_000)
+
+#: Ceiling on the whole file. Not a spreadsheet limit — a delivery one:
+#: ``rx.download`` carries the bytes inside the event payload at roughly 4/3 of
+#: file size, and ~1.5 M rows is already a ~35 MB file and a ~47 MB message.
+EXPORT_MAX_TOTAL_ROWS = _int("NM_EXPORT_MAX_TOTAL_ROWS", 1_500_000)
+
+#: For the "this will take about…" estimate. Measured between 0.06 and 0.14
+#: s/point depending on how warm Earth Engine is; the high end is quoted so the
+#: estimate errs towards over-promising the wait rather than under.
+EXPORT_SECONDS_PER_POINT = _float("NM_EXPORT_SECONDS_PER_POINT", 0.12)
 
 #: Per-point timeout inside the fan-out. One slow conglomerado must not hold the
 #: whole export.

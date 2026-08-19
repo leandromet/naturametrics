@@ -290,3 +290,81 @@ def test_analysis_entry_points_initialise_earth_engine(monkeypatch, entry):
         fn(point(lat=48.85, lon=2.35))  # Paris
 
     assert calls == [entry], f"{entry} must call get_ee() before doing anything"
+
+
+# --------------------------------------------------------------------------- #
+# Buffer capacity and the per-radius tabs
+# --------------------------------------------------------------------------- #
+
+def test_one_radius_allows_more_conglomerados_than_four():
+    """The whole point of a tab per radius: the sheet limit stops applying to
+    all four radii at once, so asking for one buys real capacity."""
+    from naturametrics.services import exports
+
+    all_four = exports.max_points_for([1.0, 2.0, 5.0, 10.0])
+    smallest = exports.max_points_for([1.0])
+    widest = exports.max_points_for([10.0])
+
+    assert smallest > widest > all_four
+    # A single radius is bounded by the sheet; four are bounded by the file.
+    assert smallest >= 3 * all_four
+
+
+def test_cap_message_names_a_radius_that_would_fit():
+    """Refusing without a remedy leaves the user guessing. When some radius can
+    carry the selection, the message has to say which."""
+    from naturametrics.services import exports
+
+    n = exports.max_points_for([1.0])          # fits at 1 km, not at all four
+    assert n > exports.max_points_for([1.0, 2.0, 5.0, 10.0])
+
+    msg = exports.buffer_cap_message(n, [1.0, 2.0, 5.0, 10.0])
+    assert "1 km" in msg
+    assert "não têm limite" in msg  # the uncapped alternatives are still offered
+
+    # And when nothing fits, it says so instead of suggesting an impossibility.
+    huge = exports.buffer_cap_message(10 ** 7, [1.0])
+    assert "Nem um raio isolado" in huge
+
+
+def test_buffer_tabs_are_split_per_radius_and_drop_the_radius_column():
+    from naturametrics.services import exports
+
+    pd = pytest.importorskip("pandas")
+    rows = []
+    for radius in (1.0, 10.0):
+        for year in (1985, 2024):
+            rows.append({"conglomerado": "X_1", "uf": "MT", "municipio": "M",
+                         "bioma": "Cerrado", "radius_km": radius, "year": year,
+                         "class_id": 3, "class_pt": "a", "class_en": "b",
+                         "pixels": 1.0, "area_ha": 1.0, "area_pct": 100.0})
+    sheets = exports._buffer_sheets(pd.DataFrame(rows), [1.0, 10.0])
+
+    assert [s.name for s in sheets] == ["buffer_01km", "buffer_10km"]
+    # The tab name carries the radius, so the column would be dead weight across
+    # a million rows.
+    assert "radius_km" not in sheets[0].header
+
+
+def test_an_oversized_radius_is_split_rather_than_refused(monkeypatch):
+    """The row budgets are estimates. An estimate that comes in low must not
+    destroy an export that has already cost minutes of Earth Engine time."""
+    from naturametrics.services import exports
+
+    pd = pytest.importorskip("pandas")
+    monkeypatch.setattr(exports, "EXPORT_ODS_ROWS_PER_SHEET", 10)
+
+    frame = pd.DataFrame([
+        {"conglomerado": f"X_{i}", "uf": "MT", "municipio": "M",
+         "bioma": "Cerrado", "radius_km": 10.0, "year": 1985 + i,
+         "class_id": 3, "class_pt": "a", "class_en": "b",
+         "pixels": 1.0, "area_ha": 1.0, "area_pct": 100.0}
+        for i in range(25)
+    ])
+    sheets = exports._buffer_sheets(frame, [10.0])
+
+    assert [s.name for s in sheets] == ["buffer_10km", "buffer_10km_2",
+                                        "buffer_10km_3"]
+    # Continuous, not overlapping: stacking the parts rebuilds the original.
+    total = sum(len(list(s.rows)) for s in sheets)
+    assert total == 25

@@ -58,10 +58,10 @@ because they have very different costs:
 |---|---|---|
 | `conglomerados` | One row per point: id, região, UF, município, bioma, coordinates | free — read from `data/ifn_points_biome.csv` |
 | `pixel_por_ano` | One row per conglomerado, one column per year, holding that pixel's class | **uncapped** — one streamed Earth Engine download; measured 17 479 points × 40 years = 2.3 MB in 1.9 s |
-| `buffers` | `conglomerado, uf, municipio, bioma, radius_km, year, class_id, class_pt, class_en, pixels, area_ha, area_pct` | ~0.11 s and ~600 rows per conglomerado — **capped**, see §1c |
+| `buffer_01km` … `buffer_10km` | one tab **per radius**: `conglomerado, uf, municipio, bioma, year, class_id, class_pt, class_en, pixels, area_ha, area_pct` | ~0.12 s per conglomerado and 280–500 rows *per radius* — **capped**, see §1c |
 | `classes_mapbiomas` | As above | free |
 
-### 1c. Why the buffer half is capped
+### 1c. The buffer half: one tab per radius, and what that costs
 
 The buffer tab is built by fanning the *same* per-point analysis the interactive view
 uses out across the Earth Engine pool — not by building one enormous `reduceRegions`.
@@ -73,11 +73,39 @@ Two reasons, and the second is the important one:
   chart, and find those exact numbers in the file. A separate batch reducer would be a
   second implementation of the same measurement, free to drift.
 
-The cap is `settings.EXPORT_BUFFER_MAX_POINTS`, default **1 500**, and it comes from the
-spreadsheet, not from us: a sheet holds 1 048 576 rows, so ~1 750 conglomerados is the
-most that can be written without silently losing the tail. The whole grid would be
-~10.5 M rows and about half an hour — that is a batch job, not a button, and the panel
-says so instead of hanging.
+**Each radius gets its own tab.** That is not only tidier — it is what sets the ceiling.
+A single combined table makes the spreadsheet's 1 048 576-row limit apply to all four
+radii together; one tab per radius makes it apply to the *largest radius alone*, and the
+same selection fits roughly four times over. The `radius_km` column is dropped, since the
+tab name carries it and it would otherwise repeat across a million rows.
+
+The panel also lets the user export **one radius instead of all four**, which cuts rows,
+Earth Engine time and file size together.
+
+Row budgets are measured, not guessed — 40 conglomerados spread across MT, BA, RS and AM,
+because the row count tracks class diversity and a sample from one município understates
+it badly:
+
+| Radius | rows/conglomerado (mean / p90 / max) | budget | max conglomerados |
+|---|---|---|---|
+| 1 km | 158 / 249 / 341 | 280 | **3 571** |
+| 2 km | 205 / — / 368 | 330 | 3 030 |
+| 5 km | 284 / — / 480 | 430 | 2 325 |
+| 10 km | 350 / 437 / 553 | 500 | 2 000 |
+| all four | 997 / 1 406 / 1 677 | 1 540 | 974 |
+
+Two independent ceilings, lower wins: **per sheet** (the widest radius asked for) and
+**per file** (`EXPORT_MAX_TOTAL_ROWS`, a delivery limit — see §1d, not a spreadsheet one).
+
+The budgets sit a little above p90 rather than at the worst case, because an underestimate
+is **not fatal**: a radius that still overflows is split into `buffer_10km_2`,
+`buffer_10km_3` … rather than refused. An estimate that comes in low must not destroy an
+export that has already cost minutes of Earth Engine time.
+
+When a selection does not fit, the message names a radius that *would* — the remedy is
+usually "ask for one buffer instead of four", and refusing without saying so leaves the
+user to guess. The whole grid at 10 km would still be ~8.7 M rows and half an hour; that
+is a batch job, not a button, and the panel says so instead of hanging.
 
 Partial failure does not abort the export. A conglomerado whose query fails is named in
 the `metadados` tab and the rest of the file is written; three bad points out of five

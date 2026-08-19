@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import reflex as rx
 
-from ..config.settings import BUFFER_RADII_KM, EXPORT_BUFFER_MAX_POINTS
+from ..config.settings import BUFFER_RADII_KM
 from ..state import AppState
 
 _RADII = ", ".join(f"{r:g}" for r in sorted(BUFFER_RADII_KM))
@@ -120,15 +120,33 @@ def _selection_section() -> rx.Component:
             AppState.exp_pixel, AppState.toggle_exp_pixel,
         ),
         _check(
-            f"Histórico dos buffers de {_RADII} km",
-            f"Área por classe, por ano e por raio, para cada conglomerado — a "
-            f"mesma conta que o gráfico faz. É a parte cara: limite de "
-            f"{EXPORT_BUFFER_MAX_POINTS} conglomerados.".replace(",", "."),
+            f"Histórico dos buffers ({_RADII} km)",
+            "Área por classe e por ano, para cada conglomerado — a mesma conta "
+            "que o gráfico faz. Uma aba por raio. É a parte cara: quanto menos "
+            "raios, mais conglomerados cabem.",
             AppState.exp_buffers, AppState.toggle_exp_buffers,
-            disabled=~AppState.export_buffers_allowed,
+            # Never disabled, even over the ceiling. Disabling it would hide the
+            # radius selector below — which is the one control that makes a large
+            # selection fit, so the remedy would be unreachable in exactly the
+            # case that needs it. The download button refuses instead, and the
+            # note says what to change.
         ),
         rx.cond(
-            AppState.exp_buffers | ~AppState.export_buffers_allowed,
+            AppState.exp_buffers,
+            rx.vstack(
+                rx.text("Raios a exportar", size="1", color_scheme="gray"),
+                rx.select(
+                    AppState.export_radius_options,
+                    value=AppState.export_radius_value,
+                    on_change=AppState.set_exp_radius,
+                    size="2", width="100%",
+                ),
+                spacing="1", width="100%", padding_left="2rem",
+            ),
+            rx.fragment(),
+        ),
+        rx.cond(
+            AppState.exp_buffers,
             rx.callout(
                 AppState.export_buffer_note,
                 icon="clock",
@@ -144,7 +162,8 @@ def _selection_section() -> rx.Component:
             "Baixar planilha da seleção (.ods)",
             on_click=AppState.download_selection,
             disabled=AppState.export_busy | AppState.export_nothing_selected
-                     | (AppState.export_selection_count == 0),
+                     | (AppState.export_selection_count == 0)
+                     | (AppState.exp_buffers & ~AppState.export_buffers_allowed),
             size="2", color_scheme="jade", width="100%",
         ),
         spacing="2", align_items="start", width="100%",

@@ -113,8 +113,10 @@ def como_usar_dialog() -> rx.Component:
                           "seleção de conglomerados — pelos filtros do mapa ou "
                           "pelos pontos escolhidos à mão — onde você marca o que quer: "
                           "lista de pontos, classe do pixel ano a ano, e o histórico "
-                          "dos buffers. Toda planilha abre com uma aba «metadados» "
-                          "dizendo como cada número foi calculado."),
+                          "dos buffers — com uma aba por raio, e a opção de exportar "
+                          "um raio só, que faz caber muito mais conglomerados. Toda "
+                          "planilha abre com uma aba «metadados» dizendo como cada "
+                          "número foi calculado."),
                     rx.callout(
                         "Esta camada é uma triagem, não um laudo. Não considera CAR, "
                         "APP/Reserva Legal, porte do imóvel nem autorizações de "

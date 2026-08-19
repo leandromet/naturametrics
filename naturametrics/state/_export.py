@@ -28,7 +28,7 @@ import logging
 
 import reflex as rx
 
-from ..config.settings import EXPORT_BUFFER_MAX_POINTS
+from ..config.settings import BUFFER_RADII_KM
 from ..services import exports, ifn
 from ..services.ods import MIMETYPE
 from ._proxy import plain
@@ -51,6 +51,9 @@ class ExportMixin(rx.State, mixin=True):
     exp_points: bool = True
     exp_pixel: bool = True
     exp_buffers: bool = False
+    #: "" means every radius; otherwise the one radius asked for, as a string
+    #: so it can drive a select directly.
+    exp_radius: str = ""
 
     # --- progress ---------------------------------------------------------
     export_busy: bool = False
@@ -82,6 +85,20 @@ class ExportMixin(rx.State, mixin=True):
     def toggle_exp_buffers(self, checked: bool):
         self.exp_buffers = checked
 
+    def set_exp_radius(self, value: str | list[str]):
+        raw = value[0] if isinstance(value, (list, tuple)) and value else value
+        label = str(raw)
+        self.exp_radius = "" if label.startswith("Todos") else \
+            label.replace(" km", "").strip()
+
+    def _radii(self) -> tuple[float, ...]:
+        if not self.exp_radius:
+            return tuple(sorted(BUFFER_RADII_KM))
+        try:
+            return (float(self.exp_radius),)
+        except ValueError:
+            return tuple(sorted(BUFFER_RADII_KM))
+
     # ---------------------------------------------------------------------- #
     # Derived
     # ---------------------------------------------------------------------- #
@@ -93,6 +110,7 @@ class ExportMixin(rx.State, mixin=True):
             region=self.ifn_region, uf=self.ifn_uf,
             municipality=self.ifn_municipality, biome=self.ifn_biome,
             conglomerados=plain(self.multi_conglomerados) if manual else None,
+            radii=self._radii(),
             include_points=self.exp_points, include_pixel=self.exp_pixel,
             include_buffers=self.exp_buffers,
         )
@@ -131,21 +149,34 @@ class ExportMixin(rx.State, mixin=True):
         return f"{n:,} conglomerado".replace(",", ".") + ("" if n == 1 else "s")
 
     @rx.var
+    def export_radius_options(self) -> list[str]:
+        return ["Todos os raios"] + [f"{r:g} km" for r in sorted(BUFFER_RADII_KM)]
+
+    @rx.var
+    def export_radius_value(self) -> str:
+        return f"{float(self.exp_radius):g} km" if self.exp_radius \
+            else "Todos os raios"
+
+    @rx.var
     def export_buffers_allowed(self) -> bool:
-        return 0 < self.export_selection_count <= EXPORT_BUFFER_MAX_POINTS
+        n = self.export_selection_count
+        return 0 < n <= exports.max_points_for(self._radii())
 
     @rx.var
     def export_buffer_note(self) -> str:
         n = self.export_selection_count
         if n == 0:
             return "Nenhum conglomerado na seleção atual."
-        if n > EXPORT_BUFFER_MAX_POINTS:
-            return exports.buffer_cap_message(n)
-        # Rounded up to whole seconds from the measured fan-out rate; a number
-        # that is roughly right beats a spinner with no end in sight.
-        seconds = max(5, int(n * 0.12))
-        return (f"≈ {seconds // 60} min {seconds % 60} s para {n} conglomerados "
-                f"({n * 600:,} linhas aprox.)".replace(",", "."))
+        radii = self._radii()
+        if n > exports.max_points_for(radii):
+            return exports.buffer_cap_message(n, radii)
+        seconds = exports.estimated_seconds(n)
+        rows = n * exports.rows_per_point(radii)
+        return (
+            f"≈ {seconds // 60} min {seconds % 60} s para {n} conglomerados, "
+            f"~{rows:,} linhas em {len(radii)} aba(s). Limite com esta escolha: "
+            f"{exports.max_points_for(radii):,}."
+        ).replace(",", ".")
 
     @rx.var
     def export_progress_label(self) -> str:
@@ -229,10 +260,11 @@ class ExportMixin(rx.State, mixin=True):
                 self.export_error = "Nenhum conglomerado na seleção atual."
             return
 
-        if spec.include_buffers and len(points) > EXPORT_BUFFER_MAX_POINTS:
+        if spec.include_buffers and len(points) > exports.max_points_for(spec.radii):
             async with self:
                 self.export_busy = False
-                self.export_error = exports.buffer_cap_message(len(points))
+                self.export_error = exports.buffer_cap_message(
+                    len(points), spec.radii)
             return
 
         loop = asyncio.get_running_loop()

@@ -7,7 +7,8 @@ Two exports, deliberately separate because they answer different questions:
   the four buffers. Small, always available once an analysis has run.
 * **the conglomerado selection** — the same measurements across every IFN point
   the current filters select. The single-pixel half is cheap at any size; the
-  buffer half is not, and is capped (see ``settings.EXPORT_BUFFER_MAX_POINTS``).
+  buffer half is not, and its ceiling depends on which radii are asked for
+  (see :func:`max_points_for`).
 
 Both are **one ODS file with a tab per table**, not a ZIP of CSVs: a spreadsheet
 is already a compressed container, it opens on a double-click, and it keeps the
@@ -33,8 +34,9 @@ import pandas as pd
 from ..config import mapbiomas as mb
 from ..config.citation import APP_URL, CITATION_TEXT, DATA_SOURCES
 from ..config.settings import (
-    BUFFER_MODE_DEFAULT, BUFFER_RADII_KM, EXPORT_BUFFER_MAX_POINTS,
-    EXPORT_POINT_TIMEOUT_S,
+    BUFFER_MODE_DEFAULT, BUFFER_RADII_KM, EXPORT_MAX_TOTAL_ROWS,
+    EXPORT_ODS_ROWS_PER_SHEET, EXPORT_POINT_TIMEOUT_S, EXPORT_ROWS_PER_POINT,
+    EXPORT_SECONDS_PER_POINT,
 )
 from . import ifn, ods
 from .geo import Point, point
@@ -266,6 +268,9 @@ class SelectionSpec:
     biome: str = ""
     #: Explicit conglomerado names, from a manual multiple selection.
     conglomerados: list[str] | None = None
+    #: Which buffer radii the export covers. Fewer radii mean fewer rows, a
+    #: smaller Earth Engine geometry per point, and a higher ceiling.
+    radii: tuple[float, ...] = tuple(sorted(BUFFER_RADII_KM))
     include_points: bool = True
     include_pixel: bool = True
     include_buffers: bool = False
@@ -384,15 +389,17 @@ def selection_buffer_frame(
         reducer="frequencyHistogram",
         pixel_area_basis="mean ee.Image.pixelArea() per buffer",
         extra={"filters": spec.filter_label(),
-               "radii_km": list(BUFFER_RADII_KM),
                "buffer_mode": BUFFER_MODE_DEFAULT,
                "n_requested": len(points)},
     )
 
     started = time.time()
+    radii = tuple(sorted(spec.radii)) or tuple(sorted(BUFFER_RADII_KM))
+    prov.extra["radii_km"] = list(radii)
     futures = {
         executor.submit(land_cover_history,
-                        point(lat=row["lat"], lon=row["lon"])): row
+                        point(lat=row["lat"], lon=row["lon"]),
+                        radii, BUFFER_MODE_DEFAULT): row
         for row in points
     }
 
@@ -448,6 +455,41 @@ def selection_buffer_frame(
     return out, prov, failed
 
 
+#: Columns of a per-radius buffer tab. ``radius_km`` is absent on purpose — the
+#: tab name carries it, and dropping it saves a column across a million rows.
+_BUFFER_COLUMNS = ["conglomerado", "uf", "municipio", "bioma", "year",
+                   "class_id", "class_pt", "class_en", "pixels", "area_ha",
+                   "area_pct"]
+
+
+def _buffer_sheets(df: pd.DataFrame, radii: Sequence[float]) -> list[ods.Sheet]:
+    """One tab per radius — which is what lifts the ceiling.
+
+    A single combined tab makes the spreadsheet's row limit apply to all four
+    radii together; splitting them means the limit applies to the largest radius
+    alone, and the same selection fits about four times over. It also happens to
+    be the more useful shape: one tab is one buffer, comparable across
+    conglomerados without filtering first.
+
+    A radius that still overflows is split further into ``…_2``, ``…_3`` rather
+    than refused. The budgets in ``settings`` are estimates, and an estimate that
+    is slightly low must not destroy an export that has already been paid for.
+    """
+    sheets: list[ods.Sheet] = []
+    for radius in sorted(radii):
+        name = f"buffer_{int(radius):02d}km"
+        sub = df[df["radius_km"] == radius] if not df.empty else df
+        if len(sub) <= EXPORT_ODS_ROWS_PER_SHEET:
+            sheets.append(ods.sheet_from_dataframe(name, sub, _BUFFER_COLUMNS))
+            continue
+        for part, start in enumerate(
+                range(0, len(sub), EXPORT_ODS_ROWS_PER_SHEET), start=1):
+            chunk = sub.iloc[start:start + EXPORT_ODS_ROWS_PER_SHEET]
+            sheets.append(ods.sheet_from_dataframe(
+                name if part == 1 else f"{name}_{part}", chunk, _BUFFER_COLUMNS))
+    return sheets
+
+
 def selection_workbook(
     spec: SelectionSpec,
     points: Sequence[dict[str, Any]],
@@ -483,12 +525,17 @@ def selection_workbook(
     if buffers is not None:
         buffer_df, buffer_prov, failed = buffers
         provenances.append(buffer_prov)
-        sheets.append(ods.sheet_from_dataframe(
-            "buffers", buffer_df,
-            ["conglomerado", "uf", "municipio", "bioma", "radius_km", "year",
-             "class_id", "class_pt", "class_en", "pixels", "area_ha", "area_pct"],
-        ))
+        buffer_sheets = _buffer_sheets(buffer_df, spec.radii)
+        sheets.extend(buffer_sheets)
+        context.append(["raios exportados",
+                        ", ".join(f"{r:g} km" for r in sorted(spec.radii))])
         context.append(["conglomerados com buffer", buffer_prov.extra.get("n_ok", 0)])
+        if len(buffer_sheets) > len(spec.radii):
+            context.append([
+                "abas divididas",
+                "Um raio passou do limite de linhas por aba e foi dividido em "
+                "«…_2», «…_3». As partes são contínuas: basta empilhá-las.",
+            ])
         if failed:
             # Named, not counted: "12 failed" is not actionable, a list is.
             context.append(["conglomerados que falharam", ", ".join(failed)])
@@ -504,11 +551,61 @@ def selection_workbook(
     return data, name
 
 
-def buffer_cap_message(n: int) -> str:
-    """Why a large selection cannot include buffers, in the user's terms."""
+# --------------------------------------------------------------------------- #
+# How much a buffer export costs, before running it
+# --------------------------------------------------------------------------- #
+
+def rows_per_point(radii: Sequence[float]) -> int:
+    """Budgeted rows one conglomerado contributes for these radii."""
+    return sum(EXPORT_ROWS_PER_POINT.get(float(r), 500) for r in radii) or 1
+
+
+def max_points_for(radii: Sequence[float]) -> int:
+    """How many conglomerados these radii allow.
+
+    Two independent ceilings, and the lower one wins:
+
+    * **per sheet** — each radius gets its own tab, so what matters is the
+      *largest* radius asked for, not their total;
+    * **per file** — the download travels inside a WebSocket event, so the whole
+      workbook has a budget of its own.
+    """
+    radii = [float(r) for r in radii] or list(BUFFER_RADII_KM)
+    widest = max(EXPORT_ROWS_PER_POINT.get(r, 500) for r in radii)
+    return max(1, min(EXPORT_ODS_ROWS_PER_SHEET // widest,
+                      EXPORT_MAX_TOTAL_ROWS // rows_per_point(radii)))
+
+
+def estimated_seconds(n: int) -> int:
+    return max(3, int(n * EXPORT_SECONDS_PER_POINT))
+
+
+def _thousands(n: int) -> str:
+    return f"{n:,}".replace(",", ".")
+
+
+def buffer_cap_message(n: int, radii: Sequence[float]) -> str:
+    """Why this many conglomerados will not fit — and what would.
+
+    Names the radii that *are* within reach rather than only refusing: the
+    remedy is usually "ask for one buffer instead of four", and a message that
+    does not say so leaves the user to guess.
+    """
+    limit = max_points_for(radii)
+    chosen = ", ".join(f"{r:g} km" for r in sorted(radii))
+
+    workable = [r for r in sorted(BUFFER_RADII_KM) if max_points_for([r]) >= n]
+    if workable:
+        remedy = ("Cabe escolhendo um raio só: "
+                  + ", ".join(f"{r:g} km" for r in workable) + ".")
+    else:
+        smallest = min(BUFFER_RADII_KM)
+        remedy = (f"Nem um raio isolado cabe nesta seleção — o máximo é "
+                  f"{_thousands(max_points_for([smallest]))} conglomerados a "
+                  f"{smallest:g} km. Reduza a seleção com os filtros.")
+
     return (
-        f"A seleção tem {n:,} conglomerados. O limite para dados de buffer é "
-        f"{EXPORT_BUFFER_MAX_POINTS:,} — acima disso a planilha passa do máximo "
-        f"de linhas que o LibreOffice e o Excel abrem. Reduza a seleção com os "
-        f"filtros, ou exporte apenas pixel e lista de pontos, que não têm limite."
-    ).replace(",", ".")
+        f"A seleção tem {_thousands(n)} conglomerados; com {chosen} o limite é "
+        f"{_thousands(limit)}. {remedy} A lista de pontos e a classe do pixel "
+        f"não têm limite."
+    )

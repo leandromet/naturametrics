@@ -172,6 +172,10 @@ data/*
 !data/.gitkeep
 !data/ifn_points.csv
 !data/ifn_points.meta.json
+# 326 KiB of counted (região, UF, município, bioma) groups — the filter UI reads
+# it at startup and a deploy cannot rebuild it (scripts/join_ifn_biomes.py needs
+# Earth Engine). The 1.3 MB per-point table it is derived from stays out.
+!data/ifn_filter_index.csv
 
 # Explicit belt-and-braces for the bulk trees
 data/raw/

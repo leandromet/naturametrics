@@ -230,3 +230,139 @@ SPOT_2008 = {
         "SPOT images"
     ),
 }
+
+
+# --------------------------------------------------------------------------- #
+# Own Earth Engine assets (project ee-leandromet)
+# --------------------------------------------------------------------------- #
+# Uploaded 2026-08-19 from the shapefiles in
+# ~/Documents/2026_inma_gustavo/shapes_google. These are the only assets the
+# application reads from its OWN project — everything else is public. If the
+# app ever runs under a different GCP project (settings.GCP_PROJECT_ID) these
+# two must be shared with it, or both layers fail while the rest still work.
+
+#: SFB IFN conglomerado locations, exactly as uploaded — 17 495 points.
+#:
+#: ⚠️ **The map does not read this one; it reads IFN_POINTS_JOINED below.** This
+#: is the raw upload and the input to scripts/join_ifn_biomes.py. It is kept
+#: named here so the join has a source and so the provenance of the joined asset
+#: is one lookup away, not so that layers point at it.
+#:
+#: ``data/ifn_points.csv`` (scripts/fetch_ifn.py) stays as the *attribute*
+#: source, since it carries the survey date, ``impedimento`` and the derived
+#: status that neither asset has. The two are joined on the UA identifier when a
+#: point is selected.
+#:
+#: ⚠️ Defects, verified against the asset (doc/04-data-sources.md §6a.1):
+#: 16 features have an EMPTY MultiPoint geometry and cannot be drawn, joined or
+#: filtered; 24 carry empty ``sigla_uf``/``nm_mun``/``nm_regiao``. Usable: 17 479.
+IFN_POINTS = {
+    "asset": "projects/ee-leandromet/assets/sfb_ifn_conglomerados_pontos",
+    "count": 17495,
+    "attribution": (
+        "Serviço Florestal Brasileiro — Inventário Florestal Nacional "
+        "(conglomerados)"
+    ),
+    #: Semantic name → property name in the asset. Nothing outside this dict
+    #: should hard-code the abbreviated shapefile column names.
+    "fields": {
+        "region": "nm_regiao",
+        "uf": "sigla_uf",
+        "municipality": "nm_mun",
+        "municipality_code": "cd_mun",
+        "conglomerate": "no_conglom",
+        "point_id": "co_pontos_",
+    },
+    #: ``FeatureCollection.style`` arguments. ``pointSize`` is in screen pixels,
+    #: so the dots stay legible at every zoom instead of vanishing at z5.
+    "style": {
+        "color": "ffffff",
+        "fillColor": "e5484dcc",
+        "pointSize": 3,
+        "pointShape": "circle",
+        "width": 1,
+    },
+}
+
+#: The IFN points with the biome joined in, written by
+#: ``scripts/join_ifn_biomes.py --export-asset``. **This is what the map reads.**
+#:
+#: The join has to be materialised rather than done at query time: filtering the
+#: raw points with ``filterBounds`` against a biome outline works for Pantanal,
+#: Pampa and Caatinga and fails for Amazônia, Cerrado and Mata Atlântica with
+#: "Description length exceeds maximum" — those three outlines are too long for
+#: Earth Engine's filter machinery at 1:250 000. Here ``bioma`` is a plain string
+#: property, so all four filters are the same ``ee.Filter.eq`` and the request
+#: size no longer depends on the size of the biome.
+#:
+#: The 16 features with empty geometry are dropped during the export, so this
+#: asset holds 17 479 points to the source asset's 17 495.
+IFN_POINTS_JOINED = {
+    "asset": "projects/ee-leandromet/assets/sfb_ifn_conglomerados_pontos_bioma",
+    "count": 17479,
+    "attribution": (
+        "Serviço Florestal Brasileiro — Inventário Florestal Nacional "
+        "(conglomerados) · bioma: IBGE 1:250.000"
+    ),
+    "fields": {
+        "region": "nm_regiao",
+        "uf": "sigla_uf",
+        "municipality": "nm_mun",
+        "municipality_code": "cd_mun",
+        "conglomerate": "no_conglom",
+        "point_id": "co_pontos_",
+        "biome": "bioma",
+        "phyto_domain": "dominio_fito",
+        "natural_region": "regiao_natural",
+    },
+    "style": {
+        "color": "ffffff",
+        "fillColor": "e5484dcc",
+        "pointSize": 3,
+        "pointShape": "circle",
+        "width": 1,
+    },
+}
+
+#: IBGE biomes, domains and natural regions, 1:250 000 — 271 polygons.
+#: Used for the biome overlay and as the spatial filter behind the IFN "bioma"
+#: selector (the point asset has no biome attribute of its own).
+IBGE_BIOME_DOMAIN = {
+    "asset": "projects/ee-leandromet/assets/ibge_biome_domain_250k",
+    "attribution": "IBGE — Biomas e domínios morfoclimáticos 1:250.000",
+    "fields": {
+        "biome": "nm_bm",
+        "biome_code": "cd_bm",
+        "geology": "gl_dom",
+        "geomorphology": "gm_dom",
+        "vegetation": "vg_dom",
+        "soil": "pd_dom",
+        "phyto_domain": "nm_dm_fito",
+        "natural_region": "nm_reg_nat",
+    },
+    #: The seven values actually present in ``nm_bm``, verified against the
+    #: asset. Order is the legend order; it is also the filter dropdown order.
+    "biomes": [
+        "Amazônia",
+        "Cerrado",
+        "Mata Atlântica",
+        "Caatinga",
+        "Pampa",
+        "Pantanal",
+        "Ilhas Oceânicas",
+    ],
+    #: Roughly IBGE's own biome cartography. 8-digit hex: the last byte is alpha,
+    #: kept low so the land cover underneath stays readable through the fill.
+    "palette": {
+        "Amazônia": "1a7f37",
+        "Cerrado": "d9a441",
+        "Mata Atlântica": "2f6f4e",
+        "Caatinga": "c96a3a",
+        "Pampa": "8fbf5a",
+        "Pantanal": "3f8fbf",
+        "Ilhas Oceânicas": "8a6fbf",
+    },
+    "fill_alpha": "59",   # ~35 % — a wash, not a mask
+    "outline_alpha": "ff",
+    "outline_width": 1.5,
+}

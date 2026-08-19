@@ -26,6 +26,8 @@ def map_pane() -> rx.Component:
             swipe=AppState.compare_enabled,
             layers=AppState.map_layers,
             overlays=AppState.buffer_overlays,
+            vectors=AppState.map_vectors,
+            fit_bounds=AppState.fit_bounds,
             on_map_click=AppState.set_study_point,
             width="100%",
             height="100%",

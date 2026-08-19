@@ -9,6 +9,7 @@ import logging
 
 import reflex as rx
 
+from .api import register as register_api
 from .components.layout import ACCENT
 from .pages.index import index
 
@@ -41,3 +42,7 @@ app.add_page(
         "MapBiomas, Hansen e Earth Engine."
     ),
 )
+
+# The biome polygons are fetched by the browser over HTTP, not pushed through
+# the WebSocket — see naturametrics/api/__init__.py for why.
+register_api(app)

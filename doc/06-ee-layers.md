@@ -99,7 +99,8 @@ tile endpoint should trigger a silent refresh, not a broken layer.
 | **SPOT 2008 visual** | `GOOGLE/BRAZIL_FOREST_2008/V1/VISUAL` | direct | `['R','G','B'], 0–255` |
 | **SPOT 2008 analytic** | `GOOGLE/BRAZIL_FOREST_2008/V1/ANALYTIC` | direct | `['N','R','G']`, `min:[156,62,53]`, `max:[6408,2584,2211]`, `gamma:0.9` |
 | **SPOT 2008 NDVI** | analytic | `.normalizedDifference(['N','R'])` | `-0.2–1.0`, vegetation palette |
-| **IFN points** | local GeoJSON | not EE — a Leaflet vector layer | canvas circle markers |
+| **IFN conglomerados** | `projects/ee-leandromet/assets/sfb_ifn_conglomerados_pontos_bioma` (derived — see [04](04-data-sources.md) §6a.2) | `.filter(eq)` on `nm_regiao`/`sigla_uf`/`nm_mun`/`bioma`, then `.style()` | 3 px white-ringed red dots |
+| **IBGE biomas** | `projects/ee-leandromet/assets/ibge_biome_domain_250k` | not tiled — simplified GeoJSON served at `/_biomes.geojson`, drawn by Leaflet with a hover tooltip | one hue per bioma, opacity 0–80 % |
 
 Both SPOT layers are gated behind the licence flag (see
 [04-data-sources.md](04-data-sources.md) §2).

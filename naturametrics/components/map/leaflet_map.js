@@ -14,15 +14,26 @@
 // There is no `React` namespace object in scope - calling `React.useRef` here throws
 // "React is not defined" at render. Use the bare hook names.
 
-function useNaturametricsMap(containerRef, config, layers, overlays, onMapClick) {
+function useNaturametricsMap(containerRef, config, layers, overlays, vectors, onMapClick) {
   const mapRef = useRef(null);
   const layerRegistry = useRef(new Map());
+  const vectorRegistry = useRef(new Map());
+  const vectorPending = useRef(new Set());
+  // Fetched GeoJSON, kept across toggles: switching the biome layer off and
+  // on again must not re-download half a megabyte.
+  const vectorData = useRef(new Map());
+  // The latest spec list, readable from inside an in-flight fetch: dragging the
+  // opacity slider while half a megabyte of polygons is still downloading would
+  // otherwise land the layer at the opacity it had when the fetch started, and
+  // nothing would re-render to correct it.
+  const vectorsRef = useRef(vectors);
   const overlayRef = useRef(null);
   const clickRef = useRef(onMapClick);
   const readyRef = useRef(false);
 
   // Keep the click callback current without re-registering the Leaflet handler.
   clickRef.current = onMapClick;
+  vectorsRef.current = vectors;
 
   // --- 1. Create the map exactly once -------------------------------------
   useEffect(() => {
@@ -96,6 +107,8 @@ function useNaturametricsMap(containerRef, config, layers, overlays, onMapClick)
         overlayRef.current = null;
         readyRef.current = false;
         layerRegistry.current.clear();
+        vectorRegistry.current.clear();
+        vectorPending.current.clear();
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -416,6 +429,188 @@ function useNaturametricsMap(containerRef, config, layers, overlays, onMapClick)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [overlayKey]);
 
+
+  // --- 3b. Browser-side vector layers -------------------------------------
+  // Tiles cannot answer "what is under the cursor" - they are pixels. A layer
+  // that has to name itself on hover therefore needs real geometry in the
+  // browser, so these specs carry a PATH and the hook fetches the GeoJSON over
+  // plain HTTP (cacheable, gzipped, and off the WebSocket - see
+  // naturametrics/api/__init__.py).
+  //
+  // They live in their own pane between the tiles (200) and the overlay pane
+  // (400): above the imagery they contextualise, below the study point and its
+  // buffers, which must never be obscured.
+  const vectorKey = JSON.stringify(vectors);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const sync = async () => {
+      const map = mapRef.current;
+      if (!map || cancelled) return;
+
+      const mod = await import("leaflet");
+      const L = mod.default || mod;
+      if (cancelled || !mapRef.current) return;
+
+      if (!map.getPane("nmVectors")) {
+        const pane = map.createPane("nmVectors");
+        pane.style.zIndex = 350;
+      }
+
+      const registry = vectorRegistry.current;
+      const incoming = Array.isArray(vectors) ? vectors : [];
+      const wanted = new Set(incoming.map((spec) => spec.id));
+
+      for (const [id, entry] of Array.from(registry.entries())) {
+        if (!wanted.has(id)) {
+          map.removeLayer(entry.layer);
+          registry.delete(id);
+        }
+      }
+
+      for (const spec of incoming) {
+        const existing = registry.get(spec.id);
+        if (existing) {
+          // Only the cheap properties can change; the geometry never does.
+          if (existing.opacity !== spec.opacity) {
+            existing.opacity = spec.opacity;
+            existing.layer.setStyle((feature) => styleFor(spec, feature));
+          }
+          continue;
+        }
+        // A second render while the fetch is still in flight would start a
+        // second fetch and add the layer twice.
+        if (vectorPending.current.has(spec.id)) continue;
+        vectorPending.current.add(spec.id);
+
+        try {
+          const url = new URL(spec.path, getBackendURL(env.PING)).href;
+          let data = vectorData.current.get(url);
+          if (!data) {
+            const response = await fetch(url, {credentials: "omit"});
+            if (!response.ok) {
+              throw new Error(`${response.status} ${response.statusText}`);
+            }
+            data = await response.json();
+            vectorData.current.set(url, data);
+          }
+          if (cancelled || !mapRef.current) return;
+
+          const layer = L.geoJSON(data, {
+            pane: "nmVectors",
+            style: (feature) => styleFor(spec, feature),
+            onEachFeature: (feature, featureLayer) => {
+              const html = tooltipHtml(spec, feature);
+              if (html) {
+                // sticky: the tooltip follows the cursor inside the polygon,
+                // which is the only sane behaviour for shapes the size of the
+                // Amazon - anchored to the centroid it would be off-screen.
+                featureLayer.bindTooltip(html, {
+                  sticky: true,
+                  direction: "top",
+                  opacity: 0.95,
+                  className: "nm-vector-tip",
+                });
+              }
+              // An interactive polygon swallows the click that would otherwise
+              // reach the map, so the study-point selection has to be forwarded
+              // explicitly or clicking anywhere on a biome does nothing.
+              featureLayer.on("click", (e) => {
+                if (clickRef.current && e.latlng) {
+                  clickRef.current(
+                    Math.round(e.latlng.lat * 1e6) / 1e6,
+                    Math.round(e.latlng.lng * 1e6) / 1e6
+                  );
+                }
+              });
+            },
+          });
+          layer.addTo(map);
+          if (spec.attribution) {
+            map.attributionControl.addAttribution(spec.attribution);
+          }
+          registry.set(spec.id, {layer: layer, opacity: spec.opacity});
+
+          // Catch up with anything the user changed while the fetch was in
+          // flight - see vectorsRef above.
+          const latest = (Array.isArray(vectorsRef.current) ? vectorsRef.current
+            : []).find((s) => s.id === spec.id);
+          if (latest && latest.opacity !== spec.opacity) {
+            registry.get(spec.id).opacity = latest.opacity;
+            layer.setStyle((feature) => styleFor(latest, feature));
+          }
+        } catch (err) {
+          console.error(`Vector layer ${spec.id} failed to load:`, err);
+        } finally {
+          vectorPending.current.delete(spec.id);
+        }
+      }
+    };
+
+    if (readyRef.current) {
+      sync();
+    } else {
+      const t = setInterval(() => {
+        if (readyRef.current) {
+          clearInterval(t);
+          sync();
+        }
+      }, 50);
+      return () => {
+        cancelled = true;
+        clearInterval(t);
+      };
+    }
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vectorKey]);
+
+
+  // --- 4b. Frame a selection ----------------------------------------------
+  // `config.bounds` is initial framing and is deliberately never re-applied.
+  // `config.fitBounds` is the opposite: Python sets it when the user narrows the
+  // IFN filter to a state or a municipality, and the map flies there. Keyed on
+  // the value, so re-rendering for an unrelated reason does not re-frame.
+  const fitKey = JSON.stringify((config && config.fitBounds) || null);
+  const lastFitRef = useRef(null);
+
+  useEffect(() => {
+    const apply = () => {
+      const map = mapRef.current;
+      if (!map) return;
+      if (!config || !config.fitBounds) {
+        // Python cleared the request. Forget what was last applied, so that
+        // choosing the SAME filter again still re-frames - otherwise
+        // "filter MT -> clear -> filter MT" leaves the map wherever it was.
+        lastFitRef.current = null;
+        return;
+      }
+      if (lastFitRef.current === fitKey) return;
+      lastFitRef.current = fitKey;
+      // maxZoom: a single conglomerado has a padded but still tiny box, and
+      // without a ceiling fitBounds lands at z18 on imagery that has no detail
+      // there - the user sees four grey tiles and assumes the layer broke.
+      map.fitBounds(config.fitBounds, {padding: [24, 24], maxZoom: 12});
+    };
+
+    if (readyRef.current) {
+      apply();
+      return;
+    }
+    const t = setInterval(() => {
+      if (readyRef.current) {
+        clearInterval(t);
+        apply();
+      }
+    }, 50);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fitKey]);
+
   // --- 4. Follow programmatic view changes from Python ---------------------
   // Only when Python actually asks for a DIFFERENT view. Comparing against the
   // map's current position instead would re-centre on every unrelated config
@@ -442,4 +637,53 @@ function useNaturametricsMap(containerRef, config, layers, overlays, onMapClick)
     map.setView(config.center, config.zoom);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(config)]);
+}
+
+// Style one feature of a vector layer from its spec's palette.
+//
+// The stroke is the palette colour at full strength and the fill is the same
+// colour at the layer's opacity: one hue per biome, so the legend, the fill and
+// the outline cannot drift apart.
+function styleFor(spec, feature) {
+  const props = (feature && feature.properties) || {};
+  const key = props[spec.color_property];
+  const palette = spec.palette || {};
+  const color = palette[key] || spec.default_color || "9e9e9e";
+  return {
+    color: `#${color}`,
+    weight: spec.weight != null ? spec.weight : 1,
+    opacity: 0.9,
+    fill: true,
+    fillColor: `#${color}`,
+    // Never 0: with preferCanvas the renderer still hit-tests a zero-opacity
+    // fill, but a reader cannot tell the layer is on.
+    fillOpacity: spec.opacity != null ? spec.opacity : 0.4,
+  };
+}
+
+// Build the hover tooltip from the spec's label/property pairs.
+// Properties that are missing or empty are skipped rather than rendered as an
+// empty row - several IBGE polygons have no natural-region name.
+function tooltipHtml(spec, feature) {
+  const props = (feature && feature.properties) || {};
+  const rows = (spec.tooltip || [])
+    .map((entry) => {
+      const value = props[entry.property];
+      if (value === undefined || value === null || value === "") return null;
+      return `<div class="nm-tip-row"><span class="nm-tip-label">${escapeHtml(
+        entry.label
+      )}</span><span class="nm-tip-value">${escapeHtml(String(value))}</span></div>`;
+    })
+    .filter(Boolean);
+  return rows.length ? rows.join("") : null;
+}
+
+// The tooltip is built as an HTML string, and these values come from a data
+// file rather than from code, so they are escaped before insertion.
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }

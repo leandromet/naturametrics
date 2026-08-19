@@ -8,6 +8,11 @@ A "layer spec" is a plain dict the Leaflet hook understands:
 ``id`` is the diff key — the hook adds, updates or removes layers by comparing
 these against what is already on the map, so ids must be stable across renders
 and must change when the pixels change.
+
+Two more layers build their own specs, in the modules that own their data:
+:mod:`naturametrics.services.ifn` (the IFN point grid and its filters) and
+:mod:`naturametrics.services.biomes` (IBGE biomes, which are drawn in the
+browser rather than tiled — see that module for why).
 """
 
 from __future__ import annotations

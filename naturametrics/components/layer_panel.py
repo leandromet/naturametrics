@@ -1,6 +1,7 @@
 """Sidebar controls for the map layers.
 
-Phase 0 scope: basemap choice and the MapBiomas year/opacity controls. The year
+Basemap, the MapBiomas year/opacity controls, the change mask, the IFN
+conglomerado grid with its four filters, and the IBGE biome overlay. The year
 slider is the acceptance test for decision D1 — moving it must repaint the layer
 without the map viewport shifting.
 """
@@ -215,6 +216,148 @@ def change_mask_control() -> rx.Component:
     )
 
 
+def _filter_select(label: str, options, value, on_change,
+                   disabled=False) -> rx.Component:
+    """One row of the IFN filter cascade."""
+    return rx.vstack(
+        rx.text(label, size="1", color_scheme="gray"),
+        rx.select(
+            options,
+            value=value,
+            on_change=on_change,
+            disabled=disabled,
+            width="100%",
+            size="2",
+        ),
+        spacing="1",
+        width="100%",
+        align_items="stretch",
+    )
+
+
+def ifn_control() -> rx.Component:
+    """The IFN conglomerado grid, filtered by região / estado / município / bioma.
+
+    The counter is not decoration: with 17 479 points nationwide, the difference
+    between a filter that selected 140 points and one that selected none is
+    invisible on the map until you zoom to the right place.
+    """
+    return _section(
+        "Inventário Florestal Nacional",
+        rx.hstack(
+            rx.switch(checked=AppState.show_ifn, on_change=AppState.toggle_ifn),
+            rx.text("Conglomerados", size="2"),
+            rx.spacer(),
+            rx.cond(AppState.ifn_busy, rx.spinner(size="1"), rx.fragment()),
+            width="100%", align="center", spacing="2",
+        ),
+        rx.cond(
+            AppState.show_ifn,
+            rx.vstack(
+                _filter_select("Região", AppState.ifn_region_options,
+                               AppState.ifn_region_value,
+                               AppState.set_ifn_region),
+                _filter_select("Bioma", AppState.ifn_biome_options,
+                               AppState.ifn_biome_value,
+                               AppState.set_ifn_biome),
+                _filter_select("Estado", AppState.ifn_uf_options,
+                               AppState.ifn_uf_value, AppState.set_ifn_uf),
+                _filter_select("Município", AppState.ifn_municipality_options,
+                               AppState.ifn_municipality_value,
+                               AppState.set_ifn_municipality,
+                               disabled=AppState.ifn_uf == ""),
+                rx.cond(
+                    AppState.ifn_municipality_hint != "",
+                    rx.text(AppState.ifn_municipality_hint, size="1",
+                            color_scheme="gray"),
+                    rx.fragment(),
+                ),
+                rx.hstack(
+                    rx.badge(AppState.ifn_count_label, color_scheme="jade",
+                             variant="soft"),
+                    rx.spacer(),
+                    rx.cond(
+                        AppState.ifn_has_filter,
+                        rx.button(
+                            rx.icon("rotate-ccw", size=12),
+                            "Limpar",
+                            size="1", variant="ghost",
+                            on_click=AppState.clear_ifn_filters,
+                        ),
+                        rx.fragment(),
+                    ),
+                    width="100%", align="center",
+                ),
+                rx.cond(
+                    AppState.ifn_count == 0,
+                    rx.callout(
+                        "Nenhum conglomerado nesta combinação de filtros.",
+                        icon="info", size="1", color_scheme="amber", width="100%",
+                    ),
+                    rx.fragment(),
+                ),
+                spacing="2", width="100%", padding_top="0.25rem",
+            ),
+            rx.fragment(),
+        ),
+    )
+
+
+def _biome_legend() -> rx.Component:
+    """One swatch per biome, in the same order and the same hues the map draws."""
+    conf = ds.IBGE_BIOME_DOMAIN
+    return rx.vstack(
+        *[
+            rx.hstack(
+                rx.box(width="10px", height="10px", border_radius="2px",
+                       background=f"#{conf['palette'][name]}"),
+                rx.text(name, size="1"),
+                spacing="2", align="center", width="100%",
+            )
+            for name in conf["biomes"]
+        ],
+        spacing="1", width="100%",
+    )
+
+
+def biome_control() -> rx.Component:
+    return _section(
+        "Biomas (IBGE)",
+        rx.hstack(
+            rx.switch(checked=AppState.show_biomes,
+                      on_change=AppState.toggle_biomes),
+            rx.text("Biomas e domínios", size="2"),
+            width="100%", align="center", spacing="2",
+        ),
+        rx.cond(
+            AppState.show_biomes,
+            rx.vstack(
+                rx.hstack(
+                    rx.text("Opacidade", size="1", color_scheme="gray"),
+                    rx.spacer(),
+                    rx.text(AppState.biome_opacity_pct.to_string() + "%", size="1"),
+                    width="100%",
+                ),
+                rx.slider(
+                    min=0, max=80, step=5,
+                    default_value=[35],
+                    on_change=AppState.set_biome_opacity,
+                    width="100%",
+                ),
+                _biome_legend(),
+                rx.text(
+                    "Passe o cursor sobre um polígono para ver bioma, domínio "
+                    "fitogeográfico e região natural. Os limites estão "
+                    "simplificados (~1 km) para desenho no navegador.",
+                    size="1", color_scheme="gray",
+                ),
+                spacing="2", width="100%", padding_top="0.25rem",
+            ),
+            rx.fragment(),
+        ),
+    )
+
+
 def status_line() -> rx.Component:
     return rx.hstack(
         rx.cond(
@@ -271,6 +414,10 @@ def layer_panel() -> rx.Component:
         compare_control(),
         rx.divider(),
         change_mask_control(),
+        rx.divider(),
+        ifn_control(),
+        rx.divider(),
+        biome_control(),
         rx.spacer(),
         rx.divider(),
         status_line(),

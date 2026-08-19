@@ -26,6 +26,35 @@ from reflex.vars.base import Var, VarData
 
 _HOOK_JS = (Path(__file__).parent / "leaflet_map.js").read_text(encoding="utf-8")
 
+#: Styling for the vector-layer hover tooltip. Injected from JS rather than
+#: shipped as a stylesheet asset: it is fifteen lines that belong to this
+#: component, and an asset file would put them a directory away from the markup
+#: that produces the class names. Guarded for server-side rendering, where there
+#: is no document.
+_TOOLTIP_CSS_JS = """
+if (typeof document !== "undefined" && !document.getElementById("nm-vector-tip-css")) {
+  const style = document.createElement("style");
+  style.id = "nm-vector-tip-css";
+  style.textContent = `
+    .nm-vector-tip {
+      font: 12px/1.45 Inter, system-ui, sans-serif;
+      padding: 6px 9px;
+      border: none;
+      border-radius: 6px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.25);
+      background: rgba(255,255,255,.97);
+      color: #1c2024;
+      max-width: 260px;
+    }
+    .nm-vector-tip .nm-tip-row { display: flex; gap: 8px; justify-content: space-between; }
+    .nm-vector-tip .nm-tip-row:first-child { font-weight: 600; }
+    .nm-vector-tip .nm-tip-label { color: #60646c; white-space: nowrap; }
+    .nm-vector-tip .nm-tip-value { text-align: right; }
+  `;
+  document.head.appendChild(style);
+}
+"""
+
 
 class LeafletMap(rx.el.Div):
     """A persistent Leaflet map.
@@ -38,6 +67,8 @@ class LeafletMap(rx.el.Div):
             and optionally ``opacity``, ``attribution``, ``z_index``,
             ``max_native_zoom``. List order is stacking order unless ``z_index``
             says otherwise.
+        vectors: browser-side vector layer specs (see ``services.biomes``).
+        fit_bounds: ``[[s, w], [n, e]]`` re-applied whenever it changes.
         on_map_click: called with ``(lat, lon)`` when the user clicks the map.
     """
 
@@ -57,6 +88,14 @@ class LeafletMap(rx.el.Div):
     #: GeoJSON FeatureCollection drawn above the tiles: the study point and its
     #: buffer outlines. Features carry a ``role`` property that drives styling.
     overlays: Var[dict[str, Any]] = Var.create({})
+    #: Browser-side vector layers, each fetched by the hook from a backend path
+    #: rather than pushed through state — for layers that must answer "what is
+    #: under the cursor", which a tile cannot. See services/biomes.py.
+    vectors: Var[Sequence[dict[str, Any]]] = Var.create([])
+    #: ``[[south, west], [north, east]]``. Unlike ``bounds`` this is re-applied
+    #: every time it CHANGES, so Python can frame a new selection. Set it to []
+    #: to leave the view alone.
+    fit_bounds: Var[Sequence[Sequence[float]]] = Var.create([])
 
     on_map_click: EventHandler[passthrough_event_spec(float, float)]
 
@@ -64,7 +103,7 @@ class LeafletMap(rx.el.Div):
         # These drive the hook, not DOM attributes. React would warn about all
         # of them and Leaflet would never see them.
         return [*super()._exclude_props(), "center", "zoom", "bounds", "swipe",
-                "layers", "overlays", "on_map_click"]
+                "layers", "overlays", "vectors", "fit_bounds", "on_map_click"]
 
     def add_imports(self) -> dict[str, Any]:
         """Leaflet's stylesheet, and the React hooks the injected code calls.
@@ -76,10 +115,16 @@ class LeafletMap(rx.el.Div):
         return {
             "": "leaflet/dist/leaflet.css",
             "react": [ImportVar(tag="useEffect"), ImportVar(tag="useRef")],
+            # Vector layers are fetched from the BACKEND, which in development
+            # is a different origin from the frontend (8011 vs 3010) and in
+            # production is the same one. `getBackendURL` is the only thing that
+            # knows which, so the hook must not build the URL itself.
+            "$/utils/state": [ImportVar(tag="getBackendURL")],
+            "$/env.json": [ImportVar(tag="env", is_default=True)],
         }
 
     def add_custom_code(self) -> list[str]:
-        return [_HOOK_JS]
+        return [_HOOK_JS, _TOOLTIP_CSS_JS]
 
     def add_hooks(self) -> list[str | Var[str]]:
         ref = self.get_ref()
@@ -99,11 +144,12 @@ class LeafletMap(rx.el.Div):
         config = (
             f"{{center: {self.center!s}, zoom: {self.zoom!s}, "
             f"bounds: ({self.bounds!s}).length ? {self.bounds!s} : null, "
+            f"fitBounds: ({self.fit_bounds!s}).length ? {self.fit_bounds!s} : null, "
             f"swipe: {self.swipe!s}}}"
         )
         expr = (
             f"useNaturametricsMap({ref}, {config}, {self.layers!s}, "
-            f"{self.overlays!s}, {handler})"
+            f"{self.overlays!s}, {self.vectors!s}, {handler})"
         )
         return [
             Var(

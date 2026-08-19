@@ -235,6 +235,84 @@ Portal: `https://snif.florestal.gov.br/pt-br/temas-florestais/ifn`.
 
 ---
 
+## 6a. Own Earth Engine assets — IFN points and IBGE biomes
+
+Three assets live in **our own** Earth Engine project (`ee-leandromet`): two uploaded
+2026-08-19 from shapefiles, and one derived from them. Everything else this app reads is
+public, so these are the only layers that break if the app is ever run under a different
+`GCP_PROJECT_ID` without the assets being shared with it.
+
+| Asset | Geometry | Features | Fields | Read by |
+|---|---|---|---|---|
+| `…/sfb_ifn_conglomerados_pontos` | MultiPoint | 17 495 | `co_pontos_`, `no_conglom`, `cd_mun`, `nm_mun`, `sigla_uf`, `nm_regiao`, `cod_mun_su` | the join script only |
+| `…/sfb_ifn_conglomerados_pontos_bioma` ★ | MultiPoint | 17 479 | the above **plus** `bioma`, `dominio_fito`, `regiao_natural` | **the map** |
+| `…/ibge_biome_domain_250k` | Polygon | 271 | `cd_bm`/`nm_bm`, `gl_dom`, `gm_dom`, `vg_dom`, `pd_dom`, `cd_dm_fito`/`nm_dm_fito`/`tp_dm_fito`, `cd_reg_nat`/`nm_reg_nat`/`tp_reg_nat` | the map, and the join |
+
+All three under `projects/ee-leandromet/assets/`. The ★ asset is **derived** — written by
+`scripts/join_ifn_biomes.py --export-asset`, not uploaded. Rebuild it whenever either
+source asset is replaced.
+
+Licences: SFB IFN **CC-BY** (as §6); IBGE biomes/domains **CC-BY** (IBGE open data).
+Attribution strings are in `config/datasets.py` and are what the map's attribution
+control shows.
+
+### 6a.1 Known defects in the point asset
+
+Verified against the asset, not assumed:
+
+- **16 features have an empty `MultiPoint` geometry** — no coordinates at all. They are
+  the same features that carry blank `sigla_uf`/`nm_mun`/`nm_regiao` (RJ and ES
+  conglomerados). They cannot be drawn, joined or filtered. `scripts/join_ifn_biomes.py`
+  drops them explicitly; without that they crash the join in `centroid()` with
+  *"List is empty (index is 1)"*.
+- **24 features have a blank UF** (the 16 above plus 8 with real geometry). Those 8 are
+  on the map whenever no administrative filter is active, and invisible to the filters
+  by construction. 5 of them also fall outside every biome polygon.
+- **Usable total: 17 479.** That is the number the app counts and the number in the
+  filter index.
+
+### 6a.2 Why the biome is joined ahead of time, and not filtered spatially
+
+The uploaded point asset carries **no biome column**, and the obvious fix — filter the
+points with `filterBounds` against the biome outline — does not work:
+
+| Biome | Points | `filterBounds` |
+|---|---|---|
+| Caatinga, Pampa, Pantanal | 2 367 / 523 / 374 | works |
+| **Amazônia, Cerrado, Mata Atlântica** | 5 801 / 4 898 / 3 511 | **fails** — `Description length exceeds maximum` |
+
+The three largest biomes have 1:250 000 outlines too long for Earth Engine's filter
+machinery. It is not a request-size problem on our side (the serialised request is 1 369
+characters either way) and it is unaffected by passing the `FeatureCollection` instead of
+its `.geometry()`. Simplifying the outline would fix the request and quietly misassign
+every point within the tolerance of a boundary — a silent correctness bug traded for a
+size limit.
+
+The symptom is worth recognising: the layer works for small biomes and silently draws
+nothing for large ones, which reads as a zoom or density problem rather than a filter
+failure.
+
+So the intersection runs **once**, at full resolution, in
+`scripts/join_ifn_biomes.py --export-asset`, and its result is stored as the ★ asset
+above. In that asset `bioma` is a plain string property, so all four map filters are the
+same `ee.Filter.eq`, and request size no longer depends on the size of the biome. The
+same run also writes `data/ifn_filter_index.csv` (see `data/README.md`), so the asset and
+the index the UI counts from are two outputs of one join and cannot disagree.
+
+### 6a.3 How each is drawn
+
+| Layer | Delivery | Why |
+|---|---|---|
+| IFN conglomerados | **Earth Engine tiles** — `FeatureCollection.style()` → `getMapId` | 17 479 points as GeoJSON is megabytes *per filter change*; as tiles it is a URL. All four filters are applied server-side, so each combination is its own cached tile URL. |
+| IBGE biomes | **Browser vector layer**, fetched from the backend at `/_biomes.geojson` | The layer has to name itself on hover, and a tile is pixels. Simplified to 1.5 km and rounded to 2 dp: ~2.5 MB of JSON, **531 KiB gzipped**, fetched once and browser-cached. |
+
+⚠️ **The served biome polygons are approximate to roughly a kilometre.** They are for
+display and hover only, and nothing decides anything from them — the one place that
+question is asked, which biome each IFN point sits in, was answered at full resolution by
+the join above.
+
+---
+
 ## 7. Basemaps
 
 Plain XYZ tiles, no Earth Engine involved. **Esri World Imagery is the default** —

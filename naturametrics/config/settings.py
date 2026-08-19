@@ -87,6 +87,15 @@ IFN_CATALOG_PATH = Path(
     os.environ.get("NM_IFN_CATALOG", str(REPO_ROOT / "data" / "ifn_points.csv"))
 )
 
+#: Precomputed (região, UF, município, bioma) groups with counts and bounding
+#: boxes — everything the filter UI needs without an Earth Engine round trip.
+#: Built by scripts/join_ifn_biomes.py; committed, because a deploy has no way
+#: to rebuild it before the first request.
+IFN_FILTER_INDEX_PATH = Path(
+    os.environ.get("NM_IFN_FILTER_INDEX",
+                   str(REPO_ROOT / "data" / "ifn_filter_index.csv"))
+)
+
 # --------------------------------------------------------------------------- #
 # Map defaults
 # --------------------------------------------------------------------------- #

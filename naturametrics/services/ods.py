@@ -58,6 +58,10 @@ class SheetTooLarge(ValueError):
     """A sheet exceeded what a spreadsheet application can open."""
 
 
+#: Characters that make Excel/LibreOffice/Sheets treat a cell as a formula.
+_FORMULA_TRIGGERS = ("=", "+", "-", "@", "\t", "\r")
+
+
 def _cell(value: Any) -> str:
     if value is None or value == "":
         return "<table:table-cell/>"
@@ -73,7 +77,22 @@ def _cell(value: Any) -> str:
         return (f'<table:table-cell office:value-type="float" '
                 f'office:value="{value!r}"><text:p>{value}</text:p>'
                 f'</table:table-cell>')
-    text = escape(str(value))
+    text = str(value)
+    if text and text[0] in _FORMULA_TRIGGERS:
+        # "CSV/formula injection" (OWASP): Excel, LibreOffice and Google
+        # Sheets all still auto-detect a formula from a cell's leading
+        # character on open/re-edit, regardless of the file format's own
+        # office:value-type="string" declaration here. Harmless as long as
+        # every string cell is server-generated — but services/user_points.py
+        # now lets a pasted "nome" become a cell value verbatim, and this app's
+        # own docs describe emailing an export to a colleague, so an untrusted
+        # name is one export away from running in someone else's spreadsheet.
+        # A leading apostrophe is the conventional "force literal text" escape
+        # every major spreadsheet app honours; it may show as a visible
+        # character, which is the trade we want against arbitrary formula
+        # execution.
+        text = "'" + text
+    text = escape(text)
     return (f'<table:table-cell office:value-type="string">'
             f'<text:p>{text}</text:p></table:table-cell>')
 

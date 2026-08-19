@@ -222,6 +222,13 @@ EXPORT_BYTES_PER_ROW = _int("NM_EXPORT_BYTES_PER_ROW", 46)
 #: all 17 479 conglomerados in about two seconds.
 EXPORT_MAX_BUFFER_POINTS = _int("NM_EXPORT_MAX_BUFFER_POINTS", 6000)
 
+#: Ceiling on a pasted coordinate list (services.user_points), set equal to
+#: EXPORT_MAX_BUFFER_POINTS rather than a separate number picked by feel: a
+#: user-submitted list goes through the exact same buffer/age/change fan-out as
+#: a conglomerado selection once "Baixar análise completa" is pressed, so the
+#: same reasoning (clears the largest biome, ~17 min) applies unchanged.
+USER_POINTS_MAX_LINES = EXPORT_MAX_BUFFER_POINTS
+
 #: Size at which the panel starts warning. **Advisory only — nothing is
 #: refused.** There is no size limit on an ODS file, and inventing one would be
 #: making up a constraint that does not exist; the only hard limit in the format

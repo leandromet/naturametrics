@@ -311,13 +311,14 @@ def study_point_workbook(
 
 @dataclasses.dataclass
 class SelectionSpec:
-    """Which conglomerados the export covers, and which tables it carries.
+    """Which points the export covers, and which tables it carries.
 
-    A selection is named in one of two ways, and the rest of this module does not
-    care which: by the four map filters, or by an explicit list of conglomerados
-    the user clicked. ``conglomerados`` wins when set — it is the more specific
-    statement of intent, and the filters are still recorded in the metadata so
-    the file says what was on screen at the time.
+    A selection is named in one of three ways, and the rest of this module does
+    not care which: by the four map filters, by an explicit list of conglomerados
+    the user clicked, or by a pasted coordinate list (services.user_points).
+    ``user_points`` wins over ``conglomerados``, which wins over the filters —
+    each is a more specific statement of intent than the last, and the filters
+    are still recorded in the metadata so the file says what was on screen.
     """
 
     region: str = ""
@@ -326,6 +327,10 @@ class SelectionSpec:
     biome: str = ""
     #: Explicit conglomerado names, from a manual multiple selection.
     conglomerados: list[str] | None = None
+    #: A pasted coordinate list — [{"id", "lat", "lon"}, ...]. These are not IFN
+    #: conglomerados: no região/UF/município/bioma exists for them, so every
+    #: downstream table carries those columns empty rather than guessing.
+    user_points: list[dict[str, Any]] | None = None
     #: Which buffer radii the export covers. Fewer radii mean fewer rows, a
     #: smaller Earth Engine geometry per point, and a higher ceiling.
     radii: tuple[float, ...] = tuple(sorted(BUFFER_RADII_KM))
@@ -334,8 +339,12 @@ class SelectionSpec:
     include_buffers: bool = False
 
     @property
+    def is_user_points(self) -> bool:
+        return bool(self.user_points)
+
+    @property
     def is_manual(self) -> bool:
-        return bool(self.conglomerados)
+        return bool(self.conglomerados) and not self.is_user_points
 
     def filters(self) -> dict[str, str]:
         return {"region": self.region, "uf": self.uf,
@@ -343,17 +352,35 @@ class SelectionSpec:
 
     def collection(self):
         """The Earth Engine collection this selection refers to."""
+        if self.is_user_points:
+            import ee
+            return ee.FeatureCollection([
+                ee.Feature(ee.Geometry.Point(p["lon"], p["lat"]), {"id": p["id"]})
+                for p in self.user_points
+            ])
         if self.is_manual:
             return ifn.points_by_conglomerado(self.conglomerados)
         return ifn.filtered_points(**self.filters())
 
     def points(self) -> list[dict[str, Any]]:
-        """The local rows for this selection."""
+        """The local rows for this selection — same shape regardless of source,
+        so every fan-out downstream (selection_buffer_frame and friends) reads
+        ``row["conglomerado"]``/``row["uf"]``/etc. without needing to know which
+        kind of selection this is."""
+        if self.is_user_points:
+            return [
+                {"ponto_id": p["id"], "conglomerado": p["id"], "regiao": "",
+                 "uf": "", "municipio": "", "bioma": "", "lon": p["lon"],
+                 "lat": p["lat"]}
+                for p in self.user_points
+            ]
         if self.is_manual:
             return ifn.points_named(self.conglomerados)
         return ifn.selected_points(**self.filters())
 
     def filter_label(self) -> str:
+        if self.is_user_points:
+            return f"lista de coordenadas enviada pelo usuário ({len(self.user_points)} pontos)"
         parts = [v for v in (self.region, self.biome, self.uf, self.municipality) if v]
         scope = " · ".join(parts) if parts else "Brasil inteiro (sem filtro)"
         if self.is_manual:
@@ -380,9 +407,16 @@ def selection_pixel_frame(spec: SelectionSpec) -> tuple[pd.DataFrame, Provenance
     years = mb.MAPBIOMAS_YEARS
     bands = [mb.band_for_year(y) for y in years]
     asset = mb.MAPBIOMAS_COLLECTIONS[mb.MAPBIOMAS_DEFAULT_COLLECTION]
-    fields = ifn.field_names()
-    keys = [fields["conglomerate"], fields["region"], fields["uf"],
-            fields["municipality"], fields["biome"]]
+
+    if spec.is_user_points:
+        # A pasted list has no IFN identity to select on — just the "id"
+        # property this module gave the FeatureCollection in collection().
+        id_key = "id"
+        keys = [id_key]
+    else:
+        fields = ifn.field_names()
+        keys = [fields["conglomerate"], fields["region"], fields["uf"],
+                fields["municipality"], fields["biome"]]
 
     prov = Provenance(
         name="selection_point_pixel",
@@ -390,7 +424,8 @@ def selection_pixel_frame(spec: SelectionSpec) -> tuple[pd.DataFrame, Provenance
         bands=bands,
         reducer="first",
         pixel_area_basis="n/a — single pixel per conglomerado",
-        extra={"filters": spec.filter_label(), "ifn_asset": ifn.asset_id()},
+        extra={"filters": spec.filter_label(),
+               "ifn_asset": None if spec.is_user_points else ifn.asset_id()},
     )
 
     started = time.time()
@@ -405,12 +440,19 @@ def selection_pixel_frame(spec: SelectionSpec) -> tuple[pd.DataFrame, Provenance
         raw = response.read()
 
     df = pd.read_csv(_io.BytesIO(raw))
-    df = df.rename(columns={
-        fields["conglomerate"]: "conglomerado", fields["region"]: "regiao",
-        fields["uf"]: "uf", fields["municipality"]: "municipio",
-        fields["biome"]: "bioma",
-    })
+    if spec.is_user_points:
+        df = df.rename(columns={id_key: "conglomerado"})
+        for col in ("regiao", "uf", "municipio", "bioma"):
+            df[col] = ""
+    else:
+        df = df.rename(columns={
+            fields["conglomerate"]: "conglomerado", fields["region"]: "regiao",
+            fields["uf"]: "uf", fields["municipality"]: "municipio",
+            fields["biome"]: "bioma",
+        })
     df = df.rename(columns={mb.band_for_year(y): f"classe_{y}" for y in years})
+    df = df[["conglomerado", "regiao", "uf", "municipio", "bioma"]
+            + [f"classe_{y}" for y in years]]
     df = df.sort_values(["uf", "municipio", "conglomerado"]).reset_index(drop=True)
 
     prov.extra["n_conglomerados"] = len(df)
@@ -759,11 +801,16 @@ def selection_workbook(
     sheets: list[ods.Sheet] = []
 
     context: list[list[Any]] = [
-        ["ESCOPO", "seleção manual de conglomerados" if spec.is_manual
-                   else "seleção de conglomerados do IFN"],
+        ["ESCOPO", (
+            "lista de coordenadas enviada pelo usuário" if spec.is_user_points
+            else "seleção manual de conglomerados" if spec.is_manual
+            else "seleção de conglomerados do IFN"
+        )],
         ["filtros", spec.filter_label()],
-        ["conglomerados na seleção", len(points)],
-        ["fonte dos pontos", ifn.asset_id()],
+        ["pontos na seleção", len(points)],
+        ["fonte dos pontos",
+         "colado pelo usuário (services.user_points)" if spec.is_user_points
+         else ifn.asset_id()],
         ["", ""],
     ]
 
@@ -772,7 +819,11 @@ def selection_workbook(
         "lon", "lat"])
 
     if spec.include_points:
-        sheets.append(ods.sheet_from_dataframe("conglomerados", points_df))
+        # Same columns either way (region/uf/municipio/bioma just come back
+        # empty for a pasted list — see SelectionSpec.points()), but the tab
+        # itself is misnamed calling a user's own points "conglomerados".
+        sheets.append(ods.sheet_from_dataframe(
+            "pontos" if spec.is_user_points else "conglomerados", points_df))
 
     if pixel is not None:
         pixel_df, pixel_prov = pixel

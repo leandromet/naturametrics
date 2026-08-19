@@ -15,6 +15,7 @@ from ..config import mapbiomas as mb
 from ..config import settings as st
 from ..services import change_mask as cm
 from ..state import AppState
+from .user_points import enviar_dados_dialog
 
 
 def _section(title: str, *children) -> rx.Component:
@@ -352,6 +353,45 @@ def ifn_control() -> rx.Component:
     )
 
 
+def user_points_control() -> rx.Component:
+    """A pasted coordinate list, standing in for the IFN grid while active.
+
+    Kept as its own section rather than folded into ifn_control(): the two are
+    alternatives, not variants of one thing, and IFN's four filters have no
+    meaning here.
+    """
+    return _section(
+        "Coordenadas enviadas",
+        rx.hstack(
+            enviar_dados_dialog(),
+            rx.spacer(),
+            rx.cond(
+                AppState.user_points_active,
+                rx.badge(AppState.user_points_count, color_scheme="iris",
+                         variant="soft"),
+                rx.fragment(),
+            ),
+            width="100%", align="center", spacing="2",
+        ),
+        rx.cond(
+            AppState.user_points_active,
+            rx.hstack(
+                rx.text(
+                    "Ativa no mapa no lugar dos conglomerados do IFN.",
+                    size="1", color_scheme="gray", flex="1",
+                ),
+                rx.button(
+                    rx.icon("rotate-ccw", size=12), "Reset",
+                    size="1", variant="ghost",
+                    on_click=AppState.reset_user_points,
+                ),
+                width="100%", align="center",
+            ),
+            rx.fragment(),
+        ),
+    )
+
+
 def _multi_row(row: rx.Var) -> rx.Component:
     return rx.hstack(
         rx.text(row["conglomerado"], size="1", weight="medium",
@@ -549,6 +589,8 @@ def layer_panel() -> rx.Component:
         multi_select_control(),
         rx.divider(),
         ifn_control(),
+        rx.divider(),
+        user_points_control(),
         rx.divider(),
         biome_control(),
         rx.spacer(),

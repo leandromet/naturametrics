@@ -640,15 +640,15 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
       if (e && e.originalEvent) L.DomEvent.stop(e.originalEvent);
       pointClickAt.current = Date.now();
       if (spec.emit_select && selectRef.current) {
-        // The conglomerado's OWN coordinates, not the click position: the user
-        // is choosing a sampling location with a known identity, and analysing
-        // a point 40 m away from it would quietly answer a different question.
-        selectRef.current({
-          lat: props.lat, lon: props.lon,
-          conglomerado: props.conglomerado || "", uf: props.uf || "",
-          municipio: props.municipio || "", bioma: props.bioma || "",
-          ponto_id: props.ponto_id || "",
-        });
+        // The feature's OWN coordinates, not the click position: the user is
+        // choosing a sampling location with a known identity, and analysing a
+        // point 40 m away from it would quietly answer a different question.
+        // Every property is spread through rather than a fixed whitelist, so
+        // this same handler serves both the IFN layer's conglomerado/uf/
+        // municipio/bioma/ponto_id shape and a pasted point's plain id — the
+        // Python side (state/_conglomerado.py) is what interprets the shape,
+        // not this hook.
+        selectRef.current({...props, lat: props.lat, lon: props.lon});
       } else if (clickRef.current && e.latlng) {
         clickRef.current(Math.round(e.latlng.lat * 1e6) / 1e6,
                          Math.round(e.latlng.lng * 1e6) / 1e6);
@@ -803,15 +803,27 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
         vectorPending.current.add(spec.id);
 
         try {
-          const url = specUrl(spec, null).toString();
-          let data = vectorData.current.get(url);
-          if (!data) {
-            const response = await fetch(url, {credentials: "omit"});
-            if (!response.ok) {
-              throw new Error(`${response.status} ${response.statusText}`);
+          let data;
+          if (spec.inline_data) {
+            // Sent directly through state rather than fetched: a pasted point
+            // list (state/_user_points.py) is session-specific, so there is no
+            // shared backend path to fetch it from the way biomes/IFN have —
+            // one dataset, everyone. The spec's id carries a version suffix
+            // that changes on every submit/reset, so a new list is a NEW id
+            // here (falls through to the "add" path below) rather than a
+            // mutation of an existing, and-thus-considered-immutable, entry.
+            data = spec.inline_data;
+          } else {
+            const url = specUrl(spec, null).toString();
+            data = vectorData.current.get(url);
+            if (!data) {
+              const response = await fetch(url, {credentials: "omit"});
+              if (!response.ok) {
+                throw new Error(`${response.status} ${response.statusText}`);
+              }
+              data = await response.json();
+              vectorData.current.set(url, data);
             }
-            data = await response.json();
-            vectorData.current.set(url, data);
           }
           if (cancelled || !mapRef.current) return;
 

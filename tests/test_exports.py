@@ -54,6 +54,33 @@ def test_ods_roundtrips_values_types_and_accents(tmp_path):
     assert back["metadados"].iloc[0]["valor"] == "não"
 
 
+@pytest.mark.parametrize("payload", ["=cmd|'/c calc'!A0", "+1+1", "-1+1",
+                                     "@SUM(A1:A9)", "\t=1+1"])
+def test_ods_neutralises_formula_trigger_characters(tmp_path, payload):
+    """CSV/formula injection (OWASP): Excel, LibreOffice and Sheets all still
+    auto-detect a formula from a cell's leading character regardless of the
+    file's own declared cell type. Not hypothetical here — services/user_points
+    lets a pasted name become a cell verbatim, and this app's own docs describe
+    emailing an export to a colleague."""
+    sheets = [ods.Sheet("dados", ["nome"], [[payload]])]
+    back = _read_back(ods.write(sheets), tmp_path)
+    stored = str(back["dados"].iloc[0]["nome"])
+    assert stored[0] not in ("=", "+", "-", "@", "\t", "\r")
+    # The original text must still be recoverable, just neutralised, not lost.
+    assert payload in stored
+
+
+def test_ods_leaves_ordinary_text_alone():
+    """The fix must not touch values that do not start with a trigger char —
+    a área/município name is not collateral damage."""
+    sheets = [ods.Sheet("dados", ["nome"], [["Fazenda Boa Vista"]])]
+    from naturametrics.services import ods as ods_mod
+    assert ods_mod._cell("Fazenda Boa Vista") == (
+        '<table:table-cell office:value-type="string">'
+        '<text:p>Fazenda Boa Vista</text:p></table:table-cell>'
+    )
+
+
 def test_ods_sheet_name_is_made_legal():
     sheet = ods.Sheet("uf/município[2024]*?:x" + "y" * 40, ["a"], [])
     assert not set(sheet.name) & set("[]*?:/\\")

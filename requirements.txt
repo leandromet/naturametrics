@@ -3,7 +3,9 @@
 
 # Core
 reflex==0.8.27              # same minor as Yvynation, so its component API matches
-python-dotenv==1.0.0
+python-dotenv==1.2.2  # >=1.2.2 fixes CVE-2026-28684 (set_key symlink handling);
+                       # unexploitable here (this app only calls load_dotenv,
+                       # never set_key) but no reason to leave it flagged
 
 # Earth Engine
 earthengine-api>=1.7.4

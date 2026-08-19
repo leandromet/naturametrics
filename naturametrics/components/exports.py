@@ -81,7 +81,11 @@ def _study_point_section() -> rx.Component:
 def _selection_section() -> rx.Component:
     return rx.vstack(
         rx.hstack(
-            rx.text("Seleção de conglomerados", size="2", weight="bold"),
+            rx.text(
+                rx.cond(AppState.user_points_active, "Lista enviada",
+                       "Seleção de conglomerados"),
+                size="2", weight="bold",
+            ),
             rx.spacer(),
             rx.badge(AppState.export_count_label, size="1", variant="soft",
                      color_scheme="jade"),

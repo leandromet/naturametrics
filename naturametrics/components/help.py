@@ -258,6 +258,66 @@ def como_citar_dialog() -> rx.Component:
     )
 
 
+def ai_disclaimer_dialog() -> rx.Component:
+    return rx.dialog.root(
+        rx.dialog.trigger(
+            rx.button(
+                rx.icon("sparkles", size=15),
+                rx.text("Aviso sobre uso de IA",
+                       display=["none", "none", "block", "block"]),
+                size="1", variant="soft", color_scheme="gray",
+                aria_label="Aviso sobre uso de IA",
+            )
+        ),
+        rx.dialog.content(
+            rx.dialog.title("Aviso sobre uso de IA"),
+            rx.dialog.description(
+                "Como este aplicativo foi construído, e com que ajuda.",
+                size="2", color_scheme="gray", margin_bottom="0.75rem",
+            ),
+            rx.vstack(
+                rx.text(
+                    "O código do Naturametrics foi escrito com assistência de "
+                    "modelos de IA da Anthropic — Claude Opus e Claude Sonnet —, "
+                    "sob supervisão e revisão do autor em cada etapa. A "
+                    "arquitetura, os padrões de estado e a maior parte das "
+                    "convenções de interface partem do Yvynation, uma "
+                    "plataforma irmã já madura para análise de terras "
+                    "indígenas, também desenvolvida com o mesmo processo.",
+                    size="2", style={"lineHeight": "1.6"},
+                ),
+                rx.text(
+                    "Isso significa que grandes trechos deste aplicativo — "
+                    "desde a integração com o Earth Engine até os componentes "
+                    "de interface — foram adaptados ou reescritos a partir do "
+                    "que já funcionava no Yvynation, em vez de criados do zero.",
+                    size="2", color_scheme="gray", style={"lineHeight": "1.6"},
+                ),
+                rx.divider(),
+                rx.text("Veja por si mesmo", size="2", weight="bold"),
+                rx.vstack(
+                    rx.link("Yvynation — aplicativo em produção",
+                           href="https://yvynation-reflex-652582010777.us-west1.run.app/",
+                           is_external=True, size="2", weight="medium"),
+                    rx.link("github.com/leandromet/naturametrics",
+                           href="https://github.com/leandromet/naturametrics",
+                           is_external=True, size="2", weight="medium"),
+                    rx.link("github.com/leandromet/yvynation",
+                           href="https://github.com/leandromet/yvynation",
+                           is_external=True, size="2", weight="medium"),
+                    spacing="2", align_items="start", width="100%",
+                ),
+                spacing="3", align_items="start", width="100%",
+            ),
+            rx.flex(
+                rx.dialog.close(rx.button("Fechar", size="2", variant="soft")),
+                justify="end", margin_top="1rem",
+            ),
+            max_width=["94vw", "94vw", "560px", "560px"],
+        ),
+    )
+
+
 def header_actions() -> rx.Component:
     from .exports import exportar_dialog
 
@@ -265,4 +325,4 @@ def header_actions() -> rx.Component:
     # the state imports components/charts.py. At module scope that closes into a
     # circular import; here the cycle is resolved by the time the page is built.
     return rx.hstack(exportar_dialog(), como_usar_dialog(), como_citar_dialog(),
-                     spacing="2")
+                     ai_disclaimer_dialog(), spacing="2")

@@ -95,7 +95,21 @@ class ConglomeradoMixin(rx.State, mixin=True):
         """Fill the hover card for one conglomerado, or clear it.
 
         The hook sends ``{}`` when the cursor leaves, after a grace period.
+        This is the single callback every browser-side point layer's hover
+        funnels into (pages/index.py wires it once); a pasted coordinate list
+        replacing the IFN layer on screen (state/_user_points.py) means it
+        replaces it here too, before any conglomerado-shaped assumption runs —
+        a user point's props carry ``id``, not ``conglomerado``.
         """
+        if self.user_points_active:
+            # NOT `type(self).preview_user_point(props)`: that dispatch pattern
+            # (used below and in select_conglomerado) builds an EventSpec off
+            # `type(self)`, which only works from a plain, non-background
+            # handler — inside a background one `self` is a StateProxy, and
+            # `type(self)` is `StateProxy` itself, with no such attribute. A
+            # background handler calling another background handler's logic
+            # has to do it as a direct awaited call instead.
+            return await self._preview_user_point(props)
         if not props or not props.get("conglomerado"):
             async with self:
                 self._hover_token += 1
@@ -217,7 +231,13 @@ class ConglomeradoMixin(rx.State, mixin=True):
         )
 
     def select_conglomerado(self, props: dict):
-        """What clicking a conglomerado does — which depends on the mode."""
+        """What clicking a conglomerado does — which depends on the mode.
+
+        Same funnel as preview_conglomerado above: a pasted list active means
+        this click is on one of ITS points, not an IFN conglomerado.
+        """
+        if self.user_points_active:
+            return type(self).select_user_point(props)
         if self.multi_mode:
             return type(self).toggle_multi_point(props)
         try:
@@ -242,6 +262,104 @@ class ConglomeradoMixin(rx.State, mixin=True):
         return event
 
     # ---------------------------------------------------------------------- #
+    # A pasted coordinate list, standing in for the IFN layer above
+    # ---------------------------------------------------------------------- #
+
+    async def _preview_user_point(self, props: dict):
+        """Hover card for a point from a pasted list.
+
+        A plain async method, not ``@rx.event`` — it only exists to be called
+        directly from inside preview_conglomerado's background task (see the
+        note there on why), never dispatched as its own event from the
+        frontend, which never references it by name.
+
+        Same card, same preview call as preview_conglomerado — deliberately: the
+        point is that switching the data source should not feel like switching
+        features. No multi-selection interplay, because a pasted list is not
+        built by clicking one point at a time the way the IFN grid is.
+        """
+        if not props or props.get("id") is None:
+            async with self:
+                self._hover_token += 1
+                self.hover_visible = False
+                self.hover_loading = False
+                if self.has_point:
+                    self._set_preview(self.study_lat, self.study_lon)
+                else:
+                    self._clear_preview()
+            return
+
+        key = str(props.get("id"))
+        try:
+            lat, lon = float(props["lat"]), float(props["lon"])
+        except (KeyError, TypeError, ValueError):
+            return
+
+        async with self:
+            self._hover_token += 1
+            token = self._hover_token
+            self._set_preview(lat, lon)
+            self.hover_visible = True
+            self.hover_conglomerado = key
+            self.hover_place = ""
+            self.hover_bioma = ""
+            self.hover_error = ""
+            cache_key = f"user:{key}"
+            cached = self._preview_cache.get(cache_key)
+            if cached is not None:
+                self._apply_preview(cached)
+                return
+            self.hover_loading = True
+            self.hover_rows = []
+            self.hover_natural = ""
+
+        if self.mapbiomas_year not in self._mb_urls:
+            await self._ensure_year(self.mapbiomas_year)
+
+        loop = asyncio.get_running_loop()
+        try:
+            from ..services.geo import point
+            preview = await loop.run_in_executor(
+                None, preview_land_cover, point(lat=lat, lon=lon))
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Preview failed for user point %s: %s", key, exc)
+            async with self:
+                if token == self._hover_token:
+                    self.hover_loading = False
+                    self.hover_error = "Não foi possível ler a cobertura aqui."
+            return
+
+        async with self:
+            if len(self._preview_cache) >= _PREVIEW_CACHE_MAX:
+                self._preview_cache.clear()
+            self._preview_cache[cache_key] = preview
+            if token != self._hover_token:
+                return
+            self._apply_preview(preview)
+
+    def select_user_point(self, props: dict):
+        """Clicking a pasted point sets it as the study point, named by
+        whatever the pasted line's own id was — the same identity that will
+        appear in the export, not an anonymous coordinate."""
+        try:
+            lat, lon = float(props["lat"]), float(props["lon"])
+        except (KeyError, TypeError, ValueError):
+            logger.warning("User point click without usable coordinates: %s", props)
+            return
+
+        event = self.set_study_point(lat, lon)
+        if not self.has_point:
+            return event
+
+        self.point_source = "lista enviada pelo usuário"
+        self.point_conglomerado = str(props.get("id", ""))
+        self.point_uf = ""
+        self.point_municipio = ""
+        self.point_bioma = ""
+        self.hover_visible = False
+        return event
+
+    # ---------------------------------------------------------------------- #
     # Multiple selection
     # ---------------------------------------------------------------------- #
 
@@ -258,6 +376,12 @@ class ConglomeradoMixin(rx.State, mixin=True):
         # left over from an earlier single point would hide the sum.
         self.analysis_error = ""
         self.point_error = ""
+        if checked and self.user_points_active:
+            # Only one point-source mode drives the map's hover/click at a
+            # time. Deactivated, not reset — the pasted list itself is not
+            # discarded, only its claim on the interactive layer.
+            self.user_points_active = False
+            self._refresh_layers()
         if checked:
             self._apply_multi_view()
         else:

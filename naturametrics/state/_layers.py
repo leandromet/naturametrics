@@ -246,7 +246,14 @@ class LayersMixin(rx.State, mixin=True):
         specs: list[dict[str, Any]] = []
         if self.show_biomes:
             specs.append(biome_service.vector_spec(opacity=self.biome_opacity))
-        if self.show_ifn:
+        if self.user_points_active:
+            # Takes over the interactive layer entirely rather than sitting
+            # alongside it — two hoverable point layers stacked in the same
+            # pane would fight over which one wins the cursor, and
+            # state/_conglomerado.py's hover/click funnel already assumes only
+            # one is live at a time.
+            specs.append(self.user_points_vector_spec)
+        elif self.show_ifn:
             specs.append(ifn_service.vector_spec(
                 self.ifn_region, self.ifn_uf, self.ifn_municipality,
                 self.ifn_biome, min_zoom=st.IFN_INTERACTIVE_MIN_ZOOM,

@@ -19,10 +19,11 @@ from ._export import ExportMixin
 from ._layers import LayersMixin
 from ._point import PointMixin
 from ._ui import UIMixin
+from ._user_points import UserPointsMixin
 
 
 class AppState(AnalysisMixin, ConglomeradoMixin, ExportMixin, LayersMixin,
-               PointMixin, UIMixin, rx.State):
+               PointMixin, UIMixin, UserPointsMixin, rx.State):
     """Root application state."""
 
 

@@ -104,7 +104,20 @@ class ExportMixin(rx.State, mixin=True):
     # ---------------------------------------------------------------------- #
 
     def _spec(self) -> exports.SelectionSpec:
-        """The export request, assembled from the panel and the map."""
+        """The export request, assembled from the panel and the map.
+
+        A pasted coordinate list wins outright when active: it is not another
+        value of ``export_source`` (filters vs. manual) but a third, mutually
+        exclusive point source — the same priority services.exports.SelectionSpec
+        itself gives user_points over conglomerados over filters.
+        """
+        if self.user_points_active:
+            return exports.SelectionSpec(
+                user_points=plain(self.user_points),
+                radii=self._radii(),
+                include_points=self.exp_points, include_pixel=self.exp_pixel,
+                include_buffers=self.exp_buffers,
+            )
         manual = self.export_source == "manual"
         return exports.SelectionSpec(
             region=self.ifn_region, uf=self.ifn_uf,
@@ -126,10 +139,14 @@ class ExportMixin(rx.State, mixin=True):
 
     @rx.var
     def export_manual_available(self) -> bool:
-        return self.multi_count > 0
+        # Hidden while a pasted list governs the export — the filter/manual
+        # toggle has nothing to switch between in that case.
+        return self.multi_count > 0 and not self.user_points_active
 
     @rx.var
     def export_selection_count(self) -> int:
+        if self.user_points_active:
+            return self.user_points_count
         if self.export_source == "manual":
             return self.multi_count
         return ifn.count(self.ifn_region, self.ifn_uf, self.ifn_municipality,
@@ -137,6 +154,8 @@ class ExportMixin(rx.State, mixin=True):
 
     @rx.var
     def export_selection_label(self) -> str:
+        if self.user_points_active:
+            return f"{self.user_points_count} pontos da lista enviada"
         if self.export_source == "manual":
             return f"{self.multi_count} conglomerados escolhidos no mapa"
         parts = [p for p in (self.ifn_region, self.ifn_biome, self.ifn_uf,

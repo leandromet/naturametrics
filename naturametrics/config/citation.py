@@ -15,10 +15,11 @@ AUTHORS = [
     ("Leandro Meneguelli Biondo", "University of British Columbia Okanagan (UBC Okanagan), Canadá"),
     ("Gustavo Heringer", "Instituto Nacional da Mata Atlântica (INMA/MCTI), Brasil"),
     ("Alex Coelho", "Universidade Federal de Viçosa (UFV), Brasil"),
+    ("João Augusto Alves Meira-Neto", "Universidade Federal de Viçosa (UFV), Brasil"),
 ]
 
 CITATION_TEXT = (
-    "Biondo, L. M.; Heringer, G.; Coelho, A. "
+    "Biondo, L. M.; Heringer, G.; Coelho, A.; Meira-Neto, J. A. A. "
     f"({APP_YEAR}). Naturametrics: história de uso da terra e análise da paisagem. "
     "University of British Columbia Okanagan; Instituto Nacional da Mata "
     "Atlântica (INMA/MCTI); Universidade Federal de Viçosa. "
@@ -27,7 +28,8 @@ CITATION_TEXT = (
 
 BIBTEX = f"""@software{{naturametrics_{APP_YEAR},
   title   = {{Naturametrics: história de uso da terra e análise da paisagem}},
-  author  = {{Biondo, Leandro Meneguelli and Heringer, Gustavo and Coelho, Alex}},
+  author  = {{Biondo, Leandro Meneguelli and Heringer, Gustavo and Coelho, Alex
+              and Meira-Neto, João Augusto Alves}},
   year    = {{{APP_YEAR}}},
   organization = {{University of British Columbia Okanagan; Instituto Nacional
                    da Mata Atlântica (INMA/MCTI); Universidade Federal de Viçosa}},

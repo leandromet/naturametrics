@@ -223,6 +223,57 @@ def forest_age_histogram_figure(
     return _style_age_hist(fig, lang)
 
 
+def change_bar_figure(loss_ha: float, gain_ha: float, lang: str = "pt") -> go.Figure:
+    """Loss vs. regrowth since the Forest Code baseline (2008), for one buffer.
+
+    Deliberately just two bars — this sits in the leftover space below the age
+    summary column (results.py `_age_summary_line`), not a chart in its own
+    right. `services.change_mask` already computes this per buffer for the map
+    layer toggle; this is its first appearance as a number you can read.
+    """
+    from ..services import change_mask as cm
+
+    fig = go.Figure()
+    labels = cm.CHANGE_LABELS_PT if lang == "pt" else cm.CHANGE_LABELS_EN
+    names = [labels[cm.CHANGE_LOSS], labels[cm.CHANGE_GAIN]]
+    values = [loss_ha, gain_ha]
+    colors = [cm.CHANGE_COLORS[cm.CHANGE_LOSS], cm.CHANGE_COLORS[cm.CHANGE_GAIN]]
+
+    if loss_ha <= 0 and gain_ha <= 0:
+        fig.add_annotation(
+            text="Sem dados" if lang == "pt" else "No data",
+            showarrow=False, font=dict(size=11, color="#888"),
+        )
+    else:
+        # Columns, not horizontal bars: the space this sits in (results.py, the
+        # leftover room below the age summary lines) is taller than it is wide,
+        # and a horizontal bar's value label sits to the *right* of the bar —
+        # exactly the direction this column is narrowest in, so a large number
+        # ran past the edge and was clipped. Above a column there is no such
+        # ceiling: the y-axis range is padded past the tallest bar for it.
+        fig.add_bar(
+            x=names, y=values,
+            marker_color=colors, marker_line_width=0,
+            text=[f"{v:,.0f} ha".replace(",", ".") for v in values],
+            textposition="outside",
+            cliponaxis=False,
+            hovertemplate="<b>%{x}</b><br>%{y:,.1f} ha<extra></extra>",
+        )
+
+    fig.update_layout(
+        template="plotly_white",
+        margin=dict(l=4, r=4, t=20, b=4),
+        height=150,
+        showlegend=False,
+        xaxis=dict(title=None, showgrid=False, tickfont=dict(size=10)),
+        yaxis=dict(visible=False, range=[0, max(values, default=1) * 1.35]),
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        bargap=0.45,
+    )
+    return fig
+
+
 def _style_age_hist(fig: go.Figure, lang: str) -> go.Figure:
     fig.update_layout(
         template="plotly_white",

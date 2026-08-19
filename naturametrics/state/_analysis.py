@@ -10,10 +10,12 @@ import plotly.graph_objects as go
 import reflex as rx
 
 from ..components.charts import (
-    forest_age_histogram_figure, forest_age_line_figure, land_cover_history_figure,
+    change_bar_figure, forest_age_histogram_figure, forest_age_line_figure,
+    land_cover_history_figure,
 )
 from ..config.settings import BUFFER_RADII_KM
 from ..services.buffers import buffer_geojson
+from ..services.change_mask import change_stats
 from ..services.vegetation_age import age_summary, buffer_forest_age_histogram, point_forest_age_series
 from ..services.geo import CoordinateError, point
 from ..services.mapbiomas_history import land_cover_history, point_pixel_series
@@ -66,6 +68,12 @@ class AnalysisMixin(rx.State, mixin=True):
     _age_point_provenance: dict[str, Any] = {}
     _age_buffers: list[dict[str, Any]] = []
     _age_buffers_provenance: dict[str, Any] = {}
+
+    #: services.change_mask.change_stats: loss/gain/stable hectares per buffer,
+    #: 2008→2024 (the Forest Code baseline). Keyed by ``f"{radius_km:g}"`` — plain
+    #: JSON-safe strings, not the float itself. Single-point only for now, same
+    #: as the point-age line above: no multi-selection sum yet.
+    _change_stats: dict[str, dict[str, float]] = {}
 
     @rx.event(background=True)
     async def run_analysis(self, lat: float, lon: float):
@@ -125,8 +133,15 @@ class AnalysisMixin(rx.State, mixin=True):
             age_point_task = loop.run_in_executor(None, point_forest_age_series, p)
             age_buffer_task = loop.run_in_executor(
                 None, buffer_forest_age_histogram, p, BUFFER_RADII_KM)
-            (age_df, age_prov), (age_buf_df, age_buf_prov) = await asyncio.gather(
-                age_point_task, age_buffer_task)
+            # services.change_mask.change_stats — 2008→2024 loss/gain per buffer,
+            # shown as the small bar next to the age summary. Cheap (~1-2 s) and
+            # unrelated in failure mode to the age counter above, but it lives in
+            # the same panel and the same "vegetation over time" question, so it
+            # shares this try/except rather than getting a third error channel.
+            change_task = loop.run_in_executor(
+                None, change_stats, p, BUFFER_RADII_KM)
+            (age_df, age_prov), (age_buf_df, age_buf_prov), change = await asyncio.gather(
+                age_point_task, age_buffer_task, change_task)
         except Exception as exc:  # noqa: BLE001
             logger.exception("Forest-age analysis failed")
             async with self:
@@ -142,6 +157,7 @@ class AnalysisMixin(rx.State, mixin=True):
             self._age_point_provenance = age_prov.to_dict()
             self._age_buffers = age_buf_df.to_dict("records")
             self._age_buffers_provenance = age_buf_prov.to_dict()
+            self._change_stats = {f"{r:g}": v for r, v in change.items()}
             self.age_running = False
             if age_buf_df.empty and age_df.empty:
                 self.age_error = "Sem dados de idade da vegetação neste ponto."
@@ -314,6 +330,20 @@ class AnalysisMixin(rx.State, mixin=True):
                        else "—"),
             "censored_label": s["censored_label"],
         }
+
+    @rx.var(cache=True)
+    def change_has_data(self) -> bool:
+        """Gates the small loss/gain bar in the leftover space of the age
+        summary column (results.py). Single-point only, like _change_stats
+        itself: no multi-selection sum yet, and "Ponto" has no buffer to read."""
+        return (not self.age_showing_point and not self.multi_mode
+                and bool(self._change_stats))
+
+    @rx.var(cache=True)
+    def change_figure(self) -> go.Figure:
+        key = f"{self.age_effective_radius:g}"
+        row = self._change_stats.get(key, {})
+        return change_bar_figure(row.get("loss_ha", 0.0), row.get("gain_ha", 0.0))
 
     @rx.var(cache=True)
     def age_provenance_line(self) -> str:

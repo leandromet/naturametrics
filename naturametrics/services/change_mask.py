@@ -26,6 +26,7 @@ import logging
 from typing import Any
 
 from ..config import mapbiomas as mb
+from .ee_client import get_ee
 from .tiles import get_tile_url
 
 logger = logging.getLogger(__name__)
@@ -39,7 +40,7 @@ CHANGE_GAIN = 2      # not natural in baseline, natural now  → already recover
 CHANGE_STABLE = 3    # natural in both
 
 CHANGE_LABELS_PT = {
-    CHANGE_LOSS: "Perda de vegetação natural",
+    CHANGE_LOSS: "Perda veg. natural",
     CHANGE_GAIN: "Regeneração",
     CHANGE_STABLE: "Natural estável",
 }
@@ -137,7 +138,20 @@ def change_stats(p, radii_km, year_from: int = FOREST_CODE_BASELINE_YEAR,
     """
     import ee
 
+    # First statement, before anything else — see the note in ee_client.get_ee
+    # and the entry points in mapbiomas_history.py. This one had no equivalent
+    # call anywhere in its path (change_mask_spec is covered transitively via
+    # tiles.get_tile_url, but this function talks to Earth Engine directly).
+    get_ee()
+
     from .buffers import buffer_collection
+    from .geo import validate_for_analysis
+
+    # Same guard every other analysis entry point has (mapbiomas_history,
+    # vegetation_age): without it, a click outside Brazil silently reduces over
+    # a geometry the MapBiomas-derived change mask has no data for and returns
+    # an empty result that reads as a bug rather than an out-of-area click.
+    validate_for_analysis(p)
 
     fc = buffer_collection(p, radii_km, mode)
     img = change_mask_image(year_from, year_to, collection, include_stable=True)

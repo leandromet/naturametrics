@@ -181,6 +181,27 @@ def _age_summary_line(row: rx.Var) -> rx.Component:
         ),
         rx.text(row["censored_area"], size="1", color_scheme="gray",
                 text_align="right", width="100%"),
+        # The leftover room below the four lines above: loss/gain since the
+        # Forest Code baseline (2008) for this same buffer, already computed by
+        # services.change_mask for the map-layer toggle and now given its first
+        # chart rendering rather than only tile pixels.
+        rx.cond(
+            AppState.change_has_data,
+            rx.vstack(
+                rx.text("Mudança 2008→2024", size="1", weight="bold",
+                        color_scheme="gray",
+                        style={"textTransform": "uppercase",
+                               "letterSpacing": "0.06em"}),
+                rx.plotly(
+                    data=AppState.change_figure,
+                    config={"displayModeBar": False, "displaylogo": False,
+                            "responsive": True},
+                    width="100%", height="150px",
+                ),
+                spacing="1", width="100%", padding_top="0.5rem",
+            ),
+            rx.fragment(),
+        ),
         spacing="1",
         # A fixed side column on desktop, same as the land-use panel's summary
         # (results.py _land_use_panel): a bare width="100%" here has nothing to

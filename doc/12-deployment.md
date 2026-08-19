@@ -1,7 +1,7 @@
 # 12 — Deployment (Cloud Run)
 
 Decision **D10**: a new Cloud Run service named **`naturametrics`**, pointed at the same
-Earth Engine project **`ee-leandromet`** — that is where the Partner-tier grant lives
+Earth Engine project **`<GCP_PROJECT_ID>`** — that is where the Partner-tier grant lives
 (**D5**), and a different project would silently drop to contributor limits.
 
 Yvynation's `CLOUD_RUN_DEPLOYMENT.md` is the model. This image is deliberately much
@@ -71,12 +71,21 @@ accepts**:
 
 | Service account | Roles | Notes |
 |---|---|---|
-| `652582010777-compute@developer.gserviceaccount.com` | `artifactregistry.writer`, `run.admin`, `logging.logWriter`, `iam.serviceAccountUser`, `editor` | **Recommended.** Already the runtime identity of `yvynation-reflex`, so it is proven to reach Earth Engine, and it already carries every role a Cloud Build → Cloud Run pipeline needs. |
-| `streamlit-ee-service@ee-leandromet.iam.gserviceaccount.com` | `earthengine.admin`, `earthengine.viewer`, `editor` | Runtime identity of the older `yvynation` service. Explicit EE roles, but lacks the CI-specific roles. |
+| `<RUNTIME_SERVICE_ACCOUNT>` | `artifactregistry.writer`, `run.admin`, `logging.logWriter`, `iam.serviceAccountUser`, `editor` | **Recommended.** Already the runtime identity of `yvynation-reflex`, so it is proven to reach Earth Engine, and it already carries every role a Cloud Build → Cloud Run pipeline needs. |
+| `<LEGACY_SERVICE_ACCOUNT>` | `earthengine.admin`, `earthengine.viewer`, `editor` | Runtime identity of the older `yvynation` service. Explicit EE roles, but lacks the CI-specific roles. |
 
 `EE_PRIVATE_KEY` / `EE_SERVICE_ACCOUNT_EMAIL` remain supported in `ee_client.py` and are
 the right path for an identity that *cannot* be attached to the service — they are simply
 not needed here.
+
+**Also needed as of doc/13-abuse-control.md:** `roles/storage.objectAdmin`, scoped to
+`gs://naturametrics-abuse-control` specifically (not project-wide), on whichever service
+account is attached. Already granted on the current deployment; a fresh one needs:
+
+```bash
+gcloud storage buckets add-iam-policy-binding gs://naturametrics-abuse-control \
+  --member="serviceAccount:<RUNTIME_SERVICE_ACCOUNT>" --role="roles/storage.objectAdmin"
+```
 
 ## 4. Deploy
 
@@ -143,21 +152,21 @@ point the trigger at `cloudbuild.yaml`, which sets `options.logging: CLOUD_LOGGI
 ```bash
 # One-off: the Artifact Registry repo cloudbuild.yaml pushes to
 gcloud artifacts repositories create naturametrics \
-  --repository-format=docker --location=us-west1 --project=ee-leandromet
+  --repository-format=docker --location=us-west1 --project=<GCP_PROJECT_ID>
 
 # Repoint the existing trigger at the YAML
 gcloud builds triggers update github naturametrics-trigg \
-  --region=us-west1 --project=ee-leandromet \
+  --region=us-west1 --project=<GCP_PROJECT_ID> \
   --repo-owner=leandromet --repo-name=naturametrics \
   --branch-pattern='^main$' \
   --build-config=cloudbuild.yaml \
-  --service-account=projects/ee-leandromet/serviceAccounts/652582010777-compute@developer.gserviceaccount.com
+  --service-account=projects/<GCP_PROJECT_ID>/serviceAccounts/<RUNTIME_SERVICE_ACCOUNT>
 ```
 
 The build service account needs `artifactregistry.writer`, `run.admin`,
 `logging.logWriter` and `iam.serviceAccountUser` (to attach the runtime SA).
-`652582010777-compute@` already has all four — which is why it is the recommended choice
-over `streamlit-ee-service@`, whose `editor` role covers most of it but not by design.
+`<RUNTIME_SERVICE_ACCOUNT_PREFIX>@` already has all four — which is why it is the recommended choice
+over `<LEGACY_SERVICE_ACCOUNT_PREFIX>@`, whose `editor` role covers most of it but not by design.
 
 ### Two failures worth remembering
 
@@ -184,7 +193,7 @@ gcloud run services add-iam-policy-binding naturametrics \
   --region=us-west1 --member=allUsers --role=roles/run.invoker
 ```
 
-**Registry note.** `cloudbuild.yaml` pushes to `gcr.io/ee-leandromet/naturametrics`,
+**Registry note.** `cloudbuild.yaml` pushes to `gcr.io/<GCP_PROJECT_ID>/naturametrics`,
 which already exists in this project — one less thing to create. A dedicated regional
 Artifact Registry repo is cleaner long-term; switch `_IMAGE` if you make one.
 
@@ -255,7 +264,7 @@ docker build -t naturametrics:local .
 
 # Ports MUST match, or the WebSocket points at an unmapped port (§7.3).
 docker run --rm -p 8080:8080 \
-  -e PORT=8080 -e GCP_PROJECT_ID=ee-leandromet \
+  -e PORT=8080 -e GCP_PROJECT_ID=<GCP_PROJECT_ID> \
   -v ~/.config/earthengine:/root/.config/earthengine:ro \
   naturametrics:local
 ```

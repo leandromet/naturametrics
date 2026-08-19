@@ -29,7 +29,7 @@ import logging
 import reflex as rx
 
 from ..config.settings import BUFFER_RADII_KM, EXPORT_MAX_BUFFER_POINTS
-from ..services import exports, ifn
+from ..services import abuse_control, exports, ifn
 from ..services.ods import MIMETYPE
 from ._proxy import plain
 
@@ -63,6 +63,14 @@ class ExportMixin(rx.State, mixin=True):
     export_error: str = ""
     export_result: str = ""
 
+    #: The friction step (doc: security audit, "public access safety") — the
+    #: buffer/age/change fan-out is the one part of this app that costs real
+    #: Earth Engine compute per click, so the first click on it asks rather
+    #: than runs. Reset wherever the request it would confirm might have
+    #: changed, so a stale "are you sure" can never wave through a different
+    #: export than the one the user actually looked at.
+    export_confirm_pending: bool = False
+
     def set_export_open(self, value: bool):
         self.export_open = value
         if value:
@@ -70,11 +78,13 @@ class ExportMixin(rx.State, mixin=True):
             # the status of the run the user is about to start.
             self.export_error = ""
             self.export_result = ""
+        self.export_confirm_pending = False
 
     def set_export_source(self, value: str | list[str]):
         raw = value[0] if isinstance(value, (list, tuple)) and value else value
         self.export_source = "manual" if str(raw).startswith("Seleção manual") \
             else "filtros"
+        self.export_confirm_pending = False
 
     def toggle_exp_points(self, checked: bool):
         self.exp_points = checked
@@ -84,12 +94,14 @@ class ExportMixin(rx.State, mixin=True):
 
     def toggle_exp_buffers(self, checked: bool):
         self.exp_buffers = checked
+        self.export_confirm_pending = False
 
     def set_exp_radius(self, value: str | list[str]):
         raw = value[0] if isinstance(value, (list, tuple)) and value else value
         label = str(raw)
         self.exp_radius = "" if label.startswith("Todos") else \
             label.replace(" km", "").strip()
+        self.export_confirm_pending = False
 
     def _radii(self) -> tuple[float, ...]:
         if not self.exp_radius:
@@ -208,6 +220,19 @@ class ExportMixin(rx.State, mixin=True):
     def export_nothing_selected(self) -> bool:
         return not (self.exp_points or self.exp_pixel or self.exp_buffers)
 
+    @rx.var
+    def export_needs_confirmation(self) -> bool:
+        """Whether the friction step applies: only the expensive fan-out
+        (buffers → land-cover + vegetation age + change mask) costs real Earth
+        Engine compute per click, so points-only/pixel-only exports stay a
+        single click."""
+        return self.exp_buffers and self.export_selection_count > 0
+
+    @rx.var
+    def export_confirm_message(self) -> str:
+        return exports.buffer_estimate_message(self.export_selection_count,
+                                               self._radii())
+
     # ---------------------------------------------------------------------- #
     # Study point
     # ---------------------------------------------------------------------- #
@@ -285,6 +310,27 @@ class ExportMixin(rx.State, mixin=True):
     # Conglomerado selection
     # ---------------------------------------------------------------------- #
 
+    def request_selection_download(self):
+        """The button's actual on_click — the friction step in front of
+        download_selection.
+
+        Only the expensive path (buffers) asks twice; a points-only or
+        pixel-only export — already unthrottled, since it costs a couple of
+        seconds no matter the size — stays one click. This is a UI-level
+        deterrent for a human clicking by mistake or on reflex, not the
+        enforcement: a script calling the Reflex event directly skips this
+        entirely, which is exactly why download_selection *also* checks
+        services.abuse_control regardless of how it was reached.
+        """
+        if not self.export_needs_confirmation or self.export_confirm_pending:
+            self.export_confirm_pending = False
+            return type(self).download_selection()
+        self.export_confirm_pending = True
+        return None
+
+    def cancel_selection_download(self):
+        self.export_confirm_pending = False
+
     @rx.event(background=True)
     async def download_selection(self):
         """One spreadsheet covering every conglomerado the filters select."""
@@ -293,12 +339,16 @@ class ExportMixin(rx.State, mixin=True):
             if self.export_nothing_selected:
                 self.export_error = "Marque pelo menos um conjunto de dados."
                 return
+            self.export_confirm_pending = False
             self.export_busy = True
             self.export_error = ""
             self.export_result = ""
             self.export_done = 0
             self.export_total = 0
             self.export_stage = "Reunindo os conglomerados"
+            client_ip = self.router.session.client_ip
+            client_token = self.router.session.client_token
+            session_id = self.router.session.session_id
 
         if spec.include_buffers and len(spec.points()) > EXPORT_MAX_BUFFER_POINTS:
             async with self:
@@ -315,6 +365,33 @@ class ExportMixin(rx.State, mixin=True):
             return
 
         loop = asyncio.get_running_loop()
+
+        # The rate-limit gate: only the buffer fan-out costs real Earth Engine
+        # compute per click (see services/abuse_control.py). Both checks hit
+        # GCS, so they run off the event loop like every other blocking call
+        # here, and both fail OPEN on a bucket error rather than blocking a
+        # real user for an infrastructure hiccup.
+        if spec.include_buffers:
+            ok, reason = await loop.run_in_executor(
+                None, abuse_control.check_session_cooldown, client_token)
+            if ok:
+                ok, reason = await loop.run_in_executor(
+                    None, abuse_control.check_ip_rate_limit, client_ip)
+            outcome = "allowed" if ok else "refused"
+            await loop.run_in_executor(
+                None, lambda: abuse_control.log_event(
+                    ip=client_ip, client_token=client_token,
+                    session_id=session_id, action="bulk_export",
+                    outcome=outcome,
+                    detail={"n_points": len(points), "radii": list(spec.radii),
+                            "reason": reason} if not ok else
+                           {"n_points": len(points), "radii": list(spec.radii)}))
+            if not ok:
+                async with self:
+                    self.export_busy = False
+                    self.export_error = reason
+                return
+
         pixel = buffers = age = change = None
 
         try:

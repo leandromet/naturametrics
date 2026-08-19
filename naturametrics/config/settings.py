@@ -229,6 +229,28 @@ EXPORT_MAX_BUFFER_POINTS = _int("NM_EXPORT_MAX_BUFFER_POINTS", 6000)
 #: same reasoning (clears the largest biome, ~17 min) applies unchanged.
 USER_POINTS_MAX_LINES = EXPORT_MAX_BUFFER_POINTS
 
+# --------------------------------------------------------------------------- #
+# Abuse control (services/abuse_control.py)
+# --------------------------------------------------------------------------- #
+#: A dedicated bucket, separate from anything Yvynation uses — gs://naturametrics-abuse-control
+#: (us-west1, uniform bucket-level access, public access prevention enforced,
+#: 90-day object-deletion lifecycle rule). Cross-instance persistence is the
+#: reason it exists at all: Cloud Run can and does run more than one instance,
+#: and in-process rate-limit state would not coordinate across them.
+ABUSE_BUCKET = os.environ.get("NM_ABUSE_BUCKET", "naturametrics-abuse-control")
+
+#: Minimum time between one session's bulk-export runs. Keyed on the Reflex
+#: client token (stable per browser tab across reconnects and page reloads),
+#: not the session id, so refreshing the page does not reset it.
+ABUSE_SESSION_COOLDOWN_S = _int("NM_ABUSE_SESSION_COOLDOWN_S", 300)
+
+#: How many bulk exports one IP address may start inside the rolling window
+#: below. Generous for a real user working through a few selections; the
+#: point is to stop a script from queuing dozens of ~17-minute Earth Engine
+#: fan-outs (doc/03-roadmap.md Phase 6 cost model) back to back.
+ABUSE_IP_MAX_PER_WINDOW = _int("NM_ABUSE_IP_MAX_PER_WINDOW", 3)
+ABUSE_IP_WINDOW_S = _int("NM_ABUSE_IP_WINDOW_S", 3600)
+
 #: Size at which the panel starts warning. **Advisory only — nothing is
 #: refused.** There is no size limit on an ODS file, and inventing one would be
 #: making up a constraint that does not exist; the only hard limit in the format

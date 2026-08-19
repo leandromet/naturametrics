@@ -12,6 +12,10 @@ earthengine-api>=1.7.4
 google-auth>=2.27.0
 google-auth-oauthlib>=1.2.1
 
+# Abuse control (services/abuse_control.py) — per-IP/per-session rate limiting
+# and access logging for the bulk export, backed by its own GCS bucket.
+google-cloud-storage>=2.10.0
+
 # Data
 pandas>=2.2.0
 numpy>=2.0.0

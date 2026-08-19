@@ -168,17 +168,46 @@ def _selection_section() -> rx.Component:
             ),
             rx.fragment(),
         ),
-        rx.button(
-            rx.icon("download", size=14),
-            "Baixar planilha da seleção (.ods)",
-            on_click=AppState.download_selection,
-            disabled=AppState.export_busy | AppState.export_nothing_selected
-                     | (AppState.export_selection_count == 0)
-                     # The only size-based refusal, and the remedy is the
-                     # sidebar filters rather than anything in this panel — so
-                     # the checkbox above stays usable and the note explains.
-                     | (AppState.exp_buffers & AppState.export_buffer_over_limit),
-            size="2", color_scheme="jade", width="100%",
+        # The friction step: a bulk export with buffers costs real Earth Engine
+        # compute per click, so the first click asks rather than runs (see
+        # state/_export.py request_selection_download and the security-audit
+        # note in doc/13-abuse-control.md). Nothing below this is the actual
+        # enforcement — that is services.abuse_control, checked server-side
+        # inside download_selection regardless of how it was reached.
+        rx.cond(
+            AppState.export_confirm_pending,
+            rx.vstack(
+                rx.callout(
+                    AppState.export_confirm_message,
+                    icon="circle-alert", color_scheme="amber", size="1",
+                    width="100%",
+                ),
+                rx.hstack(
+                    rx.button(
+                        "Cancelar", on_click=AppState.cancel_selection_download,
+                        size="2", variant="soft", color_scheme="gray", flex="1",
+                    ),
+                    rx.button(
+                        rx.icon("download", size=14), "Confirmar e baixar",
+                        on_click=AppState.download_selection,
+                        size="2", color_scheme="jade", flex="1",
+                    ),
+                    spacing="2", width="100%",
+                ),
+                spacing="2", width="100%",
+            ),
+            rx.button(
+                rx.icon("download", size=14),
+                "Baixar planilha da seleção (.ods)",
+                on_click=AppState.request_selection_download,
+                disabled=AppState.export_busy | AppState.export_nothing_selected
+                         | (AppState.export_selection_count == 0)
+                         # The only size-based refusal, and the remedy is the
+                         # sidebar filters rather than anything in this panel — so
+                         # the checkbox above stays usable and the note explains.
+                         | (AppState.exp_buffers & AppState.export_buffer_over_limit),
+                size="2", color_scheme="jade", width="100%",
+            ),
         ),
         spacing="2", align_items="start", width="100%",
     )

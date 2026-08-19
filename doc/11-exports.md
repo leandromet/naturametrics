@@ -41,9 +41,18 @@ and 0.04 s.
 
 `naturametrics_conglomerados_<timestamp>.ods`
 
-Driven by **the same four filters as the map layer** (região / bioma / estado /
-município), so "what will I get" is answered by looking at the sidebar. The panel offers
-three parts, because they have very different costs:
+A selection is named in one of two ways, and everything downstream is identical:
+
+* **by the four map filters** (região / bioma / estado / município), so "what will I get"
+  is answered by looking at the sidebar; or
+* **by hand** — the conglomerados clicked in multiple-selection mode. The panel offers
+  this only when that selection is non-empty, and it is an explicit choice rather than an
+  inference, so a few points left selected can never silently redefine a filter export.
+
+Either way the file is **point by point**: one row per conglomerado, never the aggregate.
+The sum shown in the chart is a reading of the data, not a shape for it — anyone can sum
+a column, and nobody can recover the parts from a total. The panel offers three tables,
+because they have very different costs:
 
 | Tab | Contents | Cost |
 |---|---|---|

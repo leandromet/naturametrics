@@ -197,9 +197,11 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
           }
           // The preview follows the cursor from conglomerado to conglomerado, so
           // the circle moves far more often than the tile source changes.
-          const nextCircle = JSON.stringify(spec.clip_circle || null);
-          if (JSON.stringify(existing.clipCircle || null) !== nextCircle) {
-            existing.clipCircle = spec.clip_circle || null;
+          const nextCircles = JSON.stringify(spec.clip_circles || null);
+          if (JSON.stringify(existing.clipCircles || null) !== nextCircles) {
+            existing.clipCircles = spec.clip_circles || null;
+            existing.clipRadiusKm = spec.clip_radius_km;
+            existing.clipShape = spec.clip_shape;
             applyClips();
           }
           return;
@@ -227,7 +229,9 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
           opacity: spec.opacity,
           zIndex: zIndex,
           clip: spec.clip || null,
-          clipCircle: spec.clip_circle || null,
+          clipCircles: spec.clip_circles || null,
+          clipRadiusKm: spec.clip_radius_km,
+          clipShape: spec.clip_shape,
         });
       });
 
@@ -286,19 +290,27 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
   // with latitude, and a circle drawn with the equator's scale would be visibly
   // too small in Rio Grande do Sul. Mercator is conformal, so a small circle on
   // the ground stays a circle on screen and one radius is enough.
-  const bufferClipGeometry = (map, circle) => {
+  const bufferClipGeometry = (map, centreLatLon, radiusKm) => {
     const L = leafletRef.current;
-    if (!L || !circle) return null;
-    const centre = map.latLngToLayerPoint(L.latLng(circle.lat, circle.lon));
-    const metresPerDegreeLon = 111320 * Math.cos(circle.lat * Math.PI / 180);
+    if (!L || !centreLatLon) return null;
+    const {lat, lon} = centreLatLon;
+    const centre = map.latLngToLayerPoint(L.latLng(lat, lon));
+    const metresPerDegreeLon = 111320 * Math.cos(lat * Math.PI / 180);
     if (!(metresPerDegreeLon > 1)) return null;
     const edge = map.latLngToLayerPoint(
-      L.latLng(circle.lat, circle.lon + (circle.radius_km * 1000) / metresPerDegreeLon)
+      L.latLng(lat, lon + (radiusKm * 1000) / metresPerDegreeLon)
     );
     const radius = Math.abs(edge.x - centre.x);
     if (!(radius > 0) || !isFinite(radius)) return null;
     return {x: centre.x, y: centre.y, r: radius};
   };
+
+  // One circle as an SVG path subpath: two half-arcs, which is the standard way
+  // to write a full circle in path syntax (a single 360 deg arc is degenerate).
+  const circleSubpath = (g) =>
+    `M ${g.x - g.r} ${g.y} ` +
+    `a ${g.r} ${g.r} 0 1 0 ${2 * g.r} 0 ` +
+    `a ${g.r} ${g.r} 0 1 0 ${-2 * g.r} 0 Z`;
 
   const applyClips = () => {
     const map = mapRef.current;
@@ -319,20 +331,33 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
       el.style.clipPath = "";
       el.style.clip = "";
 
-      if (entry.clipCircle) {
-        const g = bufferClipGeometry(map, entry.clipCircle);
-        if (!g) return;
-        if (entry.clipCircle.shape === "bbox") {
+      if (entry.clipCircles && entry.clipCircles.length) {
+        const radiusKm = entry.clipRadiusKm;
+        const shapes = entry.clipCircles
+          .map((c) => bufferClipGeometry(map, c, radiusKm))
+          .filter(Boolean);
+        if (!shapes.length) return;
+
+        if (shapes.length === 1 && entry.clipShape === "bbox") {
+          const g = shapes[0];
           // rect(top, right, bottom, left) — the legacy property, which takes
           // absolute offsets in the element's own coordinate system and is
-          // therefore immune to the 0×0 reference box explained below.
+          // therefore immune to the 0×0 reference box explained below. Only ever
+          // one rectangle, so a multiple selection falls through to the path.
           el.style.clip = `rect(${g.y - g.r}px, ${g.x + g.r}px, ` +
                           `${g.y + g.r}px, ${g.x - g.r}px)`;
-        } else {
+        } else if (shapes.length === 1) {
           // Absolute lengths, not percentages: the reason `clip-path: inset(%)`
           // fails here is that percentages resolve against a 0×0 box, and `px`
           // values do not.
+          const g = shapes[0];
           el.style.clipPath = `circle(${g.r}px at ${g.x}px ${g.y}px)`;
+        } else {
+          // Many buffers: one path with a subpath per circle. clip-path takes
+          // the union of the subpaths, so overlapping buffers merge rather than
+          // punching holes in each other (which is what the even-odd fill rule
+          // would do, and is why the rule is left at its nonzero default).
+          el.style.clipPath = `path("${shapes.map(circleSubpath).join(" ")}")`;
         }
         return;
       }
@@ -514,16 +539,34 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
             dashArray: props.radius_km <= 1 ? null : "5,4",
           };
         },
-        pointToLayer: (feature, latlng) =>
-          L.circleMarker(latlng, {
+        pointToLayer: (feature, latlng) => {
+          const props = feature.properties || {};
+          // A multiple selection sends its rings as centre+radius rather than as
+          // polygons. 200 conglomerados x 4 rings x 128 vertices is megabytes of
+          // coordinates over the WebSocket; this is three numbers per ring, and
+          // Leaflet draws the circle itself.
+          if (props.role === "buffer_circle") {
+            return L.circle(latlng, {
+              pane: "nmOverlays",
+              radius: props.radius_m,
+              color: "#ffffff",
+              weight: 1.5,
+              opacity: 0.9,
+              fill: false,
+              dashArray: props.radius_km <= 1 ? null : "5,4",
+              interactive: false,
+            });
+          }
+          return L.circleMarker(latlng, {
             pane: "nmOverlays",
-            radius: 6,
+            radius: props.role === "selected_point" ? 5 : 6,
             color: "#ffffff",
             weight: 2,
-            fillColor: "#e5484d",
+            fillColor: props.role === "selected_point" ? "#ff8a00" : "#e5484d",
             fillOpacity: 1,
             interactive: false,
-          }),
+          });
+        },
       });
       group.addTo(map);
       overlayRef.current = group;

@@ -118,11 +118,21 @@ class AnalysisMixin(rx.State, mixin=True):
     # Derived
     # ---------------------------------------------------------------------- #
 
+    def _chart_records(self) -> list[dict[str, Any]]:
+        """The rows the chart and the summary read.
+
+        One switch, used by every derived value, so the chart, the legend and the
+        provenance line can never end up describing different selections.
+        """
+        if self.multi_mode and self._multi_history:
+            return self._multi_history
+        return self._history
+
     @rx.var(cache=True)
     def history_figure(self) -> go.Figure:
         import pandas as pd
 
-        df = pd.DataFrame(self._history)
+        df = pd.DataFrame(self._chart_records())
         return land_cover_history_figure(
             df, self.selected_radius, lang="pt", normalise=self.normalise_chart
         )
@@ -140,7 +150,7 @@ class AnalysisMixin(rx.State, mixin=True):
         """Top classes in the latest year, for the panel beside the chart."""
         import pandas as pd
 
-        df = pd.DataFrame(self._history)
+        df = pd.DataFrame(self._chart_records())
         if df.empty or "radius_km" not in df.columns:
             return []
         sub = df[df["radius_km"] == self.selected_radius]
@@ -161,12 +171,17 @@ class AnalysisMixin(rx.State, mixin=True):
 
     @rx.var(cache=True)
     def provenance_line(self) -> str:
-        p = self._provenance
+        multi = self.multi_mode and self._multi_history
+        p = self._multi_provenance if multi else self._provenance
         if not p:
             return ""
         degraded = " · resultado degradado" if p.get("degraded") else ""
+        # The overlap warning belongs here rather than in a tooltip: it is the
+        # one thing that makes a sum over sampling units easy to misread.
+        summed = (f" · soma de {len(self.multi_points)} conglomerados "
+                  f"(buffers sobrepostos são contados em cada um)") if multi else ""
         return (
             f"MapBiomas {p.get('extra', {}).get('collection', '')} · "
             f"{len(p.get('bands', []))} anos · {p.get('scale_m')} m · "
-            f"{p.get('reducer')}{degraded}"
+            f"{p.get('reducer')}{degraded}{summed}"
         )

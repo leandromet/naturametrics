@@ -163,7 +163,7 @@ def test_state_values_survive_the_trip_into_a_workbook():
 
     from naturametrics.services.provenance import Provenance
     from naturametrics.state import AppState
-    from naturametrics.state._export import _plain
+    from naturametrics.state._proxy import plain
 
     prov = Provenance(
         name="landuse_history", dataset_id="asset", bands=["b1", "b2"],
@@ -176,10 +176,81 @@ def test_state_values_survive_the_trip_into_a_workbook():
     # The bug in miniature: proxied on the way out, and still proxied one level down.
     assert type(dict(state._provenance)["bands"]).__name__ == "MutableProxy"
 
-    plain = _plain(state._provenance)
-    assert type(plain["bands"]) is list
-    assert type(plain["extra"]["nested"]) is dict
-    assert type(_plain(state._history)[0]) is dict
+    flat = plain(state._provenance)
+    assert type(flat["bands"]) is list
+    assert type(flat["extra"]["nested"]) is dict
+    assert type(plain(state._history)[0]) is dict
 
     # The operation that actually failed.
-    assert dataclasses.asdict(Provenance(**plain))["bands"] == ["b1", "b2"]
+    assert dataclasses.asdict(Provenance(**flat))["bands"] == ["b1", "b2"]
+
+
+# --------------------------------------------------------------------------- #
+# Multiple selection
+# --------------------------------------------------------------------------- #
+
+def _history_frame(radius, year, pairs):
+    pd = pytest.importorskip("pandas")
+    return pd.DataFrame([
+        {"radius_km": radius, "year": year, "class_id": cid,
+         "pixels": px, "area_ha": ha}
+        for cid, px, ha in pairs
+    ])
+
+
+def test_aggregate_sums_per_radius_year_class():
+    from naturametrics.services.mapbiomas_history import aggregate_histories
+
+    a = _history_frame(10.0, 2024, [(3, 10.0, 1.0), (15, 5.0, 0.5)])
+    b = _history_frame(10.0, 2024, [(3, 20.0, 2.0)])
+    agg = aggregate_histories([a, b]).set_index("class_id")
+
+    assert agg.loc[3, "area_ha"] == pytest.approx(3.0)
+    assert agg.loc[3, "pixels"] == pytest.approx(30.0)
+    # A class present in only one member still appears, at its own value.
+    assert agg.loc[15, "area_ha"] == pytest.approx(0.5)
+    # Labels are re-derived, so the aggregate is readable without a join.
+    assert agg.loc[3, "class_pt"] and agg.loc[3, "color"].startswith("#")
+
+
+def test_aggregate_keeps_radii_and_years_separate():
+    """The sum is per buffer and per year — never pooled across either."""
+    from naturametrics.services.mapbiomas_history import aggregate_histories
+
+    frames = [_history_frame(1.0, 2024, [(3, 1.0, 1.0)]),
+              _history_frame(10.0, 2024, [(3, 1.0, 1.0)]),
+              _history_frame(10.0, 1985, [(3, 1.0, 1.0)])]
+    agg = aggregate_histories(frames)
+
+    assert len(agg) == 3
+    assert set(agg["radius_km"]) == {1.0, 10.0}
+    assert set(agg["year"]) == {1985, 2024}
+
+
+def test_aggregate_of_nothing_is_an_empty_frame_not_a_crash():
+    from naturametrics.services.mapbiomas_history import aggregate_histories
+
+    empty = aggregate_histories([])
+    assert empty.empty
+    # Columns still present, so callers can index it without special-casing.
+    for column in ("radius_km", "year", "class_id", "area_ha"):
+        assert column in empty.columns
+
+
+def test_manual_selection_names_the_same_points_the_filters_would():
+    """A manual spec and a filter spec must resolve to one definition of
+    "the selection" — the export's tabs are built from `points()` while the
+    Earth Engine query is built from `collection()`, and they cannot disagree."""
+    from naturametrics.services import exports
+
+    if not ifn._load_points():
+        pytest.skip("data/ifn_points_biome.csv not built")
+
+    by_filter = exports.SelectionSpec(uf="MT", municipality="Cuiabá")
+    names = [r["conglomerado"] for r in by_filter.points()]
+    manual = exports.SelectionSpec(conglomerados=names)
+
+    assert not by_filter.is_manual and manual.is_manual
+    assert [r["conglomerado"] for r in manual.points()] == names
+    # The manual label still records what the map filters were showing.
+    assert "seleção manual" in manual.filter_label()

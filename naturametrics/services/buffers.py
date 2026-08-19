@@ -123,3 +123,40 @@ def disc_area_ha(radius_km: float) -> float:
     """Nominal disc area, for sanity-checking measured totals."""
     import math
     return math.pi * (radius_km * 1000.0) ** 2 / 10_000.0
+
+
+def buffer_circles_geojson(
+    points: list[tuple[float, float]],
+    radii_km: tuple[float, ...] = BUFFER_RADII_KM,
+) -> dict[str, Any]:
+    """Buffer rings for many points, as centres and radii rather than polygons.
+
+    :func:`buffer_geojson` reprojects and tessellates each ring, which is right
+    for one point — the outline is exact and it is already on screen before Earth
+    Engine answers. For a selection of two hundred it is the wrong shape entirely:
+    200 points × 4 rings × 128 vertices is roughly two megabytes of coordinates
+    crossing the WebSocket every time the user clicks one more.
+
+    So this emits three numbers per ring and lets Leaflet draw the circle. The
+    two differ by Leaflet's projection of a metric radius versus a true azimuthal
+    equidistant buffer — a sub-pixel difference at these radii, and neither is
+    what is measured: the analysis uses Earth Engine's own geometry either way.
+    """
+    features: list[dict[str, Any]] = []
+    for lat, lon in points:
+        features.append({
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [lon, lat]},
+            "properties": {"role": "selected_point"},
+        })
+        for radius in sorted(radii_km):
+            features.append({
+                "type": "Feature",
+                "geometry": {"type": "Point", "coordinates": [lon, lat]},
+                "properties": {
+                    "role": "buffer_circle",
+                    "radius_km": radius,
+                    "radius_m": radius * 1000.0,
+                },
+            })
+    return {"type": "FeatureCollection", "features": features}

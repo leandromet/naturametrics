@@ -88,11 +88,20 @@ def como_usar_dialog() -> rx.Component:
                           "o MapBiomas só dentro desse raio, no ano escolhido. Clique "
                           "para rodar a análise completa nas coordenadas oficiais "
                           "dele."),
-                    _step("7", "Baixe os dados",
+                    _step("7", "Some vários conglomerados",
+                          "Ligue «Seleção múltipla» na barra lateral e clique nos "
+                          "conglomerados que interessam — clicar de novo remove. "
+                          "O gráfico passa a mostrar a soma das áreas de cada "
+                          "raio em todos eles, e o mapa desenha os buffers de "
+                          "todos ao mesmo tempo. Atenção: buffers que se "
+                          "sobrepõem são contados uma vez em cada conglomerado, "
+                          "então o total não é a área da união."),
+                    _step("8", "Baixe os dados",
                           "Em «Baixar dados», no topo da página. São duas planilhas "
                           "ODS independentes: a do ponto de estudo atual, com uma aba "
                           "por raio e o pixel do próprio ponto ano a ano; e a da "
-                          "seleção de conglomerados, onde você marca o que quer — "
+                          "seleção de conglomerados — pelos filtros do mapa ou "
+                          "pelos pontos escolhidos à mão — onde você marca o que quer: "
                           "lista de pontos, classe do pixel ano a ano, e o histórico "
                           "dos buffers. Toda planilha abre com uma aba «metadados» "
                           "dizendo como cada número foi calculado."),

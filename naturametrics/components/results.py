@@ -22,7 +22,7 @@ def _legend_row(row: rx.Var) -> rx.Component:
 def results_drawer() -> rx.Component:
     return rx.box(
         rx.cond(
-            AppState.has_point | AppState.analysis_running,
+            AppState.has_point | AppState.analysis_running | AppState.multi_active,
             rx.vstack(
                 # --- header ---------------------------------------------- #
                 # Wraps instead of overflowing: on a phone the title, the
@@ -36,17 +36,23 @@ def results_drawer() -> rx.Component:
                         # on a phone it is dropped rather than allowed to collide
                         # with the radius control.
                         rx.cond(
-                            AppState.point_label != "",
-                            rx.badge(AppState.point_label, variant="soft", size="1",
-                                     display=["none", "none", "inline-flex",
-                                              "inline-flex"]),
-                            rx.fragment(),
+                            AppState.multi_active,
+                            rx.badge(AppState.multi_label, variant="soft", size="1",
+                                     color_scheme="jade"),
+                            rx.cond(
+                                AppState.point_label != "",
+                                rx.badge(AppState.point_label, variant="soft",
+                                         size="1",
+                                         display=["none", "none", "inline-flex",
+                                                  "inline-flex"]),
+                                rx.fragment(),
+                            ),
                         ),
                         # Second entry point to the same dialog as the header
                         # button: this is where the user is looking when they
                         # decide they want the numbers behind the chart.
                         rx.cond(
-                            AppState.has_result,
+                            AppState.has_result | AppState.multi_active,
                             rx.button(
                                 rx.icon("download", size=13),
                                 rx.text("Baixar dados", size="1"),

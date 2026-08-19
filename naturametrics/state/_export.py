@@ -31,6 +31,7 @@ import reflex as rx
 from ..config.settings import EXPORT_BUFFER_MAX_POINTS
 from ..services import exports, ifn
 from ..services.ods import MIMETYPE
+from ._proxy import plain
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,12 @@ class ExportMixin(rx.State, mixin=True):
     """The export panel."""
 
     export_open: bool = False
+
+    #: "filtros" | "manual" — which way the selection is named. Kept explicit
+    #: rather than inferred from "is the manual selection non-empty", so that
+    #: leaving a few clicked points behind cannot silently change what a filter
+    #: export contains.
+    export_source: str = "filtros"
 
     # --- what to include in the selection export --------------------------
     exp_points: bool = True
@@ -61,6 +68,11 @@ class ExportMixin(rx.State, mixin=True):
             self.export_error = ""
             self.export_result = ""
 
+    def set_export_source(self, value: str | list[str]):
+        raw = value[0] if isinstance(value, (list, tuple)) and value else value
+        self.export_source = "manual" if str(raw).startswith("Seleção manual") \
+            else "filtros"
+
     def toggle_exp_points(self, checked: bool):
         self.exp_points = checked
 
@@ -74,16 +86,49 @@ class ExportMixin(rx.State, mixin=True):
     # Derived
     # ---------------------------------------------------------------------- #
 
+    def _spec(self) -> exports.SelectionSpec:
+        """The export request, assembled from the panel and the map."""
+        manual = self.export_source == "manual"
+        return exports.SelectionSpec(
+            region=self.ifn_region, uf=self.ifn_uf,
+            municipality=self.ifn_municipality, biome=self.ifn_biome,
+            conglomerados=plain(self.multi_conglomerados) if manual else None,
+            include_points=self.exp_points, include_pixel=self.exp_pixel,
+            include_buffers=self.exp_buffers,
+        )
+
+    @rx.var
+    def export_source_options(self) -> list[str]:
+        return ["Filtros do mapa", f"Seleção manual ({self.multi_count})"]
+
+    @rx.var
+    def export_source_value(self) -> str:
+        return (f"Seleção manual ({self.multi_count})"
+                if self.export_source == "manual" else "Filtros do mapa")
+
+    @rx.var
+    def export_manual_available(self) -> bool:
+        return self.multi_count > 0
+
     @rx.var
     def export_selection_count(self) -> int:
+        if self.export_source == "manual":
+            return self.multi_count
         return ifn.count(self.ifn_region, self.ifn_uf, self.ifn_municipality,
                          self.ifn_biome)
 
     @rx.var
     def export_selection_label(self) -> str:
+        if self.export_source == "manual":
+            return f"{self.multi_count} conglomerados escolhidos no mapa"
         parts = [p for p in (self.ifn_region, self.ifn_biome, self.ifn_uf,
                              self.ifn_municipality) if p]
         return " · ".join(parts) if parts else "Brasil inteiro (sem filtro)"
+
+    @rx.var
+    def export_count_label(self) -> str:
+        n = self.export_selection_count
+        return f"{n:,} conglomerado".replace(",", ".") + ("" if n == 1 else "s")
 
     @rx.var
     def export_buffers_allowed(self) -> bool:
@@ -129,8 +174,8 @@ class ExportMixin(rx.State, mixin=True):
             self.export_stage = "Montando a planilha do ponto"
             self.export_error = ""
             self.export_result = ""
-            history, prov = _plain(self._history), _plain(self._provenance)
-            pixel, pixel_prov = _plain(self._pixel), _plain(self._pixel_provenance)
+            history, prov = plain(self._history), plain(self._provenance)
+            pixel, pixel_prov = plain(self._pixel), plain(self._pixel_provenance)
             lat, lon = self.study_lat, self.study_lon
             identity = {
                 "source": self.point_source,
@@ -166,12 +211,7 @@ class ExportMixin(rx.State, mixin=True):
     async def download_selection(self):
         """One spreadsheet covering every conglomerado the filters select."""
         async with self:
-            spec = exports.SelectionSpec(
-                region=self.ifn_region, uf=self.ifn_uf,
-                municipality=self.ifn_municipality, biome=self.ifn_biome,
-                include_points=self.exp_points, include_pixel=self.exp_pixel,
-                include_buffers=self.exp_buffers,
-            )
+            spec = self._spec()
             if self.export_nothing_selected:
                 self.export_error = "Marque pelo menos um conjunto de dados."
                 return
@@ -182,7 +222,7 @@ class ExportMixin(rx.State, mixin=True):
             self.export_total = 0
             self.export_stage = "Reunindo os conglomerados"
 
-        points = ifn.selected_points(**spec.filters())
+        points = spec.points()
         if not points:
             async with self:
                 self.export_busy = False
@@ -246,27 +286,6 @@ class ExportMixin(rx.State, mixin=True):
             note = f" · {len(failed)} conglomerado(s) falharam" if failed else ""
             self.export_result = f"{name} ({len(data) // 1024} KiB){note}"
         return rx.download(data=data, filename=name, mime_type=MIMETYPE)
-
-
-def _plain(value):
-    """Strip Reflex's ``MutableProxy`` wrappers, recursively.
-
-    Reflex wraps every mutable it hands out of state so it can detect writes, and
-    the wrapper is transparent to ``isinstance`` — which is exactly what makes it
-    dangerous here. ``dict(state_var)`` copies only the top level; the nested
-    lists and dicts are still proxies, and the first thing that tries to
-    *reconstruct* one of them blows up. ``dataclasses.asdict`` does precisely
-    that (``type(obj)(...)``), so the failure surfaced deep inside provenance
-    serialisation with a message about a constructor nobody wrote a call to.
-
-    Anything crossing from state into a service gets flattened here, at the one
-    boundary, rather than each service defending itself.
-    """
-    if isinstance(value, dict):
-        return {k: _plain(v) for k, v in value.items()}
-    if isinstance(value, (list, tuple)):
-        return [_plain(v) for v in value]
-    return value
 
 
 def _build_study_point(lat, lon, history, prov, pixel, pixel_prov, identity):

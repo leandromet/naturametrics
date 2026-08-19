@@ -84,6 +84,21 @@ def filtered_points(
     return fc
 
 
+def points_by_conglomerado(names: list[str]):
+    """The subset of the grid naming these conglomerados.
+
+    Used by the export when the user picked points by hand instead of by filter.
+    ``inList`` rather than a chain of ``eq``: a hand-made selection is tens of
+    names, which is a small request, and the alternative grows the expression
+    tree linearly with the selection.
+    """
+    import ee
+
+    return ee.FeatureCollection(_CONF["asset"]).filter(
+        ee.Filter.inList(_F["conglomerate"], list(names))
+    )
+
+
 def asset_id() -> str:
     """The Earth Engine asset the layer and the exports both read."""
     return _CONF["asset"]
@@ -415,6 +430,17 @@ def selected_points(region: str = "", uf: str = "", municipality: str = "",
     :func:`count` — both read tables written by the same join.
     """
     return [r for r in _load_points() if _match(r, region, uf, municipality, biome)]
+
+
+def points_named(names: list[str]) -> list[dict[str, Any]]:
+    """The rows for a hand-made selection, in table order.
+
+    Table order rather than click order on purpose: an export sorted by UF and
+    município is browsable, and the order someone happened to click in carries no
+    information anyone can use later.
+    """
+    wanted = set(names)
+    return [r for r in _load_points() if r["conglomerado"] in wanted]
 
 
 def points_in_bbox(

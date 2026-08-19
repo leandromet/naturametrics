@@ -46,7 +46,11 @@ The first shippable version does exactly this:
    precomputed local index rather than a query. Zoomed in past z8 the points become
    interactive: hovering one previews the land cover in its 10 km buffer, and clicking
    one makes it the study point at its own published coordinates, so the whole buffer
-   analysis above applies to it.
+   analysis above applies to it. A **multiple-selection** switch changes what a click
+   means: conglomerados accumulate into a set, the map draws every chosen buffer at once,
+   and the chart shows the **sum** of their areas per radius and year. Overlapping buffers
+   are counted once per conglomerado — the honest reading of a sum over sampling units,
+   but not the area of the union, and the provenance line under the chart says so.
    *(The original plan listed a `status` filter. It is not offered: `status_derivado` is
    derived by us, not published by the SFB — see [05-ifn.md](05-ifn.md) §4 — and a filter
    is exactly the context where a derived field gets mistaken for an official one.)*

@@ -76,9 +76,10 @@ class LayersMixin(rx.State, mixin=True):
     #: is a CSS clip in the browser. Suppressed while the full MapBiomas layer is
     #: on, where it would only redraw what is already everywhere.
     show_buffer_preview: bool = True
-    preview_active: bool = False
-    preview_lat: float = 0.0
-    preview_lon: float = 0.0
+    #: The buffers the preview is restricted to, as ``[[lat, lon], …]``. A list
+    #: rather than one pair because a multiple selection shows every chosen
+    #: conglomerado's buffer at once; the single-point case is a list of one.
+    preview_points: list[list[float]] = []
 
     # --- IBGE biomes ------------------------------------------------------
     #: Drawn in the browser, not by Earth Engine, so that it can name itself on
@@ -164,7 +165,7 @@ class LayersMixin(rx.State, mixin=True):
                         "clip": "left",
                     })
 
-        if (self.show_buffer_preview and self.preview_active
+        if (self.show_buffer_preview and self.preview_points
                 and not self.show_mapbiomas):
             url = self._mb_urls.get(self.mapbiomas_year)
             if url:
@@ -176,12 +177,10 @@ class LayersMixin(rx.State, mixin=True):
                     "attribution": "MapBiomas Collection 10.1",
                     "z_index": 12,
                     "max_native_zoom": 15,
-                    "clip_circle": {
-                        "lat": self.preview_lat,
-                        "lon": self.preview_lon,
-                        "radius_km": st.BUFFER_PREVIEW_RADIUS_KM,
-                        "shape": st.BUFFER_PREVIEW_SHAPE,
-                    },
+                    "clip_circles": [{"lat": lat, "lon": lon}
+                                     for lat, lon in self.preview_points],
+                    "clip_radius_km": st.BUFFER_PREVIEW_RADIUS_KM,
+                    "clip_shape": st.BUFFER_PREVIEW_SHAPE,
                 })
 
         if self.show_ifn and self.ifn_url:
@@ -565,14 +564,16 @@ class LayersMixin(rx.State, mixin=True):
         return type(self).apply_ifn_filters
 
     def _set_preview(self, lat: float, lon: float) -> None:
-        """Point the land-cover preview at a location. Called from other mixins."""
-        self.preview_lat = float(lat)
-        self.preview_lon = float(lon)
-        self.preview_active = True
+        """Point the land-cover preview at one location."""
+        self._set_preview_many([[float(lat), float(lon)]])
+
+    def _set_preview_many(self, points: list[list[float]]) -> None:
+        """Restrict the preview to several buffers at once."""
+        self.preview_points = [[float(lat), float(lon)] for lat, lon in points]
         self._refresh_layers()
 
     def _clear_preview(self) -> None:
-        self.preview_active = False
+        self.preview_points = []
         self._refresh_layers()
 
     def toggle_buffer_preview(self, checked: bool):

@@ -251,23 +251,52 @@ def study_point_workbook(
 
 @dataclasses.dataclass
 class SelectionSpec:
-    """What the user ticked in the export panel."""
+    """Which conglomerados the export covers, and which tables it carries.
+
+    A selection is named in one of two ways, and the rest of this module does not
+    care which: by the four map filters, or by an explicit list of conglomerados
+    the user clicked. ``conglomerados`` wins when set — it is the more specific
+    statement of intent, and the filters are still recorded in the metadata so
+    the file says what was on screen at the time.
+    """
 
     region: str = ""
     uf: str = ""
     municipality: str = ""
     biome: str = ""
+    #: Explicit conglomerado names, from a manual multiple selection.
+    conglomerados: list[str] | None = None
     include_points: bool = True
     include_pixel: bool = True
     include_buffers: bool = False
+
+    @property
+    def is_manual(self) -> bool:
+        return bool(self.conglomerados)
 
     def filters(self) -> dict[str, str]:
         return {"region": self.region, "uf": self.uf,
                 "municipality": self.municipality, "biome": self.biome}
 
+    def collection(self):
+        """The Earth Engine collection this selection refers to."""
+        if self.is_manual:
+            return ifn.points_by_conglomerado(self.conglomerados)
+        return ifn.filtered_points(**self.filters())
+
+    def points(self) -> list[dict[str, Any]]:
+        """The local rows for this selection."""
+        if self.is_manual:
+            return ifn.points_named(self.conglomerados)
+        return ifn.selected_points(**self.filters())
+
     def filter_label(self) -> str:
         parts = [v for v in (self.region, self.biome, self.uf, self.municipality) if v]
-        return " · ".join(parts) if parts else "Brasil inteiro (sem filtro)"
+        scope = " · ".join(parts) if parts else "Brasil inteiro (sem filtro)"
+        if self.is_manual:
+            return (f"seleção manual de {len(self.conglomerados)} conglomerados "
+                    f"(filtros do mapa: {scope})")
+        return scope
 
 
 def selection_pixel_frame(spec: SelectionSpec) -> tuple[pd.DataFrame, Provenance]:
@@ -302,7 +331,7 @@ def selection_pixel_frame(spec: SelectionSpec) -> tuple[pd.DataFrame, Provenance
     url = (
         ee.Image(asset)
         .select(bands)
-        .reduceRegions(collection=ifn.filtered_points(**spec.filters()),
+        .reduceRegions(collection=spec.collection(),
                        reducer=ee.Reducer.first(), scale=prov.scale_m)
         .getDownloadURL(filetype="csv", selectors=keys + bands)
     )
@@ -427,7 +456,8 @@ def selection_workbook(
     sheets: list[ods.Sheet] = []
 
     context: list[list[Any]] = [
-        ["ESCOPO", "seleção de conglomerados do IFN"],
+        ["ESCOPO", "seleção manual de conglomerados" if spec.is_manual
+                   else "seleção de conglomerados do IFN"],
         ["filtros", spec.filter_label()],
         ["conglomerados na seleção", len(points)],
         ["fonte dos pontos", ifn.asset_id()],

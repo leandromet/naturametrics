@@ -106,6 +106,15 @@ IFN_POINTS_TABLE_PATH = Path(
 )
 
 # --------------------------------------------------------------------------- #
+# Multiple selection
+# --------------------------------------------------------------------------- #
+#: Ceiling on conglomerados picked by hand. Each click costs one Earth Engine
+#: call (~0.5 s) and its history stays in memory so the chart and the export
+#: never recompute it, so the real limits are the map getting unreadable and the
+#: aggregate losing meaning — both of which arrive well before 200.
+MULTI_SELECT_MAX_POINTS = _int("NM_MULTI_SELECT_MAX", 200)
+
+# --------------------------------------------------------------------------- #
 # Buffer land-cover preview
 # --------------------------------------------------------------------------- #
 #: When a point is hovered or selected, the MapBiomas layer is shown *inside* its

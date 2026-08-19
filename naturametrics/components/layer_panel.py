@@ -336,6 +336,79 @@ def ifn_control() -> rx.Component:
     )
 
 
+def _multi_row(row: rx.Var) -> rx.Component:
+    return rx.hstack(
+        rx.text(row["conglomerado"], size="1", weight="medium",
+                style={"whiteSpace": "nowrap"}),
+        rx.text(row["place"], size="1", color_scheme="gray", flex="1",
+                no_of_lines=1),
+        rx.text(row["pending"], size="1", color_scheme="gray"),
+        spacing="2", align="center", width="100%",
+    )
+
+
+def multi_select_control() -> rx.Component:
+    """Pick many conglomerados and read them as one landscape."""
+    return _section(
+        "Seleção múltipla",
+        rx.hstack(
+            rx.switch(checked=AppState.multi_mode,
+                      on_change=AppState.toggle_multi_mode),
+            rx.text("Somar vários conglomerados", size="2"),
+            rx.spacer(),
+            rx.cond(AppState.multi_busy, rx.spinner(size="1"), rx.fragment()),
+            width="100%", align="center", spacing="2",
+        ),
+        rx.cond(
+            AppState.multi_mode,
+            rx.vstack(
+                rx.text(
+                    "Clique nos conglomerados para incluir ou remover. O gráfico "
+                    "passa a mostrar a soma das áreas de cada raio. Cliques "
+                    "avulsos no mapa ficam desativados enquanto o modo está "
+                    "ligado.",
+                    size="1", color_scheme="gray", style={"lineHeight": "1.4"},
+                ),
+                rx.hstack(
+                    rx.badge(AppState.multi_label, color_scheme="jade",
+                             variant="soft", size="1"),
+                    rx.spacer(),
+                    rx.cond(
+                        AppState.multi_count > 0,
+                        rx.button(
+                            rx.icon("rotate-ccw", size=12), "Limpar",
+                            size="1", variant="ghost",
+                            on_click=AppState.clear_multi_selection,
+                        ),
+                        rx.fragment(),
+                    ),
+                    width="100%", align="center",
+                ),
+                rx.cond(
+                    AppState.multi_error != "",
+                    rx.callout(AppState.multi_error, icon="triangle-alert",
+                               color_scheme="amber", size="1", width="100%"),
+                    rx.fragment(),
+                ),
+                rx.cond(
+                    AppState.multi_count > 0,
+                    rx.scroll_area(
+                        rx.vstack(
+                            rx.foreach(AppState.multi_points, _multi_row),
+                            spacing="1", width="100%",
+                        ),
+                        type="auto", scrollbars="vertical",
+                        style={"maxHeight": "150px"},
+                    ),
+                    rx.fragment(),
+                ),
+                spacing="2", width="100%", padding_top="0.25rem",
+            ),
+            rx.fragment(),
+        ),
+    )
+
+
 def _biome_legend() -> rx.Component:
     """One swatch per biome, in the same order and the same hues the map draws."""
     conf = ds.IBGE_BIOME_DOMAIN
@@ -451,6 +524,8 @@ def layer_panel() -> rx.Component:
         change_mask_control(),
         rx.divider(),
         ifn_control(),
+        rx.divider(),
+        multi_select_control(),
         rx.divider(),
         biome_control(),
         rx.spacer(),

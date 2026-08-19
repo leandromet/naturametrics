@@ -339,3 +339,33 @@ def preview_land_cover(
         "natural_last": round(natural(last), 1),
         "empty": False,
     }
+
+
+def aggregate_histories(frames: list[pd.DataFrame]) -> pd.DataFrame:
+    """Sum several conglomerados' buffer histories into one.
+
+    Areas and pixel counts are **added** per (radius, year, class) — the natural
+    reading of "these fifty places together". Percentages are deliberately *not*
+    carried over from the inputs and are recomputed from the summed areas, since
+    an average of percentages over buffers is not the percentage of the whole.
+
+    The buffers of two conglomerados 12 km apart overlap, and the overlap is
+    counted twice. That is the honest meaning of a sum over sampling units — each
+    unit contributes its own landscape — but it means the total is *not* the area
+    of the union, and the chart says so.
+    """
+    frames = [f for f in frames if f is not None and not f.empty]
+    if not frames:
+        return pd.DataFrame(columns=["radius_km", "year", "class_id", "pixels",
+                                     "area_ha", "class_pt", "class_en", "color"])
+
+    combined = pd.concat(frames, ignore_index=True)
+    out = (
+        combined.groupby(["radius_km", "year", "class_id"], as_index=False)
+        [["pixels", "area_ha"]].sum()
+    )
+    out["class_pt"] = out["class_id"].map(lambda c: mb.label(int(c), "pt"))
+    out["class_en"] = out["class_id"].map(lambda c: mb.label(int(c), "en"))
+    out["color"] = out["class_id"].map(lambda c: mb.color(int(c)))
+    return out.sort_values(["radius_km", "year", "area_ha"],
+                           ascending=[True, True, False]).reset_index(drop=True)

@@ -83,14 +83,27 @@ def _selection_section() -> rx.Component:
         rx.hstack(
             rx.text("Seleção de conglomerados", size="2", weight="bold"),
             rx.spacer(),
-            rx.badge(AppState.ifn_count_label, size="1", variant="soft",
+            rx.badge(AppState.export_count_label, size="1", variant="soft",
                      color_scheme="jade"),
             width="100%", align="center",
         ),
+        rx.cond(
+            AppState.export_manual_available,
+            rx.segmented_control.root(
+                rx.foreach(
+                    AppState.export_source_options,
+                    lambda opt: rx.segmented_control.item(opt, value=opt),
+                ),
+                value=AppState.export_source_value,
+                on_change=AppState.set_export_source,
+                size="1", width="100%",
+            ),
+            rx.fragment(),
+        ),
         rx.text(AppState.export_selection_label, size="1", color_scheme="gray"),
         rx.text(
-            "Os mesmos filtros da barra lateral definem o que entra no arquivo. "
-            "Ajuste-os lá para mudar a seleção.",
+            "Sai ponto a ponto, um conglomerado por linha — a soma que aparece "
+            "no gráfico é uma leitura, não o formato do arquivo.",
             size="1", color_scheme="gray",
         ),
         rx.divider(),

@@ -50,6 +50,16 @@ class PointMixin(rx.State, mixin=True):
         goes through :mod:`naturametrics.services.geo`, which is the only place
         allowed to reorder them — see that module for why.
         """
+        if self.multi_mode:
+            # Replacing the study point here would also replace the map's
+            # overlays and the chart, quietly discarding a selection the user
+            # spent real effort building. Refused, with the reason.
+            self.point_error = (
+                "Seleção múltipla ativa: clique nos conglomerados para incluí-los "
+                "ou removê-los. Desligue o modo para escolher um ponto avulso."
+            )
+            return
+
         # A bare map click carries no identity. Cleared here rather than in the
         # caller so that clicking away from a conglomerado cannot leave the
         # previous one's name attached to a different coordinate.

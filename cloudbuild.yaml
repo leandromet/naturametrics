@@ -18,7 +18,7 @@
 substitutions:
   _REGION: us-west1                      # matches yvynation-reflex and the trigger
   _SERVICE: naturametrics
-  _AR_REPO: naturametrics
+  _IMAGE: gcr.io/ee-leandromet/naturametrics
   # Runtime identity. The default compute SA is already Earth-Engine-enabled
   # in this project — yvynation-reflex runs on it with no EE key at all.
   _RUNTIME_SA: 652582010777-compute@developer.gserviceaccount.com
@@ -27,10 +27,12 @@ options:
   logging: CLOUD_LOGGING_ONLY
   machineType: E2_HIGHCPU_8      # the Reflex/bun frontend build is the slow part
 
-# Cloud Build pushes these once every step succeeds.
-images:
-  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_SERVICE}:${SHORT_SHA}
-  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_SERVICE}:latest
+# Registry. Uses the project's existing `gcr.io` Artifact Registry repo, which is
+# already present — no new repository to create. To move to a dedicated regional
+# repo instead:
+#   gcloud artifacts repositories create naturametrics \
+#     --repository-format=docker --location=us-west1 --project=ee-leandromet
+# and set _IMAGE to us-west1-docker.pkg.dev/${PROJECT_ID}/naturametrics/naturametrics
 
 timeout: 1800s
 
@@ -39,9 +41,20 @@ steps:
     name: gcr.io/cloud-builders/docker
     args:
       - build
-      - --tag=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_SERVICE}:${SHORT_SHA}
-      - --tag=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_SERVICE}:latest
+      - --tag=${_IMAGE}:${SHORT_SHA}
+      - --tag=${_IMAGE}:latest
       - .
+
+  # The push MUST be its own step, before deploy.
+  #
+  # The top-level `images:` field also pushes, but only AFTER every step has
+  # finished — so a deploy step that references the tag runs while it does not
+  # yet exist, and Cloud Run fails the revision with "Image ... not found".
+  # That is what broke build 8eb829ba. Pushing explicitly here fixes the
+  # ordering; `images:` is deliberately not used.
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args: [push, --all-tags, '${_IMAGE}']
 
   - id: deploy
     name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
@@ -50,7 +63,7 @@ steps:
       - run
       - deploy
       - ${_SERVICE}
-      - --image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_AR_REPO}/${_SERVICE}:${SHORT_SHA}
+      - --image=${_IMAGE}:${SHORT_SHA}
       - --region=${_REGION}
       - --service-account=${_RUNTIME_SA}
       - --cpu=2
@@ -59,13 +72,16 @@ steps:
       - --timeout=300
       - --min-instances=0
       - --max-instances=4
-      - --allow-unauthenticated
       - --cpu-boost
-      # No EE credentials here on purpose. Cloud Run exposes Application Default
-      # Credentials for the attached service account through the metadata
-      # server, which is auth method 2 in services/ee_client.py. That is how
-      # yvynation-reflex runs — it carries no EE key of any kind. Setting
-      # EE_PRIVATE_KEY would only be needed for an identity that cannot be
-      # attached to the service.
-      # PORT is injected by Cloud Run — never set it here.
+      # `--allow-unauthenticated` is NOT set here: it makes gcloud set an IAM
+      # policy binding (allUsers → run.invoker), which the build service account
+      # can only do with roles/run.admin. With roles/editor it fails the deploy.
+      # Grant public access once, out of band:
+      #   gcloud run services add-iam-policy-binding naturametrics \
+      #     --region=us-west1 --member=allUsers --role=roles/run.invoker
+      # It persists across revisions, so it is a one-off rather than per-deploy.
+      #
+      # No EE credentials: Cloud Run supplies ADC for the attached service
+      # account via the metadata server (auth method 2 in ee_client.py), which
+      # is how yvynation-reflex runs. PORT is injected by Cloud Run — never set.
       - --set-env-vars=GCP_PROJECT_ID=${PROJECT_ID},NM_EE_TIER=partner,NM_EE_CONCURRENCY=64,NM_BASEMAP=esri_imagery,NM_SPOT_ENABLED=false

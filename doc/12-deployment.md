@@ -159,6 +159,35 @@ The build service account needs `artifactregistry.writer`, `run.admin`,
 `652582010777-compute@` already has all four — which is why it is the recommended choice
 over `streamlit-ee-service@`, whose `editor` role covers most of it but not by design.
 
+### Two failures worth remembering
+
+**1. `Image ... not found` on the first real build.**
+Cloud Build's top-level `images:` field pushes **after every step finishes**. A deploy
+step inside the same build therefore references a tag that does not exist yet, and Cloud
+Run fails the revision:
+
+```
+ERROR: (gcloud.run.deploy) Revision 'naturametrics-00001-wq5' is not ready and cannot
+serve traffic. Image 'us-west1-docker.pkg.dev/.../naturametrics:e67f537' not found.
+```
+
+Fix: give the push its **own step** before deploy, and do not use `images:` at all.
+
+**2. `Setting IAM Policy........warning`.**
+`--allow-unauthenticated` makes gcloud set an `allUsers → roles/run.invoker` binding,
+which needs `roles/run.admin`. A build service account with only `roles/editor` cannot do
+it. Rather than widen the build SA, the flag is omitted from `cloudbuild.yaml` and public
+access is granted **once**, out of band — it persists across revisions:
+
+```bash
+gcloud run services add-iam-policy-binding naturametrics \
+  --region=us-west1 --member=allUsers --role=roles/run.invoker
+```
+
+**Registry note.** `cloudbuild.yaml` pushes to `gcr.io/ee-leandromet/naturametrics`,
+which already exists in this project — one less thing to create. A dedicated regional
+Artifact Registry repo is cleaner long-term; switch `_IMAGE` if you make one.
+
 ### Run it
 
 ```bash

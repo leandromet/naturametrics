@@ -101,6 +101,19 @@ def event_year(code):
 regrowth_year = event_year(5)      # last regrowth
 ```
 
+**Implementation note (2026-08-19).** E1 is built. The user pointed at MapBiomas' own
+generator script for this product (`doc/mapbiomas_veg_secundaria.js`) as the reference to
+port; that script reads `projects/mapbiomas-workspace/COLECAO9/integracao`, an internal
+MapBiomas asset this service account cannot read (confirmed by trying), and is a Collection
+9 vintage besides. Rather than re-deriving ~300 lines of temporal-window classification
+logic against an asset we cannot access, `services/vegetation_age.py` reads the *published*
+`..._deforestation_secondary_vegetation_v3` asset directly — MapBiomas' own validated output
+of exactly that kind of script — and implements the part with no upstream equivalent: a
+single sequential per-year counter turning the class codes into an age (module docstring has
+the full reasoning). The "≥40 years" ceiling requested for never-disturbed forest is computed
+as the DSV record length (38 as of Collection 10.1's 1987–2024 window), not hard-coded, so it
+tracks the data if MapBiomas extends the record.
+
 ### E2 — MapBiomas annual LULC series (fallback / cross-check)
 
 The Collection 10.1 coverage image (40 bands, 1985–2024) is used when the DSV product does

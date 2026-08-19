@@ -146,47 +146,60 @@ Verified seamless: with both sides set to the same year, each half is **pixel-id
 
 ---
 
-## Phase 3 — Vegetation age ★
+## Phase 3 — Vegetation age ★ 🚧 **E1 done (2026-08-19), E2/E3/fusion not started**
 
 **Goal:** how old is the forest and natural vegetation in each buffer? This is the
 analytical core of the product — read [10-forest-age.md](10-forest-age.md) in full before
 writing any of it.
 
-- [ ] `config/mapbiomas.py`: natural-vegetation class groups (forest formations, natural
-      non-forest, planted forest, anthropic, masked), **validated against the official
-      Collection 10.1 legend** — not against Yvynation's convenience label table (**D6**).
-- [ ] `services/hansen.py`: GFC tree cover / loss year / gain, ocean+`datamask` handling.
-- [ ] `services/vegetation_age.py`:
-      - [ ] **E1** — MapBiomas *Deforestation & Secondary Vegetation* v3, last regrowth
-            year via `ImageCollection(...).max()`; year range clamped to 1987–2024.
+- [x] `services/vegetation_age.py`:
+      - [x] **E1** — MapBiomas *Deforestation & Secondary Vegetation* v3, year range
+            1987–2024. **Deviation from the original plan:** rather than
+            `ImageCollection(...).max()` over per-code event-year images, age is a single
+            sequential per-year counter (reset on suppression, restart at 1 on regrowth,
+            climb otherwise) — algebraically the same "most recent event" answer, cheaper
+            to build (one 38-band chain instead of up to 38 max-reductions), and it makes
+            "reached the ceiling" and "primary, right-censored" the same condition with no
+            separate flag. See the module docstring and doc/10 §3 E1.
       - [ ] **E2** — annual MapBiomas series establishment year, **with the ≥3-consecutive-
             year persistence rule** (a bare year-to-year `neq` will read flicker as regrowth).
+            Not started; E1 alone already covers forest formations, which is what shipped.
       - [ ] **E3** — Hansen `lossyear` as an independent upper bound on age;
-            `treecover2000` threshold user-configurable, default 30 %.
-      - [ ] Fusion: most recent disturbance from any source wins; censored otherwise.
-      - [ ] Confidence flag (high / medium / low) from inter-source agreement.
-- [ ] Single fused `reduceRegions` producing the age-class histogram for all four buffers;
-      the three estimator builds submitted concurrently.
-- [ ] Fire qualifier from MapBiomas Fire c4 (`fire_frequency`, `year_last_fire`) attached
-      to each age class — as a qualifier, **not** an age reset (**D7**).
-- [ ] Charts: age-class distribution per buffer; forest formations and natural non-forest
-      **visually separated, never pooled**.
-- [ ] Headline stats: median age of dated vegetation, **censored share**, total natural
-      area, confidence breakdown.
-- [ ] Map layers: vegetation age (with a distinct flat colour for censored), establishment
-      year, confidence, source disagreement.
-- [ ] **Censoring surfaced in the UI**: the ≥40 y class labelled as *"no conversion observed
-      since 1985"*, never as a numeric bin; no mean that folds censored pixels in at their
-      floor (constraint **C5**).
+            `treecover2000` threshold user-configurable, default 30 %. Not started.
+      - [ ] Fusion: most recent disturbance from any source wins; censored otherwise. Not
+            started — there is only one source so far.
+      - [ ] Confidence flag (high / medium / low) from inter-source agreement. Not started;
+            meaningless with a single source.
+- [ ] `config/mapbiomas.py`: natural-vegetation class groups validated against the official
+      Collection 10.1 legend (**D6**) — still needed for E2, not for E1 (the DSV product
+      already encodes "natural vs. not" in its own class codes).
+- [ ] `services/hansen.py` — not started (feeds E3).
+- [x] Charts: point line (age at one pixel, 1987–2024) and per-buffer age-class histogram,
+      `components/charts.py` `forest_age_line_figure` / `forest_age_histogram_figure`.
+      Forest formations only (E1's own domain); natural non-forest is not yet separated out
+      because E2 does not exist yet to estimate its age.
+- [x] Headline stats: median age of dated vegetation, **censored share**, total natural
+      area — `services.vegetation_age.age_summary`. Confidence breakdown not applicable yet
+      (single source).
+- [ ] Map layers: vegetation age, establishment year, confidence, source disagreement. Not
+      started — this phase only added the point/buffer charts under the results drawer, no
+      map layer yet.
+- [x] **Censoring surfaced in the UI**: labelled `"≥ N anos (sem alteração desde 1987)"`
+      with N computed from the DSV record length, never hard-coded as "40" even though that
+      was the round number initially requested — see `config.vegetation_age.CENSORED_AGE`.
+      Median age is computed only over dated (non-censored) area; censored share is always
+      shown alongside it, never folded into a mean (constraint **C5**).
 - [ ] Internal-consistency test: natural area from the age product reconciles with the
-      Phase 1 MapBiomas history for the same year.
+      Phase 1 MapBiomas history for the same year. Not written yet — would need to define
+      what "reconciles" means once E2 adds natural non-forest to the mix.
 
 **Done when:** clicking a point yields an age-class distribution per buffer whose censored
 share is stated plainly, and the age map layer visibly distinguishes recent regrowth from
-"older than the record".
+"older than the record". **Partially done**: the distribution and the censored share are
+there; the map layer is not.
 
 **Not done when** it merely produces a number. If the censored share is not on screen next
-to the summary, this phase is not finished.
+to the summary, this phase is not finished. *(It is — see age_summary_row above.)*
 
 ---
 

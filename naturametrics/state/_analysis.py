@@ -9,9 +9,12 @@ from typing import Any
 import plotly.graph_objects as go
 import reflex as rx
 
-from ..components.charts import land_cover_history_figure
+from ..components.charts import (
+    forest_age_histogram_figure, forest_age_line_figure, land_cover_history_figure,
+)
 from ..config.settings import BUFFER_RADII_KM
 from ..services.buffers import buffer_geojson
+from ..services.vegetation_age import age_summary, buffer_forest_age_histogram, point_forest_age_series
 from ..services.geo import CoordinateError, point
 from ..services.mapbiomas_history import land_cover_history, point_pixel_series
 
@@ -47,6 +50,22 @@ class AnalysisMixin(rx.State, mixin=True):
     _run_token: int = 0
 
     buffer_overlays: dict[str, Any] = {}
+
+    # --- forest age (services.vegetation_age, doc/10) --------------------------- #
+    #: Fetched alongside the land-cover history above but kept in its own error
+    #: channel: a hiccup in the age estimator must not take down the land-use
+    #: chart that already succeeded, and vice versa.
+    age_running: bool = False
+    age_error: str = ""
+    #: "Ponto" (the line chart) or a radius label (the histogram). Point mode has
+    #: no meaning for a multi-selection sum, so multi mode is steered away from it
+    #: — see age_tab_options.
+    selected_age_radius: str = "Ponto"
+
+    _age_point: list[dict[str, Any]] = []
+    _age_point_provenance: dict[str, Any] = {}
+    _age_buffers: list[dict[str, Any]] = []
+    _age_buffers_provenance: dict[str, Any] = {}
 
     @rx.event(background=True)
     async def run_analysis(self, lat: float, lon: float):
@@ -96,6 +115,36 @@ class AnalysisMixin(rx.State, mixin=True):
                 self.analysis_error = (
                     "Nenhuma cobertura do solo encontrada neste ponto."
                 )
+            self.age_running = True
+            self.age_error = ""
+
+        # A separate try/except on purpose: the land-use chart above already has
+        # its answer by this point, and an Earth Engine hiccup specific to the DSV
+        # asset (services/vegetation_age.py) must not blank out a result that worked.
+        try:
+            age_point_task = loop.run_in_executor(None, point_forest_age_series, p)
+            age_buffer_task = loop.run_in_executor(
+                None, buffer_forest_age_histogram, p, BUFFER_RADII_KM)
+            (age_df, age_prov), (age_buf_df, age_buf_prov) = await asyncio.gather(
+                age_point_task, age_buffer_task)
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("Forest-age analysis failed")
+            async with self:
+                if token == self._run_token:
+                    self.age_running = False
+                    self.age_error = f"Falha ao calcular a idade da vegetação: {exc}"
+            return
+
+        async with self:
+            if token != self._run_token:
+                return
+            self._age_point = age_df.to_dict("records")
+            self._age_point_provenance = age_prov.to_dict()
+            self._age_buffers = age_buf_df.to_dict("records")
+            self._age_buffers_provenance = age_buf_prov.to_dict()
+            self.age_running = False
+            if age_buf_df.empty and age_df.empty:
+                self.age_error = "Sem dados de idade da vegetação neste ponto."
 
     def set_selected_radius(self, value: str | list[str]):
         """Set the buffer whose history is charted.
@@ -113,6 +162,11 @@ class AnalysisMixin(rx.State, mixin=True):
 
     def toggle_normalise(self, checked: bool):
         self.normalise_chart = checked
+
+    def set_selected_age_radius(self, value: str | list[str]):
+        """"Ponto" or a radius label — see selected_age_radius."""
+        raw = value[0] if isinstance(value, (list, tuple)) and value else value
+        self.selected_age_radius = str(raw)
 
     # ---------------------------------------------------------------------- #
     # Derived
@@ -184,4 +238,94 @@ class AnalysisMixin(rx.State, mixin=True):
             f"MapBiomas {p.get('extra', {}).get('collection', '')} · "
             f"{len(p.get('bands', []))} anos · {p.get('scale_m')} m · "
             f"{p.get('reducer')}{degraded}{summed}"
+        )
+
+    # --- forest age ----------------------------------------------------- #
+
+    def _age_buffer_records(self) -> list[dict[str, Any]]:
+        """Same switch as _chart_records, for the age histogram."""
+        if self.multi_mode and self._multi_age_history:
+            return self._multi_age_history
+        return self._age_buffers
+
+    @rx.var(cache=True)
+    def age_has_result(self) -> bool:
+        return bool(self._age_point) or bool(self._age_buffers) or bool(self._multi_age_history)
+
+    @rx.var(cache=True)
+    def age_tab_options(self) -> list[str]:
+        """"Ponto" only makes sense for one pixel — dropped for a multi-sum."""
+        radii = [f"{r:g} km" for r in BUFFER_RADII_KM]
+        return radii if (self.multi_mode and self._multi_age_history) else ["Ponto"] + radii
+
+    @rx.var(cache=True)
+    def age_effective_radius(self) -> float:
+        """The radius the histogram actually reads — falls back off "Ponto" in
+        multi mode rather than showing nothing just because the tab never got
+        switched."""
+        if self.selected_age_radius != "Ponto":
+            try:
+                return float(self.selected_age_radius.replace(" km", "").strip())
+            except ValueError:
+                pass
+        return BUFFER_RADII_KM[0]
+
+    @rx.var(cache=True)
+    def age_showing_point(self) -> bool:
+        return self.selected_age_radius == "Ponto" and not (
+            self.multi_mode and self._multi_age_history
+        )
+
+    @rx.var(cache=True)
+    def age_point_figure(self) -> go.Figure:
+        import pandas as pd
+
+        return forest_age_line_figure(pd.DataFrame(self._age_point))
+
+    @rx.var(cache=True)
+    def age_histogram_figure(self) -> go.Figure:
+        import pandas as pd
+
+        df = pd.DataFrame(self._age_buffer_records())
+        return forest_age_histogram_figure(df, self.age_effective_radius)
+
+    @rx.var(cache=True)
+    def age_has_summary(self) -> bool:
+        """Plain bool for rx.cond — a dict var is truthy in JS even when empty,
+        so the summary panel needs its own gate rather than testing the dict."""
+        return bool(self.age_summary_row)
+
+    @rx.var(cache=True)
+    def age_summary_row(self) -> dict[str, str]:
+        """Headline numbers beside the histogram — doc/10 §5.1: median of dated
+        vegetation and censored share, never a bare mean."""
+        import pandas as pd
+
+        df = pd.DataFrame(self._age_buffer_records())
+        s = age_summary(df, self.age_effective_radius)
+        if not s:
+            return {}
+        median = s.get("median_dated_age")
+        return {
+            "total": f"{s['total_natural_area_ha']:,.0f} ha".replace(",", "."),
+            "censored_pct": f"{s['censored_pct']:.1f}%",
+            "censored_area": f"{s['censored_area_ha']:,.0f} ha".replace(",", "."),
+            "median": (f"{median:.0f} anos".replace(",", ".") if median is not None
+                       else "—"),
+            "censored_label": s["censored_label"],
+        }
+
+    @rx.var(cache=True)
+    def age_provenance_line(self) -> str:
+        multi = self.multi_mode and self._multi_age_history
+        p = self._multi_age_provenance if multi else self._age_buffers_provenance
+        if self.age_showing_point:
+            p = self._age_point_provenance
+        if not p:
+            return ""
+        degraded = " · resultado degradado" if p.get("degraded") else ""
+        return (
+            f"MapBiomas Desmatamento e Vegetação Secundária v3 · "
+            f"{p.get('extra', {}).get('reference_year', '')} · {p.get('scale_m')} m · "
+            f"{p.get('reducer')}{degraded}"
         )

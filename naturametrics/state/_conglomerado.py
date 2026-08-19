@@ -30,6 +30,7 @@ from ..config.settings import (
 )
 from ..services import ifn as ifn_service
 from ..services.buffers import buffer_circles_geojson, buffer_geojson
+from ..services.vegetation_age import aggregate_forest_age, buffer_forest_age_histogram
 from ..services.mapbiomas_history import (
     aggregate_histories, land_cover_history, preview_land_cover,
 )
@@ -80,6 +81,14 @@ class ConglomeradoMixin(rx.State, mixin=True):
     _multi_meta: dict[str, dict[str, str]] = {}
     _multi_history: list[dict[str, Any]] = []
     _multi_provenance: dict[str, Any] = {}
+
+    #: Same shape, one key per selected conglomerado — the forest-age histogram
+    #: (services.vegetation_age) alongside the land-cover history above. Kept in its
+    #: own dict rather than folded into ``_multi_frames`` because the two are
+    #: different tables (age bins vs. class/year) summed by different aggregators.
+    _multi_age_frames: dict[str, list[dict[str, Any]]] = {}
+    _multi_age_history: list[dict[str, Any]] = []
+    _multi_age_provenance: dict[str, Any] = {}
 
     @rx.event(background=True)
     async def preview_conglomerado(self, props: dict):
@@ -256,9 +265,11 @@ class ConglomeradoMixin(rx.State, mixin=True):
 
     def clear_multi_selection(self):
         self._multi_frames = {}
+        self._multi_age_frames = {}
         self._multi_coords = {}
         self._multi_meta = {}
         self._multi_history = []
+        self._multi_age_history = []
         self.multi_points = []
         self.multi_error = ""
         if self.multi_mode:
@@ -280,6 +291,7 @@ class ConglomeradoMixin(rx.State, mixin=True):
                 self._multi_coords.pop(key, None)
                 self._multi_meta.pop(key, None)
                 self._multi_frames.pop(key, None)
+                self._multi_age_frames.pop(key, None)
                 self.multi_error = ""
                 self._recompute_multi()
                 return
@@ -316,10 +328,15 @@ class ConglomeradoMixin(rx.State, mixin=True):
         loop = asyncio.get_running_loop()
         try:
             from ..services.geo import point
-            df, prov = await loop.run_in_executor(
-                None, land_cover_history, point(lat=lat, lon=lon),
-                BUFFER_RADII_KM, BUFFER_MODE_DEFAULT,
-            )
+            p = point(lat=lat, lon=lon)
+            # Issued together, not one after the other: both are independent
+            # Earth Engine round-trips for the same point, so the pair costs one
+            # wall-clock wait rather than two (same reasoning as run_analysis).
+            history_task = loop.run_in_executor(
+                None, land_cover_history, p, BUFFER_RADII_KM, BUFFER_MODE_DEFAULT)
+            age_task = loop.run_in_executor(
+                None, buffer_forest_age_histogram, p, BUFFER_RADII_KM, BUFFER_MODE_DEFAULT)
+            (df, prov), (age_df, age_prov) = await asyncio.gather(history_task, age_task)
         except Exception as exc:  # noqa: BLE001
             logger.warning("Multi-select analysis failed for %s: %s", key, exc)
             async with self:
@@ -337,6 +354,8 @@ class ConglomeradoMixin(rx.State, mixin=True):
                 return  # removed again while the query was in flight
             self._multi_frames[key] = df.to_dict("records")
             self._multi_provenance = prov.to_dict()
+            self._multi_age_frames[key] = age_df.to_dict("records")
+            self._multi_age_provenance = age_prov.to_dict()
             self.multi_busy = False
             self._recompute_multi()
 
@@ -416,6 +435,21 @@ class ConglomeradoMixin(rx.State, mixin=True):
         executor = get_ee_executor()
         progress = {"done": 0}
 
+        def _history_and_age(p):
+            """Both tables for one point, sequentially in one pool thread.
+
+            One future per point rather than two keeps the done/bad bookkeeping
+            below unchanged from before forest age existed, at the cost of a
+            point's own wall time being the sum of the two calls rather than the
+            max — acceptable here because points still run in parallel against
+            each other across the pool, which is what actually bounds a box
+            select's total time.
+            """
+            df, prov = land_cover_history(p, BUFFER_RADII_KM, BUFFER_MODE_DEFAULT)
+            age_df, age_prov = buffer_forest_age_histogram(
+                p, BUFFER_RADII_KM, BUFFER_MODE_DEFAULT)
+            return df, prov, age_df, age_prov
+
         def collect():
             """Submit every point, then gather. One thread, not one per point.
 
@@ -425,9 +459,8 @@ class ConglomeradoMixin(rx.State, mixin=True):
             Earth Engine pool is the one doing the work; this only harvests.
             """
             futures = {
-                executor.submit(land_cover_history,
-                                point(lat=row["lat"], lon=row["lon"]),
-                                BUFFER_RADII_KM, BUFFER_MODE_DEFAULT):
+                executor.submit(_history_and_age,
+                                point(lat=row["lat"], lon=row["lon"])):
                 str(row["ponto_id"]) for row in fresh
             }
             done: dict[str, Any] = {}
@@ -435,8 +468,9 @@ class ConglomeradoMixin(rx.State, mixin=True):
             for future in futures:
                 key = futures[future]
                 try:
-                    df, prov = future.result(timeout=180)
-                    done[key] = (df.to_dict("records"), prov.to_dict())
+                    df, prov, age_df, age_prov = future.result(timeout=180)
+                    done[key] = (df.to_dict("records"), prov.to_dict(),
+                                 age_df.to_dict("records"), age_prov.to_dict())
                 except Exception as exc:  # noqa: BLE001
                     logger.warning("Area select failed for %s: %s", key, exc)
                     bad.append(key)
@@ -453,10 +487,12 @@ class ConglomeradoMixin(rx.State, mixin=True):
 
         async with self:
             self.multi_progress = ""
-            for key, (records, prov) in results.items():
+            for key, (records, prov, age_records, age_prov) in results.items():
                 if key in self._multi_coords:
                     self._multi_frames[key] = records
                     self._multi_provenance = prov
+                    self._multi_age_frames[key] = age_records
+                    self._multi_age_provenance = age_prov
             for key in failed:
                 # Same rule as a single click: a point on the map but absent
                 # from the sum would understate every total.
@@ -476,6 +512,9 @@ class ConglomeradoMixin(rx.State, mixin=True):
         frames = [pd.DataFrame(plain(records))
                   for records in self._multi_frames.values()]
         self._multi_history = aggregate_histories(frames).to_dict("records")
+        age_frames = [pd.DataFrame(plain(records))
+                      for records in self._multi_age_frames.values()]
+        self._multi_age_history = aggregate_forest_age(age_frames).to_dict("records")
         self._refresh_multi_rows()
         if self.multi_mode:
             self._apply_multi_view()

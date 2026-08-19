@@ -11,6 +11,7 @@ from typing import Any
 import pandas as pd
 import plotly.graph_objects as go
 
+from ..config import vegetation_age as fa
 from ..config import mapbiomas as mb
 
 #: Classes are stacked in this order so the reading is stable across years:
@@ -112,4 +113,128 @@ def _style(fig: go.Figure, radius_km: float, lang: str, normalise: bool) -> go.F
     )
     if normalise:
         fig.update_yaxes(range=[0, 100])
+    return fig
+
+
+# --------------------------------------------------------------------------- #
+# Forest age (doc/10-forest-age.md, estimator E1) — deliberately a different
+# look from the land-cover history above: its own palette (config/vegetation_age.py,
+# carried over from the reference script rather than the MapBiomas coverage
+# colours) and different chart shapes, since "age" and "land-cover history" are
+# different questions even though they are computed from related products.
+# --------------------------------------------------------------------------- #
+
+_AGE_BIN_ORDER = [b[2] for b in fa.AGE_BIN_EDGES] + [fa.censored_label()]
+
+
+def forest_age_line_figure(df: pd.DataFrame, lang: str = "pt") -> go.Figure:
+    """Age at one pixel, year by year.
+
+    A single trace that climbs while the pixel stays forested, drops to zero on
+    every detected clearing, and either climbs again (regrowth) or plateaus at the
+    censored ceiling (never disturbed in the DSV record) — see
+    services.vegetation_age._forest_age_bands for why the ceiling is meaningful on its
+    own, not an arbitrary cutoff.
+    """
+    fig = go.Figure()
+    if df is None or df.empty or "age" not in df.columns:
+        fig.add_annotation(
+            text="Sem dados" if lang == "pt" else "No data",
+            showarrow=False, font=dict(size=13, color="#888"),
+        )
+        return _style_age_line(fig, lang)
+
+    fig.add_trace(go.Scatter(
+        x=df["year"], y=df["age"], mode="lines+markers",
+        line=dict(color="#2f6f4f", width=2),
+        marker=dict(color=df["color"], size=7, line=dict(width=1, color="white")),
+        customdata=df["class_pt"],
+        hovertemplate=(
+            "<b>%{x}</b><br>idade: %{y} anos<br>%{customdata}<extra></extra>"
+            if lang == "pt" else
+            "<b>%{x}</b><br>age: %{y} years<br>%{customdata}<extra></extra>"
+        ),
+        showlegend=False,
+    ))
+
+    fig.add_hline(
+        y=fa.CENSORED_AGE,
+        line=dict(color=fa.CENSORED_COLOR, width=1, dash="dot"),
+        annotation_text=(f"teto do registro ({fa.CENSORED_AGE} anos)" if lang == "pt"
+                         else f"record ceiling ({fa.CENSORED_AGE} years)"),
+        annotation_position="bottom right",
+        annotation_font=dict(size=9, color=fa.CENSORED_COLOR),
+    )
+
+    return _style_age_line(fig, lang)
+
+
+def _style_age_line(fig: go.Figure, lang: str) -> go.Figure:
+    fig.update_layout(
+        template="plotly_white",
+        margin=dict(l=48, r=8, t=8, b=36),
+        height=280,
+        hovermode="closest",
+        xaxis=dict(title=None, tickmode="linear", dtick=5, showgrid=False),
+        yaxis=dict(title="Idade (anos)" if lang == "pt" else "Age (years)",
+                   showgrid=True, gridcolor="rgba(0,0,0,0.06)", zeroline=True,
+                   rangemode="tozero"),
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+    )
+    return fig
+
+
+def forest_age_histogram_figure(
+    df: pd.DataFrame, radius_km: float, lang: str = "pt",
+) -> go.Figure:
+    """Area by age bin for one buffer — a snapshot, not a time series.
+
+    The censored bin is deliberately not the ramp's last step: doc/10 §6 warns
+    that a continuous ramp running into "censored" reads as "even older" rather
+    than "unknown, possibly far older", so it gets config.vegetation_age.CENSORED_COLOR
+    instead, a colour that does not belong to the dated ramp at all.
+    """
+    fig = go.Figure()
+    sub = pd.DataFrame()
+    if df is not None and not df.empty and "radius_km" in df.columns:
+        sub = df[df["radius_km"] == radius_km]
+
+    if sub.empty:
+        fig.add_annotation(
+            text="Sem dados" if lang == "pt" else "No data",
+            showarrow=False, font=dict(size=13, color="#888"),
+        )
+        return _style_age_hist(fig, lang)
+
+    grouped = sub.groupby("bin", as_index=False).agg(
+        area_ha=("area_ha", "sum"), color=("color", "first"))
+    grouped["order"] = grouped["bin"].apply(
+        lambda b: _AGE_BIN_ORDER.index(b) if b in _AGE_BIN_ORDER else len(_AGE_BIN_ORDER))
+    grouped = grouped.sort_values("order")
+
+    unit = "ha"
+    fig.add_bar(
+        x=grouped["bin"], y=grouped["area_ha"],
+        marker_color=grouped["color"], marker_line_width=0,
+        hovertemplate=f"<b>%{{x}}</b><br>%{{y:,.1f}} {unit}<extra></extra>",
+    )
+
+    return _style_age_hist(fig, lang)
+
+
+def _style_age_hist(fig: go.Figure, lang: str) -> go.Figure:
+    fig.update_layout(
+        template="plotly_white",
+        margin=dict(l=56, r=8, t=8, b=56),
+        height=280,
+        bargap=0.25,
+        xaxis=dict(title=None, showgrid=False, tickangle=-20,
+                   categoryorder="array", categoryarray=_AGE_BIN_ORDER),
+        yaxis=dict(title="Área (ha)" if lang == "pt" else "Area (ha)",
+                   showgrid=True, gridcolor="rgba(0,0,0,0.06)", zeroline=False),
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        showlegend=False,
+    )
     return fig

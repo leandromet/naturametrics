@@ -258,6 +258,159 @@ TRANSLATIONS_EN: dict[str, str] = {
     "err_vegetation_age_failed": "Failed to compute vegetation age: {exc}",
     "err_no_vegetation_age": "No vegetation age data for this point.",
 
+    # --- "Como usar" dialog ------------------------------------------------ #
+    "help_trigger": "How to use",
+    "help_dialog_title": "How to use Naturametrics",
+    "help_dialog_desc": (
+        "Land-use history and landscape analysis at any point in Brazil."
+    ),
+    "help_step1_title": "Choose a point",
+    "help_step1_body": (
+        "Click anywhere on the map. A marker is created and four analysis "
+        "areas (1, 2, 5 and 10 km radius) are drawn around it. Clicks "
+        "outside Brazil are refused: MapBiomas covers only national "
+        "territory."
+    ),
+    "help_step2_title": "Read the land-use history",
+    "help_step2_body": (
+        "The chart below the map shows one column per year, from 1985 to "
+        "2024, with MapBiomas classes in their official colours. Switch "
+        "the radius across 1/2/5/10 km and use the «%» button to toggle "
+        "between hectares and area share."
+    ),
+    "help_step3_title": "Switch the base map",
+    "help_step3_body": (
+        "The default is Google's hybrid map, which shows municipality "
+        "names and roads — useful for checking where you are. The list "
+        "also includes Brazil's 2008 SPOT mosaic, in natural colour and "
+        "infrared false colour: it covers only the country's forest "
+        "areas, so there are gaps outside that footprint, and it is drawn "
+        "on top of whichever base map was chosen before."
+    ),
+    "help_step4_title": "See the coverage on the map",
+    "help_step4_body": (
+        "Turn on «MapBiomas 10.1» in the sidebar. The «Year» control "
+        "spans 1985–2024 — every year is pre-loaded, so switching is "
+        "instant and the map does not shift. «Opacity» controls how much "
+        "of the base map shows through underneath."
+    ),
+    "help_step5_title": "Compare two years",
+    "help_step5_body": (
+        "«Sliding curtain» shows two years at once, split by a white line "
+        "you drag across the map. The left-hand year is chosen in its own "
+        "panel; the right-hand one is the year selected in «Land cover». "
+        "Each side has its own opacity."
+    ),
+    "help_step6_title": "Find restoration candidates",
+    "help_step6_body": (
+        "«Natural vegetation change» highlights in red what was natural "
+        "vegetation in the baseline year and no longer is, and in green "
+        "what has regrown. The default is 2008, the Forest Code baseline: "
+        "clearing after 22/07/2008 carries a restoration obligation."
+    ),
+    "help_step7_title": "Work with the IFN clusters",
+    "help_step7_body": (
+        "Turn on «Clusters» in the sidebar to see the 17,479 points of "
+        "the National Forest Inventory, and filter by region, biome, "
+        "state and municipality — the map frames the selection on its "
+        "own. Zooming in makes the points interactive: hover over one to "
+        "see its coverage within a 10 km radius today and in 1985 — and "
+        "the map itself shows MapBiomas only inside that radius, for the "
+        "chosen year. Click to run the full analysis at its official "
+        "coordinates."
+    ),
+    "help_step8_title": "Sum several clusters",
+    "help_step8_body": (
+        "Turn on «Multiple selection» in the sidebar and click the "
+        "clusters you're interested in — clicking again removes them — "
+        "or hold Ctrl (Cmd on Mac) and drag to grab a whole area at once. "
+        "The chart switches to showing the summed area of each radius "
+        "across all of them, and the map draws every buffer at once. "
+        "Note: overlapping buffers are counted once per cluster, so the "
+        "total is not the area of the union."
+    ),
+    "help_step9_title": "Download the data",
+    "help_step9_body": (
+        "Under «Download data», at the top of the page. There are two "
+        "independent ODS spreadsheets: one for the current study point, "
+        "with one tab per radius and the point's own pixel year by year; "
+        "and one for the cluster selection — by the map's filters or by "
+        "hand-picked points — where you mark what you want: point list, "
+        "pixel class year by year, and buffer history — with one tab per "
+        "radius, and the option to export a single radius, which fits "
+        "many more clusters. Every spreadsheet opens with a «metadata» "
+        "tab explaining how each number was computed."
+    ),
+    "help_triage_callout": (
+        "This layer is a screening tool, not a formal report. It does "
+        "not account for CAR, APP/Legal Reserve, property size or "
+        "clearing permits. Use it to guide the investigation, not to "
+        "conclude it."
+    ),
+    "help_limitations_title": "Limitations worth knowing",
+    "help_limit_1": (
+        "30 m resolution: a 1 km radius holds about 3,500 pixels, so a "
+        "few misclassified pixels already move the percentages."
+    ),
+    "help_limit_2": (
+        "The MapBiomas series starts in 1985 — there is no way to know "
+        "the age of vegetation that already existed before then."
+    ),
+    "help_limit_3": (
+        "Areas are computed from the pixel's real area "
+        "(ee.Image.pixelArea), which varies with latitude; a fixed value "
+        "of 0.09 ha would overestimate the area."
+    ),
+    "help_limit_4": (
+        "MapBiomas classes are not colour-blind safe — the legend always "
+        "carries the name next to the colour."
+    ),
+
+    # --- "Como citar" dialog ------------------------------------------------ #
+    "cite_trigger": "How to cite",
+    "cite_dialog_title": "How to cite",
+    "cite_dialog_desc": (
+        "If Naturametrics contributed to your work, cite it and also "
+        "cite the data sources used."
+    ),
+    "cite_suggested_title": "Suggested citation",
+    "cite_copy_citation": "Copy citation",
+    "cite_bibtex_title": "BibTeX",
+    "cite_copy_bibtex": "Copy BibTeX",
+    "cite_authors_title": "Authors and institutions",
+    "cite_sources_title": "Data sources — cite these too",
+    "cite_sources_desc": (
+        "Each source has its own attribution requirements. When "
+        "publishing figures or numbers obtained here, cite whichever "
+        "ones were used."
+    ),
+    "cite_spot_callout": (
+        "The SPOT 2008 imagery (Brazil Forest Imagery Dataset) requires "
+        "accepting a specific Google license and is not yet enabled on "
+        "this instance."
+    ),
+
+    # --- AI-disclaimer dialog ------------------------------------------------ #
+    "ai_trigger": "AI use disclosure",
+    "ai_dialog_desc": "How this application was built, and with what help.",
+    "ai_para1": (
+        "Naturametrics' code was written with the assistance of "
+        "Anthropic's AI models — Claude Opus and Claude Sonnet — under "
+        "the author's supervision and review at every step. The "
+        "architecture, state patterns and most of the interface "
+        "conventions come from Yvynation, an already-mature sibling "
+        "platform for Indigenous-lands analysis, also built with the "
+        "same process."
+    ),
+    "ai_para2": (
+        "That means large parts of this application — from the Earth "
+        "Engine integration to the interface components — were adapted "
+        "or rewritten from what already worked in Yvynation, rather than "
+        "built from scratch."
+    ),
+    "ai_see_yourself_title": "See for yourself",
+    "ai_yvynation_link": "Yvynation — live application",
+
     # --- language switcher ---------------------------------------------- #
     "language_label": "Language",
 }

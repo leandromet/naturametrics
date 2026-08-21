@@ -18,6 +18,14 @@ AUTHORS = [
     ("João Augusto Alves Meira-Neto", "Universidade Federal de Viçosa (UFV), Brasil"),
 ]
 
+#: Same list, institution country name in English — everything else about an
+#: author's affiliation (the institution itself, its acronym) is already in
+#: English or is a proper noun, so only "Canadá"/"Brasil" actually differ.
+AUTHORS_EN = [
+    (name, inst.replace("Canadá", "Canada").replace("Brasil", "Brazil"))
+    for name, inst in AUTHORS
+]
+
 CITATION_TEXT = (
     "Biondo, L. M.; Heringer, G.; Coelho, A.; Meira-Neto, J. A. A. "
     f"({APP_YEAR}). Naturametrics: história de uso da terra e análise da paisagem. "
@@ -57,6 +65,35 @@ DATA_SOURCES = [
      "analysis for everyone. Remote Sensing of Environment 202, 18–27.",
      "https://earthengine.google.com"),
     ("Mapas base",
+     "Esri World Imagery; OpenStreetMap contributors; Google.",
+     "https://www.openstreetmap.org/copyright"),
+]
+
+#: Same sources, name/description in English — used only by the "Como citar"
+#: dialog in English mode. The exported spreadsheet's metadata sheet
+#: (services/exports.py) always cites from the Portuguese list above, matching
+#: what the app's own citation string (CITATION_TEXT) says regardless of the
+#: UI language a given session happens to be in.
+DATA_SOURCES_EN = [
+    ("MapBiomas — Collection 10.1",
+     "MapBiomas Project — Annual Land Use and Land Cover Mapping in Brazil. "
+     "CC-BY-SA license.",
+     "https://mapbiomas.org"),
+    ("MapBiomas — Deforestation and Secondary Vegetation",
+     "Basis for the regrowth calculation and the Forest Code baseline year.",
+     "https://mapbiomas.org"),
+    ("Hansen Global Forest Change",
+     "Hansen, M. C. et al. (2013). High-Resolution Global Maps of 21st-Century "
+     "Forest Cover Change. Science 342, 850–853. CC-BY 4.0 license.",
+     "https://glad.earthengine.app/view/global-forest-change"),
+    ("National Forest Inventory (IFN)",
+     "Brazilian Forest Service — open data, CC-BY license.",
+     "https://dados.florestal.gov.br"),
+    ("Google Earth Engine",
+     "Gorelick, N. et al. (2017). Google Earth Engine: Planetary-scale geospatial "
+     "analysis for everyone. Remote Sensing of Environment 202, 18–27.",
+     "https://earthengine.google.com"),
+    ("Base maps",
      "Esri World Imagery; OpenStreetMap contributors; Google.",
      "https://www.openstreetmap.org/copyright"),
 ]

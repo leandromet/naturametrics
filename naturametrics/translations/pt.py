@@ -259,6 +259,159 @@ TRANSLATIONS_PT: dict[str, str] = {
     "err_vegetation_age_failed": "Falha ao calcular a idade da vegetação: {exc}",
     "err_no_vegetation_age": "Sem dados de idade da vegetação neste ponto.",
 
+    # --- "Como usar" dialog ------------------------------------------------ #
+    "help_trigger": "Como usar",
+    "help_dialog_title": "Como usar o Naturametrics",
+    "help_dialog_desc": (
+        "Análise da história de uso da terra e da paisagem em qualquer "
+        "ponto do Brasil."
+    ),
+    "help_step1_title": "Escolha um ponto",
+    "help_step1_body": (
+        "Clique em qualquer lugar do mapa. Um marcador é criado e quatro "
+        "áreas de análise (1, 2, 5 e 10 km de raio) são desenhadas em volta "
+        "dele. Cliques fora do Brasil são recusados: o MapBiomas cobre "
+        "apenas o território nacional."
+    ),
+    "help_step2_title": "Leia a história de uso da terra",
+    "help_step2_body": (
+        "O gráfico abaixo do mapa traz uma coluna por ano, de 1985 a 2024, "
+        "com as classes do MapBiomas nas cores oficiais. Troque o raio em "
+        "1/2/5/10 km e use o botão «%» para alternar entre hectares e "
+        "proporção da área."
+    ),
+    "help_step3_title": "Troque o mapa base",
+    "help_step3_body": (
+        "O padrão é o híbrido do Google, que traz nomes de municípios e "
+        "estradas — útil para conferir onde você está. A lista inclui "
+        "ainda o mosaico SPOT de 2008 do Brasil, em cor natural e em "
+        "falsa-cor infravermelha: ele cobre só as áreas florestais do "
+        "país, então há vazios fora desse recorte, e fica desenhado por "
+        "cima do mapa base escolhido antes."
+    ),
+    "help_step4_title": "Veja a cobertura no mapa",
+    "help_step4_body": (
+        "Ligue «MapBiomas 10.1» na barra lateral. O controle «Ano» percorre "
+        "1985–2024 — todos os anos são pré-carregados, então a troca é "
+        "imediata e o mapa não sai do lugar. «Opacidade» controla o quanto "
+        "do mapa base aparece por baixo."
+    ),
+    "help_step5_title": "Compare dois anos",
+    "help_step5_body": (
+        "«Cortina deslizante» mostra dois anos ao mesmo tempo, separados "
+        "por uma linha branca que você arrasta pelo mapa. O ano da "
+        "esquerda é escolhido no próprio painel; o da direita é o ano "
+        "selecionado em «Cobertura do solo». Cada lado tem sua própria "
+        "opacidade."
+    ),
+    "help_step6_title": "Encontre candidatos a recuperação",
+    "help_step6_body": (
+        "«Mudança na vegetação natural» destaca em vermelho o que era "
+        "vegetação natural no ano base e deixou de ser, e em verde o que "
+        "regenerou. O padrão é 2008, marco do Código Florestal: supressão "
+        "posterior a 22/07/2008 tem obrigação de recomposição."
+    ),
+    "help_step7_title": "Trabalhe com os conglomerados do IFN",
+    "help_step7_body": (
+        "Ligue «Conglomerados» na barra lateral para ver os 17.479 pontos "
+        "do Inventário Florestal Nacional, e filtre por região, bioma, "
+        "estado e município — o mapa enquadra a seleção sozinho. "
+        "Aproximando o zoom, os pontos ficam interativos: pare o cursor "
+        "sobre um para ver a cobertura num raio de 10 km hoje e em 1985 — "
+        "e o próprio mapa mostra o MapBiomas só dentro desse raio, no ano "
+        "escolhido. Clique para rodar a análise completa nas coordenadas "
+        "oficiais dele."
+    ),
+    "help_step8_title": "Some vários conglomerados",
+    "help_step8_body": (
+        "Ligue «Seleção múltipla» na barra lateral e clique nos "
+        "conglomerados que interessam — clicar de novo remove — ou segure "
+        "Ctrl (Cmd no Mac) e arraste para pegar uma área inteira de uma "
+        "vez. O gráfico passa a mostrar a soma das áreas de cada raio em "
+        "todos eles, e o mapa desenha os buffers de todos ao mesmo tempo. "
+        "Atenção: buffers que se sobrepõem são contados uma vez em cada "
+        "conglomerado, então o total não é a área da união."
+    ),
+    "help_step9_title": "Baixe os dados",
+    "help_step9_body": (
+        "Em «Baixar dados», no topo da página. São duas planilhas ODS "
+        "independentes: a do ponto de estudo atual, com uma aba por raio e "
+        "o pixel do próprio ponto ano a ano; e a da seleção de "
+        "conglomerados — pelos filtros do mapa ou pelos pontos escolhidos "
+        "à mão — onde você marca o que quer: lista de pontos, classe do "
+        "pixel ano a ano, e o histórico dos buffers — com uma aba por "
+        "raio, e a opção de exportar um raio só, que faz caber muito mais "
+        "conglomerados. Toda planilha abre com uma aba «metadados» "
+        "dizendo como cada número foi calculado."
+    ),
+    "help_triage_callout": (
+        "Esta camada é uma triagem, não um laudo. Não considera CAR, "
+        "APP/Reserva Legal, porte do imóvel nem autorizações de "
+        "supressão. Use-a para orientar a investigação, não para "
+        "concluí-la."
+    ),
+    "help_limitations_title": "Limitações que valem conhecer",
+    "help_limit_1": (
+        "Resolução de 30 m: num raio de 1 km cabem cerca de 3.500 pixels, "
+        "então poucos pixels mal classificados já mexem nas porcentagens."
+    ),
+    "help_limit_2": (
+        "A série do MapBiomas começa em 1985 — não é possível saber a "
+        "idade de vegetação que já existia antes disso."
+    ),
+    "help_limit_3": (
+        "As áreas são calculadas com a área real do pixel "
+        "(ee.Image.pixelArea), que varia com a latitude; um valor fixo de "
+        "0,09 ha superestimaria a área."
+    ),
+    "help_limit_4": (
+        "As classes do MapBiomas não são seguras para daltonismo — a "
+        "legenda sempre traz o nome ao lado da cor."
+    ),
+
+    # --- "Como citar" dialog ------------------------------------------------ #
+    "cite_trigger": "Como citar",
+    "cite_dialog_title": "Como citar",
+    "cite_dialog_desc": (
+        "Se o Naturametrics contribuiu para o seu trabalho, cite-o e cite "
+        "também as bases de dados utilizadas."
+    ),
+    "cite_suggested_title": "Citação sugerida",
+    "cite_copy_citation": "Copiar citação",
+    "cite_bibtex_title": "BibTeX",
+    "cite_copy_bibtex": "Copiar BibTeX",
+    "cite_authors_title": "Autores e instituições",
+    "cite_sources_title": "Bases de dados — cite também",
+    "cite_sources_desc": (
+        "Cada base tem exigências próprias de atribuição. Ao publicar "
+        "figuras ou números obtidos aqui, cite as que foram usadas."
+    ),
+    "cite_spot_callout": (
+        "As imagens SPOT 2008 (Brazil Forest Imagery Dataset) exigem "
+        "aceite de licença específica do Google e ainda não estão "
+        "habilitadas nesta instância."
+    ),
+
+    # --- AI-disclaimer dialog ------------------------------------------------ #
+    "ai_trigger": "Aviso sobre uso de IA",
+    "ai_dialog_desc": "Como este aplicativo foi construído, e com que ajuda.",
+    "ai_para1": (
+        "O código do Naturametrics foi escrito com assistência de modelos "
+        "de IA da Anthropic — Claude Opus e Claude Sonnet —, sob "
+        "supervisão e revisão do autor em cada etapa. A arquitetura, os "
+        "padrões de estado e a maior parte das convenções de interface "
+        "partem do Yvynation, uma plataforma irmã já madura para análise "
+        "de terras indígenas, também desenvolvida com o mesmo processo."
+    ),
+    "ai_para2": (
+        "Isso significa que grandes trechos deste aplicativo — desde a "
+        "integração com o Earth Engine até os componentes de interface — "
+        "foram adaptados ou reescritos a partir do que já funcionava no "
+        "Yvynation, em vez de criados do zero."
+    ),
+    "ai_see_yourself_title": "Veja por si mesmo",
+    "ai_yvynation_link": "Yvynation — aplicativo em produção",
+
     # --- language switcher ---------------------------------------------- #
     "language_label": "Idioma",
 }

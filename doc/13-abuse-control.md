@@ -111,11 +111,19 @@ gcloud storage cat gs://naturametrics-abuse-control/logs/2026-08-19/*.json
 
 ## 4. What was checked before building this (Yvynation)
 
-Before writing a bucket-backed limiter, Yvynation was checked for one to reuse. It does
-not have one: its own bucket holds export ZIPs only (read-only from the app's side —
-Earth Engine's own export tasks write to it, the app never does), and grepping its
-`state/`, `pages/` and `components/` trees for rate-limiting, IP extraction or a
-confirm-before-expensive-action UI pattern turned up nothing. Everything in this module
-was written for Naturametrics specifically, on a bucket of its own — sharing Yvynation's
-bucket was considered and dropped once it was clear there was no existing mechanism in
-it to extend, and a dedicated bucket costs a few objects' worth of storage either way.
+Before writing a bucket-backed limiter, Yvynation was checked for one to reuse. At the
+time, it did not have one: its own bucket held export ZIPs only (read-only from the
+app's side — Earth Engine's own export tasks write to it, the app never does), and
+grepping its `state/`, `pages/` and `components/` trees for rate-limiting, IP extraction
+or a confirm-before-expensive-action UI pattern turned up nothing. Everything in this
+module was written for Naturametrics specifically, on a bucket of its own — sharing
+Yvynation's bucket was considered and dropped once it was clear there was no existing
+mechanism in it to extend, and a dedicated bucket costs a few objects' worth of storage
+either way.
+
+**Update:** this finding is what prompted porting the same pattern to Yvynation
+afterward — see `yvynation`'s own `docs/ABUSE_CONTROL.md`
+(`utils/abuse_control.py`, gating `run_batch_processing`). It runs on its own bucket
+(`yvynation-abuse-control`), not this one — the two apps are separate Cloud Run
+services, and sharing a limiter bucket would let a bug or outage in either app's logic
+throttle the other's.

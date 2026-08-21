@@ -144,11 +144,12 @@ def forest_age_line_figure(df: pd.DataFrame, lang: str = "pt") -> go.Figure:
         )
         return _style_age_line(fig, lang)
 
+    name_col = "class_pt" if lang == "pt" else "class_en"
     fig.add_trace(go.Scatter(
         x=df["year"], y=df["age"], mode="lines+markers",
         line=dict(color="#2f6f4f", width=2),
         marker=dict(color=df["color"], size=7, line=dict(width=1, color="white")),
-        customdata=df["class_pt"],
+        customdata=df[name_col] if name_col in df.columns else df["class_pt"],
         hovertemplate=(
             "<b>%{x}</b><br>idade: %{y} anos<br>%{customdata}<extra></extra>"
             if lang == "pt" else

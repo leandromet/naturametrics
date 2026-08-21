@@ -33,7 +33,7 @@ def _land_use_panel() -> rx.Component:
         rx.flex(
             rx.hstack(
                 rx.icon("chart-column", size=15, color="var(--jade-11)"),
-                rx.text("História de uso da terra", size="2", weight="bold",
+                rx.text(AppState.tr["landuse_title"], size="2", weight="bold",
                         white_space="nowrap"),
                 # The coordinate is already shown in the side panel, so on a
                 # phone it is dropped rather than allowed to collide with the
@@ -57,10 +57,10 @@ def _land_use_panel() -> rx.Component:
                     AppState.has_result | AppState.multi_active,
                     rx.button(
                         rx.icon("download", size=13),
-                        rx.text("Baixar dados", size="1"),
+                        rx.text(AppState.tr["download_button"], size="1"),
                         on_click=AppState.set_export_open(True),
                         size="1", variant="ghost", color_scheme="jade",
-                        aria_label="Baixar dados deste ponto",
+                        aria_label=AppState.tr["download_point_aria"],
                     ),
                     rx.fragment(),
                 ),
@@ -97,7 +97,7 @@ def _land_use_panel() -> rx.Component:
             rx.center(
                 rx.vstack(
                     rx.spinner(size="2"),
-                    rx.text("Reduzindo 40 anos sobre 4 buffers…",
+                    rx.text(AppState.tr["analysis_running"],
                             size="1", color_scheme="gray"),
                     spacing="2", align="center",
                 ),
@@ -129,7 +129,7 @@ def _land_use_panel() -> rx.Component:
                         ),
                         rx.vstack(
                             rx.text(
-                                "Classes principais (2024)",
+                                AppState.tr["top_classes_title"],
                                 size="1", weight="bold", color_scheme="gray",
                                 style={"textTransform": "uppercase",
                                        "letterSpacing": "0.06em"},
@@ -161,13 +161,13 @@ def _land_use_panel() -> rx.Component:
 def _age_summary_line(row: rx.Var) -> rx.Component:
     return rx.vstack(
         rx.hstack(
-            rx.text("Área natural (registrada)", size="1", color_scheme="gray"),
+            rx.text(AppState.tr["area_natural_label"], size="1", color_scheme="gray"),
             rx.spacer(),
             rx.text(row["total"], size="1", weight="medium"),
             width="100%",
         ),
         rx.hstack(
-            rx.text("Mediana (datada)", size="1", color_scheme="gray"),
+            rx.text(AppState.tr["median_label"], size="1", color_scheme="gray"),
             rx.spacer(),
             rx.text(row["median"], size="1", weight="medium"),
             width="100%",
@@ -175,7 +175,7 @@ def _age_summary_line(row: rx.Var) -> rx.Component:
         rx.hstack(
             rx.box(width="10px", height="10px", border_radius="2px",
                    background="#264653", flex_shrink="0"),
-            rx.text("Sem alteração observada", size="1", flex="1"),
+            rx.text(AppState.tr["no_change_label"], size="1", flex="1"),
             rx.text(row["censored_pct"], size="1", weight="medium"),
             spacing="2", align="center", width="100%",
         ),
@@ -188,7 +188,7 @@ def _age_summary_line(row: rx.Var) -> rx.Component:
         rx.cond(
             AppState.change_has_data,
             rx.vstack(
-                rx.text("Mudança 2008→2024", size="1", weight="bold",
+                rx.text(AppState.tr["change_title"], size="1", weight="bold",
                         color_scheme="gray",
                         style={"textTransform": "uppercase",
                                "letterSpacing": "0.06em"}),
@@ -221,7 +221,7 @@ def _forest_age_panel() -> rx.Component:
         rx.flex(
             rx.hstack(
                 rx.icon("trees", size=15, color="var(--jade-11)"),
-                rx.text("Idade da vegetação", size="2", weight="bold",
+                rx.text(AppState.tr["vegetation_age_title"], size="2", weight="bold",
                         white_space="nowrap"),
                 spacing="2", align="center",
                 flex=["1 1 100%", "1 1 100%", "1 1 auto", "1 1 auto"],
@@ -246,7 +246,7 @@ def _forest_age_panel() -> rx.Component:
             rx.center(
                 rx.vstack(
                     rx.spinner(size="2"),
-                    rx.text("Lendo a série de desmatamento e vegetação secundária…",
+                    rx.text(AppState.tr["age_running"],
                             size="1", color_scheme="gray"),
                     spacing="2", align="center",
                 ),
@@ -317,12 +317,10 @@ def results_drawer() -> rx.Component:
             rx.center(
                 rx.vstack(
                     rx.icon("map-pin", size=22, color="var(--gray-8)"),
-                    rx.text("Clique no mapa para escolher um ponto",
+                    rx.text(AppState.tr["empty_state_title"],
                             size="2", weight="medium", color_scheme="gray"),
                     rx.text(
-                        "A história de uso da terra e a idade da vegetação, "
-                        "de 1985/1987 a 2024, serão calculadas para raios de "
-                        "1, 2, 5 e 10 km em volta dele.",
+                        AppState.tr["empty_state_body"],
                         size="1", color_scheme="gray", text_align="center",
                         style={"maxWidth": "34ch"},
                     ),

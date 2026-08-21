@@ -122,6 +122,7 @@ def point_forest_age_series(p: Point) -> tuple[pd.DataFrame, Provenance]:
             "censored": age is not None and age >= fa.CENSORED_AGE,
             "class_id": class_id,
             "class_pt": fa.dsv_label(class_id, "pt"),
+            "class_en": fa.dsv_label(class_id, "en"),
             "color": fa.dsv_color(class_id),
         })
 
@@ -273,7 +274,7 @@ def aggregate_forest_age(frames: list[pd.DataFrame]) -> pd.DataFrame:
     return out.sort_values(["radius_km", "age"]).reset_index(drop=True)
 
 
-def age_summary(df: pd.DataFrame, radius_km: float) -> dict[str, Any]:
+def age_summary(df: pd.DataFrame, radius_km: float, lang: str = "pt") -> dict[str, Any]:
     """Headline numbers for one buffer — doc/10 §5.1: never a bare mean.
 
     Median age is computed only over the *dated* (non-censored) area, and the
@@ -308,5 +309,5 @@ def age_summary(df: pd.DataFrame, radius_km: float) -> dict[str, Any]:
         "censored_pct": round(censored_ha / total_ha * 100.0, 1) if total_ha else 0.0,
         "dated_area_ha": round(dated_ha, 1),
         "median_dated_age": round(median_age, 1) if median_age is not None else None,
-        "censored_label": fa.censored_label(),
+        "censored_label": fa.censored_label(lang),
     }

@@ -105,9 +105,8 @@ class AnalysisMixin(rx.State, mixin=True):
             async with self:
                 if token == self._run_token:
                     self.analysis_running = False
-                    self.analysis_error = (
-                        f"Falha ao consultar o Earth Engine: {exc}"
-                    )
+                    self.analysis_error = self.tr["err_earth_engine_query"].format(
+                        exc=exc)
             return
 
         async with self:
@@ -121,9 +120,7 @@ class AnalysisMixin(rx.State, mixin=True):
             self.analysis_running = False
             self.has_result = not df.empty
             if df.empty:
-                self.analysis_error = (
-                    "Nenhuma cobertura do solo encontrada neste ponto."
-                )
+                self.analysis_error = self.tr["err_no_landcover"]
             self.age_running = True
             self.age_error = ""
 
@@ -148,7 +145,8 @@ class AnalysisMixin(rx.State, mixin=True):
             async with self:
                 if token == self._run_token:
                     self.age_running = False
-                    self.age_error = f"Falha ao calcular a idade da vegetação: {exc}"
+                    self.age_error = self.tr["err_vegetation_age_failed"].format(
+                        exc=exc)
             return
 
         async with self:
@@ -162,7 +160,7 @@ class AnalysisMixin(rx.State, mixin=True):
             self._change_provenance = change_prov.to_dict()
             self.age_running = False
             if age_buf_df.empty and age_df.empty:
-                self.age_error = "Sem dados de idade da vegetação neste ponto."
+                self.age_error = self.tr["err_no_vegetation_age"]
 
     def set_selected_radius(self, value: str | list[str]):
         """Set the buffer whose history is charted.
@@ -206,7 +204,8 @@ class AnalysisMixin(rx.State, mixin=True):
 
         df = pd.DataFrame(self._chart_records())
         return land_cover_history_figure(
-            df, self.selected_radius, lang="pt", normalise=self.normalise_chart
+            df, self.selected_radius, lang=self.language,
+            normalise=self.normalise_chart
         )
 
     @rx.var(cache=True)
@@ -231,11 +230,13 @@ class AnalysisMixin(rx.State, mixin=True):
         latest = sub[sub["year"] == sub["year"].max()]
         total = latest["area_ha"].sum()
         rows = latest.nlargest(6, "area_ha")
+        name_col = "class_pt" if self.language == "pt" else "class_en"
         return [
             {
-                "name": str(r["class_pt"]),
+                "name": str(r[name_col]),
                 "color": str(r["color"]),
-                "area": f"{r['area_ha']:,.0f} ha".replace(",", "."),
+                "area": (f"{r['area_ha']:,.0f} ha" if self.language != "pt"
+                         else f"{r['area_ha']:,.0f} ha".replace(",", ".")),
                 "pct": f"{(r['area_ha'] / total * 100):.1f}%",
             }
             for _, r in rows.iterrows()
@@ -247,14 +248,17 @@ class AnalysisMixin(rx.State, mixin=True):
         p = self._multi_provenance if multi else self._provenance
         if not p:
             return ""
-        degraded = " · resultado degradado" if p.get("degraded") else ""
+        degraded = self.tr["provenance_degraded"] if p.get("degraded") else ""
         # The overlap warning belongs here rather than in a tooltip: it is the
         # one thing that makes a sum over sampling units easy to misread.
-        summed = (f" · soma de {len(self.multi_points)} conglomerados "
-                  f"(buffers sobrepostos são contados em cada um)") if multi else ""
+        summed = ""
+        if multi:
+            n = len(self.multi_points)
+            summed = self.tr["provenance_summed_one" if n == 1
+                              else "provenance_summed_many"].format(n=n)
         return (
             f"MapBiomas {p.get('extra', {}).get('collection', '')} · "
-            f"{len(p.get('bands', []))} anos · {p.get('scale_m')} m · "
+            f"{len(p.get('bands', []))} {self.tr['years_unit']} · {p.get('scale_m')} m · "
             f"{p.get('reducer')}{degraded}{summed}"
         )
 
@@ -298,14 +302,16 @@ class AnalysisMixin(rx.State, mixin=True):
     def age_point_figure(self) -> go.Figure:
         import pandas as pd
 
-        return forest_age_line_figure(pd.DataFrame(self._age_point))
+        return forest_age_line_figure(pd.DataFrame(self._age_point),
+                                       lang=self.language)
 
     @rx.var(cache=True)
     def age_histogram_figure(self) -> go.Figure:
         import pandas as pd
 
         df = pd.DataFrame(self._age_buffer_records())
-        return forest_age_histogram_figure(df, self.age_effective_radius)
+        return forest_age_histogram_figure(df, self.age_effective_radius,
+                                            lang=self.language)
 
     @rx.var(cache=True)
     def age_has_summary(self) -> bool:
@@ -320,16 +326,22 @@ class AnalysisMixin(rx.State, mixin=True):
         import pandas as pd
 
         df = pd.DataFrame(self._age_buffer_records())
-        s = age_summary(df, self.age_effective_radius)
+        s = age_summary(df, self.age_effective_radius, lang=self.language)
         if not s:
             return {}
         median = s.get("median_dated_age")
+        pt = self.language == "pt"
+
+        def ha(value: float) -> str:
+            text = f"{value:,.0f} ha"
+            return text.replace(",", ".") if pt else text
+
         return {
-            "total": f"{s['total_natural_area_ha']:,.0f} ha".replace(",", "."),
+            "total": ha(s["total_natural_area_ha"]),
             "censored_pct": f"{s['censored_pct']:.1f}%",
-            "censored_area": f"{s['censored_area_ha']:,.0f} ha".replace(",", "."),
-            "median": (f"{median:.0f} anos".replace(",", ".") if median is not None
-                       else "—"),
+            "censored_area": ha(s["censored_area_ha"]),
+            "median": (f"{median:.0f} {self.tr['years_unit']}"
+                       if median is not None else "—"),
             "censored_label": s["censored_label"],
         }
 
@@ -345,7 +357,8 @@ class AnalysisMixin(rx.State, mixin=True):
     def change_figure(self) -> go.Figure:
         key = f"{self.age_effective_radius:g}"
         row = self._change_stats.get(key, {})
-        return change_bar_figure(row.get("loss_ha", 0.0), row.get("gain_ha", 0.0))
+        return change_bar_figure(row.get("loss_ha", 0.0), row.get("gain_ha", 0.0),
+                                  lang=self.language)
 
     @rx.var(cache=True)
     def age_provenance_line(self) -> str:
@@ -355,7 +368,7 @@ class AnalysisMixin(rx.State, mixin=True):
             p = self._age_point_provenance
         if not p:
             return ""
-        degraded = " · resultado degradado" if p.get("degraded") else ""
+        degraded = self.tr["provenance_degraded"] if p.get("degraded") else ""
         return (
             f"MapBiomas Desmatamento e Vegetação Secundária v3 · "
             f"{p.get('extra', {}).get('reference_year', '')} · {p.get('scale_m')} m · "

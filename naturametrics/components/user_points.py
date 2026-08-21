@@ -23,23 +23,20 @@ def enviar_dados_dialog() -> rx.Component:
         rx.dialog.trigger(
             rx.button(
                 rx.icon("clipboard-list", size=15),
-                rx.text("Enviar dados", display=["none", "none", "block", "block"]),
+                rx.text(AppState.tr["send_button"],
+                       display=["none", "none", "block", "block"]),
                 size="1", variant="soft", color_scheme="gray",
-                aria_label="Enviar lista de coordenadas",
+                aria_label=AppState.tr["send_list_aria"],
             )
         ),
         rx.dialog.content(
-            rx.dialog.title("Enviar lista de coordenadas"),
+            rx.dialog.title(AppState.tr["send_dialog_title"]),
             rx.dialog.description(
-                "Cole uma lista de pontos — um por linha — para usá-la no mapa "
-                "no lugar dos conglomerados do IFN: passar o mouse ou clicar em "
-                "um ponto passa a se referir a esta lista, e a análise completa "
-                "de todos os pontos pode ser baixada depois. Apenas colar texto "
-                "é aceito, não upload de arquivo.",
+                AppState.tr["send_dialog_desc"],
                 size="2", color_scheme="gray", margin_bottom="0.75rem",
             ),
             rx.vstack(
-                rx.text("Formato: nome (opcional), latitude, longitude",
+                rx.text(AppState.tr["send_format_label"],
                         size="1", weight="medium"),
                 rx.code_block(
                     AppState.user_points_example,
@@ -55,13 +52,13 @@ def enviar_dados_dialog() -> rx.Component:
                 ),
                 rx.hstack(
                     rx.text(
-                        f"Até {AppState.user_points_max} pontos por lista.",
+                        AppState.user_points_max_label,
                         size="1", color_scheme="gray",
                     ),
                     rx.spacer(),
                     rx.cond(
                         AppState.user_points_active,
-                        rx.badge(f"{AppState.user_points_count} pontos ativos",
+                        rx.badge(AppState.user_points_active_label,
                                  size="1", variant="soft", color_scheme="jade"),
                         rx.fragment(),
                     ),
@@ -79,7 +76,7 @@ def enviar_dados_dialog() -> rx.Component:
                 rx.hstack(
                     rx.button(
                         rx.icon("upload", size=14),
-                        "Enviar",
+                        AppState.tr["submit_button"],
                         on_click=AppState.submit_user_points,
                         disabled=AppState.user_points_text == "",
                         size="2", color_scheme="jade",
@@ -88,7 +85,7 @@ def enviar_dados_dialog() -> rx.Component:
                         AppState.user_points_active,
                         rx.button(
                             rx.icon("rotate-ccw", size=14),
-                            "Resetar",
+                            AppState.tr["reset_button"],
                             on_click=AppState.reset_user_points,
                             size="2", variant="soft", color_scheme="gray",
                         ),
@@ -99,7 +96,8 @@ def enviar_dados_dialog() -> rx.Component:
                 spacing="3", align_items="start", width="100%",
             ),
             rx.flex(
-                rx.dialog.close(rx.button("Fechar", size="2", variant="soft")),
+                rx.dialog.close(rx.button(AppState.tr["close_button"], size="2",
+                                          variant="soft")),
                 justify="end", margin_top="1rem",
             ),
             max_width=["94vw", "94vw", "560px", "560px"],

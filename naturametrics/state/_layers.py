@@ -25,13 +25,8 @@ from ..services import layers as layer_service
 logger = logging.getLogger(__name__)
 
 #: What a select shows for "no filter". Radix selects cannot carry an empty
-#: string as a value, so the sentinel lives here and is translated at the state
-#: boundary — everything below :func:`_unset` speaks the empty-string convention.
-ALL_OPTION = "Todos"
-
-
-def _unset(value: str) -> str:
-    return "" if value == ALL_OPTION else value
+#: string as a value, so the sentinel is the current language's "All" — everything
+#: below :meth:`LayersMixin._unset` speaks the empty-string convention.
 
 
 class LayersMixin(rx.State, mixin=True):
@@ -303,11 +298,19 @@ class LayersMixin(rx.State, mixin=True):
                 # licence-gated, and a silent revert would look like a bug in
                 # the select rather than a permission the account lacks.
                 self.basemap = self.xyz_basemap
-                self.basemap_error = (
-                    f"«{ds.EE_BASEMAPS[key]['label_pt']}» indisponível — a conta "
-                    f"pode não ter aceitado a licença deste conjunto."
+                label_key = "label_pt" if self.language == "pt" else "label_en"
+                self.basemap_error = self.tr["basemap_unavailable"].format(
+                    label=ds.EE_BASEMAPS[key][label_key]
                 )
             self._refresh_layers()
+
+    def set_basemap_by_label(self, label: str):
+        """Bridge for the select, which shows labels in the current language."""
+        key = "label_pt" if self.language == "pt" else "label_en"
+        lookup = {v[key]: k for k, v in ds.ALL_BASEMAPS.items()}
+        basemap_key = lookup.get(label)
+        if basemap_key:
+            return type(self).set_basemap(basemap_key)
 
     def set_mapbiomas_opacity(self, value: list[int | float]):
         """Slider gives a list; Reflex sliders are range-capable."""
@@ -613,17 +616,20 @@ class LayersMixin(rx.State, mixin=True):
             return
         return type(self).apply_ifn_filters
 
+    def _unset(self, value: str) -> str:
+        return "" if value == self.tr["filter_all"] else value
+
     def set_ifn_region(self, value: str):
-        return self._set_ifn_filter(ifn_region=_unset(value))
+        return self._set_ifn_filter(ifn_region=self._unset(value))
 
     def set_ifn_uf(self, value: str):
-        return self._set_ifn_filter(ifn_uf=_unset(value))
+        return self._set_ifn_filter(ifn_uf=self._unset(value))
 
     def set_ifn_municipality(self, value: str):
-        return self._set_ifn_filter(ifn_municipality=_unset(value))
+        return self._set_ifn_filter(ifn_municipality=self._unset(value))
 
     def set_ifn_biome(self, value: str):
-        return self._set_ifn_filter(ifn_biome=_unset(value))
+        return self._set_ifn_filter(ifn_biome=self._unset(value))
 
     def clear_ifn_filters(self):
         self.ifn_region = ""
@@ -664,6 +670,23 @@ class LayersMixin(rx.State, mixin=True):
     # ---------------------------------------------------------------------- #
 
     @rx.var
+    def basemap_label(self) -> str:
+        key = "label_pt" if self.language == "pt" else "label_en"
+        return ds.ALL_BASEMAPS[self.basemap][key]
+
+    @rx.var
+    def basemap_options(self) -> list[str]:
+        key = "label_pt" if self.language == "pt" else "label_en"
+        return [v[key] for v in ds.ALL_BASEMAPS.values()]
+
+    @rx.var
+    def basemap_note(self) -> str:
+        if self.basemap not in ds.EE_BASEMAPS:
+            return ""
+        key = "note_pt" if self.language == "pt" else "note_en"
+        return ds.EE_BASEMAPS[self.basemap].get(key, "")
+
+    @rx.var
     def opacity_pct(self) -> int:
         return int(round(self.mapbiomas_opacity * 100))
 
@@ -674,12 +697,13 @@ class LayersMixin(rx.State, mixin=True):
     @rx.var
     def ee_status_label(self) -> str:
         if self.ee_error:
-            return "Earth Engine indisponível"
+            return self.tr["status_ee_unavailable"]
         if not self.ee_ready:
-            return "Conectando ao Earth Engine…"
+            return self.tr["status_ee_connecting"]
         if self.prefetch_total and self.prefetch_done < self.prefetch_total:
-            return f"Pré-carregando anos… {self.prefetch_done}/{self.prefetch_total}"
-        return f"Earth Engine pronto — {self.prefetch_done} anos em cache"
+            return self.tr["status_ee_prefetching"].format(
+                done=self.prefetch_done, total=self.prefetch_total)
+        return self.tr["status_ee_ready"].format(done=self.prefetch_done)
 
     @rx.var
     def biome_opacity_pct(self) -> int:
@@ -688,42 +712,43 @@ class LayersMixin(rx.State, mixin=True):
     # --- IFN filter options ------------------------------------------------
     # Computed rather than stored: the full município table is 4 100 names and
     # only the list for the selected UF has any business reaching the browser.
-    #: ``ALL_OPTION`` stands in for "no filter" because a Radix select cannot
-    #: hold an empty-string value — it treats it as nothing selected and shows
-    #: the placeholder, so clearing a filter would leave the control blank.
+    #: ``tr["filter_all"]`` stands in for "no filter" because a Radix select
+    #: cannot hold an empty-string value — it treats it as nothing selected and
+    #: shows the placeholder, so clearing a filter would leave the control blank.
 
     @rx.var
     def ifn_region_options(self) -> list[str]:
-        return [ALL_OPTION, *ifn_service.options()["regions"]]
+        return [self.tr["filter_all"], *ifn_service.options()["regions"]]
 
     @rx.var
     def ifn_uf_options(self) -> list[str]:
-        return [ALL_OPTION, *ifn_service.uf_options(self.ifn_region, self.ifn_biome)]
+        return [self.tr["filter_all"],
+                *ifn_service.uf_options(self.ifn_region, self.ifn_biome)]
 
     @rx.var
     def ifn_municipality_options(self) -> list[str]:
-        return [ALL_OPTION, *ifn_service.municipality_options(
+        return [self.tr["filter_all"], *ifn_service.municipality_options(
             self.ifn_uf, self.ifn_biome)]
 
     @rx.var
     def ifn_biome_options(self) -> list[str]:
-        return [ALL_OPTION, *ifn_service.biome_options(self.ifn_uf)]
+        return [self.tr["filter_all"], *ifn_service.biome_options(self.ifn_uf)]
 
     @rx.var
     def ifn_region_value(self) -> str:
-        return self.ifn_region or ALL_OPTION
+        return self.ifn_region or self.tr["filter_all"]
 
     @rx.var
     def ifn_uf_value(self) -> str:
-        return self.ifn_uf or ALL_OPTION
+        return self.ifn_uf or self.tr["filter_all"]
 
     @rx.var
     def ifn_municipality_value(self) -> str:
-        return self.ifn_municipality or ALL_OPTION
+        return self.ifn_municipality or self.tr["filter_all"]
 
     @rx.var
     def ifn_biome_value(self) -> str:
-        return self.ifn_biome or ALL_OPTION
+        return self.ifn_biome or self.tr["filter_all"]
 
     @rx.var
     def ifn_has_filter(self) -> bool:
@@ -732,11 +757,14 @@ class LayersMixin(rx.State, mixin=True):
 
     @rx.var
     def ifn_count_label(self) -> str:
-        """e.g. "1.817 conglomerados" — thousands separated the Brazilian way."""
-        n = f"{self.ifn_count:,}".replace(",", ".")
-        return f"{n} conglomerado" + ("" if self.ifn_count == 1 else "s")
+        """e.g. "1.817 conglomerados" / "1,817 clusters"."""
+        n = f"{self.ifn_count:,}"
+        if self.language == "pt":
+            n = n.replace(",", ".")
+        noun = self.tr["ifn_count_label_one" if self.ifn_count == 1
+                        else "ifn_count_label_many"]
+        return f"{n} {noun}"
 
     @rx.var
     def ifn_municipality_hint(self) -> str:
-        return ("Escolha um estado para listar os municípios."
-                if not self.ifn_uf else "")
+        return (self.tr["ifn_municipality_hint"] if not self.ifn_uf else "")

@@ -62,9 +62,7 @@ class UserPointsMixin(rx.State, mixin=True):
         self.user_points_errors = list(result.errors)
         if result.truncated:
             self.user_points_errors.insert(
-                0,
-                f"A lista tem mais de {USER_POINTS_MAX_LINES} pontos válidos; "
-                f"apenas os primeiros {USER_POINTS_MAX_LINES} foram mantidos."
+                0, self.tr["send_truncated"].format(max=USER_POINTS_MAX_LINES)
             )
         self._user_points_version += 1
 
@@ -107,6 +105,14 @@ class UserPointsMixin(rx.State, mixin=True):
     @rx.var(cache=True)
     def user_points_max(self) -> int:
         return USER_POINTS_MAX_LINES
+
+    @rx.var(cache=True)
+    def user_points_max_label(self) -> str:
+        return self.tr["send_max_points"].format(max=USER_POINTS_MAX_LINES)
+
+    @rx.var(cache=True)
+    def user_points_active_label(self) -> str:
+        return self.tr["send_active_points"].format(n=self.user_points_count)
 
     @rx.var(cache=True)
     def user_points_example(self) -> str:

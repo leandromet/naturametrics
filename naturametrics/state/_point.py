@@ -54,10 +54,7 @@ class PointMixin(rx.State, mixin=True):
             # Replacing the study point here would also replace the map's
             # overlays and the chart, quietly discarding a selection the user
             # spent real effort building. Refused, with the reason.
-            self.point_error = (
-                "Seleção múltipla ativa: clique nos conglomerados para incluí-los "
-                "ou removê-los. Desligue o modo para escolher um ponto avulso."
-            )
+            self.point_error = self.tr["multi_blocked_point_error"]
             return
 
         # A bare map click carries no identity. Cleared here rather than in the
@@ -66,7 +63,7 @@ class PointMixin(rx.State, mixin=True):
         self._clear_identity()
         try:
             p = point(lat=lat, lon=lon)
-            validate_for_analysis(p)
+            validate_for_analysis(p, messages=self.tr)
         except CoordinateError as exc:
             self.has_point = False
             self.point_error = str(exc)

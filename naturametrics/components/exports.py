@@ -16,8 +16,24 @@ import reflex as rx
 
 from ..config.settings import BUFFER_RADII_KM
 from ..state import AppState
+from ..translations import get_translations
 
 _RADII = ", ".join(f"{r:g}" for r in sorted(BUFFER_RADII_KM))
+
+
+def _tr_radii(key: str) -> rx.Var:
+    """A translated string with ``{radii}`` filled in at build time.
+
+    ``AppState.tr[key]`` is a runtime Var — Python's ``.format()`` cannot run
+    on it in the component tree (only inside state methods, where ``self.tr``
+    is the real dict). ``_RADII`` never changes, so both language variants can
+    be formatted once here and switched with ``rx.cond``.
+    """
+    return rx.cond(
+        AppState.language == "pt",
+        get_translations("pt")[key].format(radii=_RADII),
+        get_translations("en")[key].format(radii=_RADII),
+    )
 
 
 def _check(label: str, detail: str, checked, on_change,
@@ -38,13 +54,13 @@ def _check(label: str, detail: str, checked, on_change,
 def _study_point_section() -> rx.Component:
     return rx.vstack(
         rx.hstack(
-            rx.text("Ponto de estudo", size="2", weight="bold"),
+            rx.text(AppState.tr["section_point"], size="2", weight="bold"),
             rx.spacer(),
             rx.cond(
                 AppState.has_result,
                 rx.badge(AppState.point_label, size="1", variant="soft",
                          color_scheme="jade"),
-                rx.badge("nenhum ponto", size="1", variant="soft",
+                rx.badge(AppState.tr["no_point_badge"], size="1", variant="soft",
                          color_scheme="gray"),
             ),
             width="100%", align="center",
@@ -55,15 +71,12 @@ def _study_point_section() -> rx.Component:
             rx.fragment(),
         ),
         rx.text(
-            f"Uma planilha com: o pixel do próprio ponto ano a ano, uma aba por "
-            f"raio ({_RADII} km) com a série completa 1985–2024, um resumo de "
-            f"variação por classe, o dicionário de classes do MapBiomas e a aba "
-            f"de metadados com a proveniência de cada consulta.",
+            _tr_radii("study_point_desc"),
             size="1", color_scheme="gray", style={"lineHeight": "1.45"},
         ),
         rx.button(
             rx.icon("download", size=14),
-            "Baixar planilha do ponto (.ods)",
+            AppState.tr["download_point_button"],
             on_click=AppState.download_study_point,
             disabled=~AppState.has_result | AppState.export_busy,
             size="2", color_scheme="jade", width="100%",
@@ -71,7 +84,7 @@ def _study_point_section() -> rx.Component:
         rx.cond(
             AppState.has_result,
             rx.fragment(),
-            rx.text("Clique num ponto ou num conglomerado do mapa para habilitar.",
+            rx.text(AppState.tr["download_point_hint"],
                     size="1", color_scheme="gray"),
         ),
         spacing="2", align_items="start", width="100%",
@@ -82,8 +95,9 @@ def _selection_section() -> rx.Component:
     return rx.vstack(
         rx.hstack(
             rx.text(
-                rx.cond(AppState.user_points_active, "Lista enviada",
-                       "Seleção de conglomerados"),
+                rx.cond(AppState.user_points_active,
+                       AppState.tr["selection_title_submitted"],
+                       AppState.tr["selection_title_default"]),
                 size="2", weight="bold",
             ),
             rx.spacer(),
@@ -106,28 +120,23 @@ def _selection_section() -> rx.Component:
         ),
         rx.text(AppState.export_selection_label, size="1", color_scheme="gray"),
         rx.text(
-            "Sai ponto a ponto, um conglomerado por linha — a soma que aparece "
-            "no gráfico é uma leitura, não o formato do arquivo.",
+            AppState.tr["selection_note"],
             size="1", color_scheme="gray",
         ),
         rx.divider(),
         _check(
-            "Lista de conglomerados",
-            "Um por linha: identificador, região, UF, município, bioma e "
-            "coordenadas. Instantâneo.",
+            AppState.tr["check_points_label"],
+            AppState.tr["check_points_detail"],
             AppState.exp_points, AppState.toggle_exp_points,
         ),
         _check(
-            "Classe do pixel, ano a ano",
-            "O pixel de 30 m de cada conglomerado, uma coluna por ano de 1985 a "
-            "2024. Sem limite de tamanho — a seleção inteira sai em segundos.",
+            AppState.tr["check_pixel_label"],
+            AppState.tr["check_pixel_detail"],
             AppState.exp_pixel, AppState.toggle_exp_pixel,
         ),
         _check(
-            f"Histórico dos buffers ({_RADII} km)",
-            "Área por classe e por ano, para cada conglomerado — a mesma conta "
-            "que o gráfico faz. Uma aba por raio. É a parte cara: exportar um "
-            "raio só deixa o arquivo bem menor e mais rápido.",
+            _tr_radii("check_buffers_label"),
+            AppState.tr["check_buffers_detail"],
             AppState.exp_buffers, AppState.toggle_exp_buffers,
             # Never disabled, even over the ceiling. Disabling it would hide the
             # radius selector below — which is the one control that makes a large
@@ -138,7 +147,7 @@ def _selection_section() -> rx.Component:
         rx.cond(
             AppState.exp_buffers,
             rx.vstack(
-                rx.text("Raios a exportar", size="1", color_scheme="gray"),
+                rx.text(AppState.tr["export_radii_label"], size="1", color_scheme="gray"),
                 rx.select(
                     AppState.export_radius_options,
                     value=AppState.export_radius_value,
@@ -184,11 +193,12 @@ def _selection_section() -> rx.Component:
                 ),
                 rx.hstack(
                     rx.button(
-                        "Cancelar", on_click=AppState.cancel_selection_download,
+                        AppState.tr["cancel_button"],
+                        on_click=AppState.cancel_selection_download,
                         size="2", variant="soft", color_scheme="gray", flex="1",
                     ),
                     rx.button(
-                        rx.icon("download", size=14), "Confirmar e baixar",
+                        rx.icon("download", size=14), AppState.tr["confirm_download_button"],
                         on_click=AppState.download_selection,
                         size="2", color_scheme="jade", flex="1",
                     ),
@@ -198,7 +208,7 @@ def _selection_section() -> rx.Component:
             ),
             rx.button(
                 rx.icon("download", size=14),
-                "Baixar planilha da seleção (.ods)",
+                AppState.tr["download_selection_button"],
                 on_click=AppState.request_selection_download,
                 disabled=AppState.export_busy | AppState.export_nothing_selected
                          | (AppState.export_selection_count == 0)
@@ -245,17 +255,16 @@ def exportar_dialog() -> rx.Component:
         rx.dialog.trigger(
             rx.button(
                 rx.icon("download", size=15),
-                rx.text("Baixar dados", display=["none", "none", "block", "block"]),
+                rx.text(AppState.tr["download_button"],
+                       display=["none", "none", "block", "block"]),
                 size="1", variant="soft", color_scheme="gray",
-                aria_label="Baixar dados",
+                aria_label=AppState.tr["download_button"],
             )
         ),
         rx.dialog.content(
-            rx.dialog.title("Baixar dados"),
+            rx.dialog.title(AppState.tr["export_dialog_title"]),
             rx.dialog.description(
-                "Cada download é uma planilha ODS com uma aba por tabela e uma "
-                "aba de metadados com a proveniência completa. Abre no "
-                "LibreOffice, no Excel e no Google Planilhas.",
+                AppState.tr["export_dialog_desc"],
                 size="2", color_scheme="gray", margin_bottom="0.75rem",
             ),
             rx.scroll_area(
@@ -266,10 +275,7 @@ def exportar_dialog() -> rx.Component:
                     rx.divider(),
                     _status(),
                     rx.callout(
-                        "Nenhum número sai daqui sem proveniência: a aba "
-                        "«metadados» diz qual coleção, quais bandas, qual escala "
-                        "e qual redutor produziram cada tabela, e traz as "
-                        "atribuições que devem ser citadas.",
+                        AppState.tr["provenance_callout"],
                         icon="info", size="1", color_scheme="gray", width="100%",
                     ),
                     spacing="4", align_items="start", width="100%",
@@ -278,7 +284,8 @@ def exportar_dialog() -> rx.Component:
                 style={"maxHeight": "62vh", "paddingRight": "1rem"},
             ),
             rx.flex(
-                rx.dialog.close(rx.button("Fechar", size="2", variant="soft")),
+                rx.dialog.close(rx.button(AppState.tr["close_button"], size="2",
+                                          variant="soft")),
                 justify="end", margin_top="1rem",
             ),
             max_width=["94vw", "94vw", "560px", "560px"],

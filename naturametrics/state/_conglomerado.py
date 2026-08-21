@@ -172,7 +172,7 @@ class ConglomeradoMixin(rx.State, mixin=True):
             async with self:
                 if token == self._hover_token:
                     self.hover_loading = False
-                    self.hover_error = "Coordenadas do conglomerado indisponíveis."
+                    self.hover_error = self.tr["hover_coords_unavailable"]
             return
         lat, lon = hover_lat, hover_lon
 
@@ -192,7 +192,7 @@ class ConglomeradoMixin(rx.State, mixin=True):
             async with self:
                 if token == self._hover_token:
                     self.hover_loading = False
-                    self.hover_error = "Não foi possível ler a cobertura aqui."
+                    self.hover_error = self.tr["hover_read_failed"]
             return
 
         async with self:
@@ -209,26 +209,29 @@ class ConglomeradoMixin(rx.State, mixin=True):
         if preview.get("empty"):
             self.hover_rows = []
             self.hover_natural = ""
-            self.hover_note = "Sem cobertura mapeada neste raio."
+            self.hover_note = self.tr["hover_no_coverage"]
             return
+        name_col = "class_pt" if self.language == "pt" else "class_en"
+        pt_decimal = self.language == "pt"
         self.hover_rows = [
-            {"name": str(r["class_pt"]), "color": str(r["color"]),
-             "pct": str(r["pct_label"]),
+            {"name": str(r.get(name_col, r["class_pt"])), "color": str(r["color"]),
+             "pct": (f"{r['pct']:.1f}%".replace(".", ",") if pt_decimal
+                     else f"{r['pct']:.1f}%")
+                    if "pct" in r else str(r["pct_label"]),
              # Signed and in percentage points, with the sign kept for zero-ish
              # values so the column reads as a change column, not a second share.
              "delta": ("+" if r["delta"] > 0 else "") +
-                      f"{r['delta']:.1f}".replace(".", ",") + " pp"}
+                      (f"{r['delta']:.1f}".replace(".", ",") if pt_decimal
+                       else f"{r['delta']:.1f}") + " pp"}
             for r in preview["rows"]
         ]
         first, last = preview["natural_first"], preview["natural_last"]
-        self.hover_natural = (
-            f"Vegetação natural {str(last).replace('.', ',')}% "
-            f"(era {str(first).replace('.', ',')}% em {preview['first_year']})"
-        )
-        self.hover_note = (
-            f"Composição em {preview['last_year']} num raio de "
-            f"{preview['radius_km']:g} km. Clique para a análise completa."
-        )
+        first_s = str(first).replace(".", ",") if pt_decimal else str(first)
+        last_s = str(last).replace(".", ",") if pt_decimal else str(last)
+        self.hover_natural = self.tr["hover_natural_template"].format(
+            last=last_s, first=first_s, year=preview["first_year"])
+        self.hover_note = self.tr["hover_note_template"].format(
+            year=preview["last_year"], radius=f"{preview['radius_km']:g}")
 
     def select_conglomerado(self, props: dict):
         """What clicking a conglomerado does — which depends on the mode.
@@ -326,7 +329,7 @@ class ConglomeradoMixin(rx.State, mixin=True):
             async with self:
                 if token == self._hover_token:
                     self.hover_loading = False
-                    self.hover_error = "Não foi possível ler a cobertura aqui."
+                    self.hover_error = self.tr["hover_read_failed"]
             return
 
         async with self:
@@ -421,16 +424,14 @@ class ConglomeradoMixin(rx.State, mixin=True):
                 return
 
             if len(self._multi_coords) >= MULTI_SELECT_MAX_POINTS:
-                self.multi_error = (
-                    f"Limite de {MULTI_SELECT_MAX_POINTS} conglomerados na "
-                    f"seleção. Remova algum para incluir outro."
-                )
+                self.multi_error = self.tr["multi_limit_reached"].format(
+                    max=MULTI_SELECT_MAX_POINTS)
                 return
 
             try:
                 lat, lon = float(props["lat"]), float(props["lon"])
             except (KeyError, TypeError, ValueError):
-                self.multi_error = "Coordenadas do conglomerado indisponíveis."
+                self.multi_error = self.tr["hover_coords_unavailable"]
                 return
 
             # The ring and the clipped land cover appear on this click, not on
@@ -469,7 +470,8 @@ class ConglomeradoMixin(rx.State, mixin=True):
                 self._multi_coords.pop(key, None)
                 self._multi_meta.pop(key, None)
                 self.multi_busy = False
-                self.multi_error = f"Falha ao analisar {key}: {exc}"
+                self.multi_error = self.tr["multi_analysis_failed"].format(
+                    key=key, exc=exc)
                 self._recompute_multi()
             return
 
@@ -517,8 +519,8 @@ class ConglomeradoMixin(rx.State, mixin=True):
         if not fresh:
             async with self:
                 self.multi_error = (
-                    "Nenhum conglomerado novo nessa área."
-                    if found else "Nenhum conglomerado nessa área."
+                    self.tr["multi_area_none_new"] if found
+                    else self.tr["multi_area_none"]
                 )
             return
 
@@ -526,9 +528,8 @@ class ConglomeradoMixin(rx.State, mixin=True):
         fresh = fresh[:max(room, 0)]
         if not fresh:
             async with self:
-                self.multi_error = (
-                    f"Limite de {MULTI_SELECT_MAX_POINTS} conglomerados atingido."
-                )
+                self.multi_error = self.tr["multi_area_limit_reached"].format(
+                    max=MULTI_SELECT_MAX_POINTS)
             return
 
         async with self:
@@ -544,8 +545,8 @@ class ConglomeradoMixin(rx.State, mixin=True):
                 }
             self.multi_busy = True
             self.multi_error = (
-                f"Área com mais conglomerados que o limite — incluídos os "
-                f"primeiros {len(fresh)}." if truncated else ""
+                self.tr["multi_area_truncated"].format(n=len(fresh))
+                if truncated else ""
             )
             self._refresh_multi_rows()
             self._apply_multi_view()
@@ -623,7 +624,7 @@ class ConglomeradoMixin(rx.State, mixin=True):
                 self._multi_coords.pop(key, None)
                 self._multi_meta.pop(key, None)
             if failed and not self.multi_error:
-                self.multi_error = f"{len(failed)} conglomerado(s) falharam."
+                self.multi_error = self.tr["multi_area_failed"].format(n=len(failed))
             self.multi_busy = False
             self._recompute_multi()
 
@@ -688,7 +689,7 @@ class ConglomeradoMixin(rx.State, mixin=True):
     @rx.var
     def multi_label(self) -> str:
         n = len(self.multi_points)
-        return f"Soma de {n} conglomerado" + ("" if n == 1 else "s")
+        return self.tr["multi_label_one" if n == 1 else "multi_label_many"].format(n=n)
 
     @rx.var
     def multi_conglomerados(self) -> list[str]:

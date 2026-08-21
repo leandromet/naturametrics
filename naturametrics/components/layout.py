@@ -31,6 +31,17 @@ _MOBILE_ONLY = ["flex", "flex", "flex", "none"]
 _DESKTOP_ONLY = ["none", "none", "none", "flex"]
 
 
+def language_switcher() -> rx.Component:
+    return rx.segmented_control.root(
+        rx.segmented_control.item("🇧🇷 PT", value="pt"),
+        rx.segmented_control.item("🇨🇦 EN", value="en"),
+        value=AppState.language,
+        on_change=AppState.set_language,
+        size="1",
+        aria_label=AppState.tr["language_label"],
+    )
+
+
 def header() -> rx.Component:
     return rx.hstack(
         rx.button(
@@ -40,7 +51,7 @@ def header() -> rx.Component:
             variant="ghost",
             color_scheme="gray",
             display=_MOBILE_ONLY,
-            aria_label="Abrir painel de camadas",
+            aria_label=AppState.tr["nav_toggle_layers_aria"],
         ),
         rx.hstack(
             rx.icon("layers", size=20, color=f"var(--{ACCENT}-11)"),
@@ -53,12 +64,13 @@ def header() -> rx.Component:
         ),
         rx.spacer(),
         rx.text(
-            "História de uso da terra e análise da paisagem",
+            AppState.tr["nav_subtitle"],
             size="2",
             color_scheme="gray",
             display=["none", "none", "none", "block"],
         ),
         rx.box(width="1rem", display=["none", "none", "none", "block"]),
+        language_switcher(),
         header_actions(),
         width="100%",
         min_width="0",
@@ -93,13 +105,13 @@ def _mobile_sidebar(sidebar: rx.Component) -> rx.Component:
         rx.box(
             rx.vstack(
                 rx.hstack(
-                    rx.text("Camadas e análise", size="2", weight="bold"),
+                    rx.text(AppState.tr["drawer_title"], size="2", weight="bold"),
                     rx.spacer(),
                     rx.button(
                         rx.icon("x", size=16),
                         on_click=AppState.toggle_sidebar,
                         size="1", variant="ghost", color_scheme="gray",
-                        aria_label="Fechar painel",
+                        aria_label=AppState.tr["drawer_close_aria"],
                     ),
                     width="100%", align="center",
                     padding="0.6rem 0.75rem 0",

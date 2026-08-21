@@ -82,8 +82,8 @@ class ExportMixin(rx.State, mixin=True):
 
     def set_export_source(self, value: str | list[str]):
         raw = value[0] if isinstance(value, (list, tuple)) and value else value
-        self.export_source = "manual" if str(raw).startswith("Seleção manual") \
-            else "filtros"
+        prefix = self.tr["export_source_manual_prefix"]
+        self.export_source = "manual" if str(raw).startswith(prefix) else "filtros"
         self.export_confirm_pending = False
 
     def toggle_exp_points(self, checked: bool):
@@ -142,12 +142,14 @@ class ExportMixin(rx.State, mixin=True):
 
     @rx.var
     def export_source_options(self) -> list[str]:
-        return ["Filtros do mapa", f"Seleção manual ({self.multi_count})"]
+        return [self.tr["export_source_map_filters"],
+                f"{self.tr['export_source_manual_prefix']} ({self.multi_count})"]
 
     @rx.var
     def export_source_value(self) -> str:
-        return (f"Seleção manual ({self.multi_count})"
-                if self.export_source == "manual" else "Filtros do mapa")
+        return (f"{self.tr['export_source_manual_prefix']} ({self.multi_count})"
+                if self.export_source == "manual"
+                else self.tr["export_source_map_filters"])
 
     @rx.var
     def export_manual_available(self) -> bool:
@@ -167,33 +169,39 @@ class ExportMixin(rx.State, mixin=True):
     @rx.var
     def export_selection_label(self) -> str:
         if self.user_points_active:
-            return f"{self.user_points_count} pontos da lista enviada"
+            return self.tr["export_selection_user_points"].format(
+                n=self.user_points_count)
         if self.export_source == "manual":
-            return f"{self.multi_count} conglomerados escolhidos no mapa"
+            return self.tr["export_selection_manual"].format(n=self.multi_count)
         parts = [p for p in (self.ifn_region, self.ifn_biome, self.ifn_uf,
                              self.ifn_municipality) if p]
-        return " · ".join(parts) if parts else "Brasil inteiro (sem filtro)"
+        return " · ".join(parts) if parts else self.tr["export_selection_whole_country"]
 
     @rx.var
     def export_count_label(self) -> str:
         n = self.export_selection_count
-        return f"{n:,} conglomerado".replace(",", ".") + ("" if n == 1 else "s")
+        text = f"{n:,}"
+        if self.language == "pt":
+            text = text.replace(",", ".")
+        noun = self.tr["export_count_one" if n == 1 else "export_count_many"]
+        return f"{text} {noun}"
 
     @rx.var
     def export_radius_options(self) -> list[str]:
-        return ["Todos os raios"] + [f"{r:g} km" for r in sorted(BUFFER_RADII_KM)]
+        return [self.tr["export_radius_all"]] + [
+            f"{r:g} km" for r in sorted(BUFFER_RADII_KM)]
 
     @rx.var
     def export_radius_value(self) -> str:
         return f"{float(self.exp_radius):g} km" if self.exp_radius \
-            else "Todos os raios"
+            else self.tr["export_radius_all"]
 
     @rx.var
     def export_buffer_note(self) -> str:
         """What the buffer export will cost. Advisory — nothing is refused."""
         n = self.export_selection_count
         if n == 0:
-            return "Nenhum conglomerado na seleção atual."
+            return self.tr["export_no_selection"]
         return exports.buffer_estimate_message(n, self._radii())
 
     @rx.var
@@ -242,10 +250,10 @@ class ExportMixin(rx.State, mixin=True):
         """One spreadsheet for the location on screen. No Earth Engine calls."""
         async with self:
             if not self.has_result:
-                self.export_error = "Escolha um ponto no mapa primeiro."
+                self.export_error = self.tr["export_choose_point_first"]
                 return
             self.export_busy = True
-            self.export_stage = "Montando a planilha do ponto"
+            self.export_stage = self.tr["export_stage_building_point"]
             self.export_error = ""
             self.export_result = ""
 
@@ -264,12 +272,12 @@ class ExportMixin(rx.State, mixin=True):
             if not running:
                 break
             async with self:
-                self.export_stage = "Aguardando a idade da vegetação…"
+                self.export_stage = self.tr["export_stage_waiting_age"]
             await asyncio.sleep(0.4)
             waited += 0.4
 
         async with self:
-            self.export_stage = "Montando a planilha do ponto"
+            self.export_stage = self.tr["export_stage_building_point"]
             history, prov = plain(self._history), plain(self._provenance)
             pixel, pixel_prov = plain(self._pixel), plain(self._pixel_provenance)
             age_point = plain(self._age_point)
@@ -337,7 +345,7 @@ class ExportMixin(rx.State, mixin=True):
         async with self:
             spec = self._spec()
             if self.export_nothing_selected:
-                self.export_error = "Marque pelo menos um conjunto de dados."
+                self.export_error = self.tr["export_no_datasets"]
                 return
             self.export_confirm_pending = False
             self.export_busy = True
@@ -345,7 +353,7 @@ class ExportMixin(rx.State, mixin=True):
             self.export_result = ""
             self.export_done = 0
             self.export_total = 0
-            self.export_stage = "Reunindo os conglomerados"
+            self.export_stage = self.tr["export_stage_gathering"]
             client_ip = self.router.session.client_ip
             client_token = self.router.session.client_token
             session_id = self.router.session.session_id
@@ -361,7 +369,7 @@ class ExportMixin(rx.State, mixin=True):
         if not points:
             async with self:
                 self.export_busy = False
-                self.export_error = "Nenhum conglomerado na seleção atual."
+                self.export_error = self.tr["export_no_selection"]
             return
 
         loop = asyncio.get_running_loop()
@@ -397,7 +405,7 @@ class ExportMixin(rx.State, mixin=True):
         try:
             if spec.include_pixel:
                 async with self:
-                    self.export_stage = "Lendo o pixel de cada conglomerado"
+                    self.export_stage = self.tr["export_stage_reading_pixel"]
                 pixel = await loop.run_in_executor(
                     None, exports.selection_pixel_frame, spec)
 
@@ -430,14 +438,14 @@ class ExportMixin(rx.State, mixin=True):
 
             if spec.include_buffers:
                 buffers = await fan_out(exports.selection_buffer_frame,
-                                        "Calculando o uso da terra")
+                                        self.tr["export_stage_computing_landuse"])
                 age = await fan_out(exports.selection_age_frame,
-                                    "Calculando a idade da vegetação")
+                                    self.tr["export_stage_computing_age"])
                 change = await fan_out(exports.selection_change_frame,
-                                       "Calculando a mudança 2008→2024")
+                                       self.tr["export_stage_computing_change"])
 
             async with self:
-                self.export_stage = "Montando a planilha"
+                self.export_stage = self.tr["export_stage_building_sheet"]
             data, name = await loop.run_in_executor(
                 None, exports.selection_workbook, spec, points, pixel, buffers,
                 age, change)
@@ -446,7 +454,7 @@ class ExportMixin(rx.State, mixin=True):
             async with self:
                 self.export_busy = False
                 self.export_stage = ""
-                self.export_error = f"Falha ao gerar a planilha: {exc}"
+                self.export_error = self.tr["export_sheet_failed"].format(exc=exc)
             return
 
         async with self:
@@ -461,7 +469,8 @@ class ExportMixin(rx.State, mixin=True):
                 + (age[2] if age else [])
                 + (change[2] if change else [])
             ))
-            note = f" · {len(failed)} conglomerado(s) falharam" if failed else ""
+            note = (self.tr["export_result_failed_note"].format(n=len(failed))
+                    if failed else "")
             self.export_result = f"{name} ({len(data) // 1024} KiB){note}"
         return rx.download(data=data, filename=name, mime_type=MIMETYPE)
 

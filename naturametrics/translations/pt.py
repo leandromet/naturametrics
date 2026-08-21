@@ -1,0 +1,264 @@
+"""Portuguese — canonical key set. Every other language falls back to this."""
+
+from __future__ import annotations
+
+TRANSLATIONS_PT: dict[str, str] = {
+    # --- header / drawer ------------------------------------------------- #
+    "nav_toggle_layers_aria": "Abrir painel de camadas",
+    "nav_subtitle": "História de uso da terra e análise da paisagem",
+    "drawer_title": "Camadas e análise",
+    "drawer_close_aria": "Fechar painel",
+
+    # --- layer panel: sections -------------------------------------------- #
+    "section_basemap": "Mapa base",
+    "section_landcover": "Cobertura do solo",
+    "section_buffer_preview": "Uso no buffer",
+    "section_compare": "Comparar dois anos",
+    "section_change_mask": "Mudança na vegetação natural",
+    "section_ifn": "Inventário Florestal Nacional",
+    "section_user_points": "Coordenadas enviadas",
+    "section_multi_select": "Seleção múltipla",
+    "section_biomes": "Biomas (IBGE)",
+    "section_point": "Ponto de estudo",
+
+    "year_label": "Ano",
+    "opacity_label": "Opacidade",
+    "opacity_label_compare": "Opacidade — ano à direita",
+    "clear_button": "Limpar",
+    "reset_button": "Reset",
+
+    "buffer_preview_toggle_label": "Mostrar Uso no Buffer",
+    "buffer_preview_text": (
+        "Ao passar o cursor sobre um conglomerado — ou ao escolher um ponto "
+        "— o MapBiomas aparece só dentro do raio de análise, no ano "
+        "selecionado acima. Não consulta o Earth Engine: usa os mesmos "
+        "blocos já pré-carregados."
+    ),
+    "buffer_preview_hidden_note": (
+        "Oculta enquanto «MapBiomas 10.1» está ligado — a cobertura já "
+        "aparece no mapa inteiro."
+    ),
+
+    "compare_toggle_label": "Cortina deslizante",
+    "compare_year_left": "Ano à esquerda",
+    "compare_opacity_left": "Opacidade — ano à esquerda",
+    "compare_note": (
+        "Arraste a linha branca no mapa. À direita fica o ano selecionado "
+        "acima em «Cobertura do solo»."
+    ),
+
+    "change_mask_toggle_label": "Candidatos a recuperação",
+    "change_base_year": "Ano base",
+    "change_loss_label": "Perda de vegetação natural",
+    "change_gain_label": "Regeneração",
+    "change_mask_callout": (
+        "2008 é o marco do Código Florestal: vegetação nativa suprimida "
+        "depois dessa data tem obrigação de recomposição. Esta camada é "
+        "uma triagem, não um laudo — não considera CAR, APP/RL, porte do "
+        "imóvel nem autorizações."
+    ),
+
+    "ifn_toggle_label": "Conglomerados",
+    "filter_all": "Todos",
+    "filter_region": "Região",
+    "filter_biome": "Bioma",
+    "filter_uf": "Estado",
+    "filter_municipality": "Município",
+    "ifn_empty_callout": "Nenhum conglomerado nesta combinação de filtros.",
+    "ifn_municipality_hint": "Escolha um estado para listar os municípios.",
+    "ifn_count_label_one": "conglomerado",
+    "ifn_count_label_many": "conglomerados",
+
+    "user_points_active_note": "Ativa no mapa no lugar dos conglomerados do IFN.",
+
+    "multi_toggle_label": "Somar vários conglomerados",
+    "multi_help_text": (
+        "Clique nos conglomerados para incluir ou remover, ou segure Ctrl "
+        "(Cmd no Mac) e arraste para selecionar uma área inteira. O gráfico "
+        "passa a mostrar a soma das áreas de cada raio. Shift+arrastar "
+        "continua sendo o zoom por área do mapa, e cliques avulsos ficam "
+        "desativados enquanto o modo está ligado."
+    ),
+    "multi_label_one": "Soma de 1 conglomerado",
+    "multi_label_many": "Soma de {n} conglomerados",
+    "multi_blocked_point_error": (
+        "Seleção múltipla ativa: clique nos conglomerados para incluí-los "
+        "ou removê-los. Desligue o modo para escolher um ponto avulso."
+    ),
+
+    "biomes_toggle_label": "Biomas e domínios",
+    "biomes_hover_note": (
+        "Passe o cursor sobre um polígono para ver bioma, domínio "
+        "fitogeográfico e região natural. Os limites estão simplificados "
+        "(~1 km) para desenho no navegador."
+    ),
+
+    "point_click_other": "Clique no mapa para escolher outro ponto.",
+    "point_click_choose": "Clique no mapa para escolher um ponto.",
+
+    "basemap_unavailable": (
+        "«{label}» indisponível — a conta pode não ter aceitado a licença "
+        "deste conjunto."
+    ),
+
+    "status_ee_unavailable": "Earth Engine indisponível",
+    "status_ee_connecting": "Conectando ao Earth Engine…",
+    "status_ee_prefetching": "Pré-carregando anos… {done}/{total}",
+    "status_ee_ready": "Earth Engine pronto — {done} anos em cache",
+
+    # --- results drawer ----------------------------------------------------- #
+    "landuse_title": "História de uso da terra",
+    "download_button": "Baixar dados",
+    "download_point_aria": "Baixar dados deste ponto",
+    "analysis_running": "Reduzindo 40 anos sobre 4 buffers…",
+    "top_classes_title": "Classes principais (2024)",
+    "area_natural_label": "Área natural (registrada)",
+    "median_label": "Mediana (datada)",
+    "no_change_label": "Sem alteração observada",
+    "change_title": "Mudança 2008→2024",
+    "vegetation_age_title": "Idade da vegetação",
+    "age_running": "Lendo a série de desmatamento e vegetação secundária…",
+    "empty_state_title": "Clique no mapa para escolher um ponto",
+    "empty_state_body": (
+        "A história de uso da terra e a idade da vegetação, de 1985/1987 a "
+        "2024, serão calculadas para raios de 1, 2, 5 e 10 km em volta dele."
+    ),
+
+    # --- export dialog ------------------------------------------------------ #
+    "export_dialog_title": "Baixar dados",
+    "export_dialog_desc": (
+        "Cada download é uma planilha ODS com uma aba por tabela e uma aba "
+        "de metadados com a proveniência completa. Abre no LibreOffice, no "
+        "Excel e no Google Planilhas."
+    ),
+    "close_button": "Fechar",
+    "no_point_badge": "nenhum ponto",
+    "study_point_desc": (
+        "Uma planilha com: o pixel do próprio ponto ano a ano, uma aba por "
+        "raio ({radii} km) com a série completa 1985–2024, um resumo de "
+        "variação por classe, o dicionário de classes do MapBiomas e a aba "
+        "de metadados com a proveniência de cada consulta."
+    ),
+    "download_point_button": "Baixar planilha do ponto (.ods)",
+    "download_point_hint": "Clique num ponto ou num conglomerado do mapa para habilitar.",
+    "selection_title_submitted": "Lista enviada",
+    "selection_title_default": "Seleção de conglomerados",
+    "selection_note": (
+        "Sai ponto a ponto, um conglomerado por linha — a soma que aparece "
+        "no gráfico é uma leitura, não o formato do arquivo."
+    ),
+    "check_points_label": "Lista de conglomerados",
+    "check_points_detail": (
+        "Um por linha: identificador, região, UF, município, bioma e "
+        "coordenadas. Instantâneo."
+    ),
+    "check_pixel_label": "Classe do pixel, ano a ano",
+    "check_pixel_detail": (
+        "O pixel de 30 m de cada conglomerado, uma coluna por ano de 1985 a "
+        "2024. Sem limite de tamanho — a seleção inteira sai em segundos."
+    ),
+    "check_buffers_label": "Histórico dos buffers ({radii} km)",
+    "check_buffers_detail": (
+        "Área por classe e por ano, para cada conglomerado — a mesma conta "
+        "que o gráfico faz. Uma aba por raio. É a parte cara: exportar um "
+        "raio só deixa o arquivo bem menor e mais rápido."
+    ),
+    "export_radii_label": "Raios a exportar",
+    "cancel_button": "Cancelar",
+    "confirm_download_button": "Confirmar e baixar",
+    "download_selection_button": "Baixar planilha da seleção (.ods)",
+    "provenance_callout": (
+        "Nenhum número sai daqui sem proveniência: a aba «metadados» diz "
+        "qual coleção, quais bandas, qual escala e qual redutor produziram "
+        "cada tabela, e traz as atribuições que devem ser citadas."
+    ),
+    "export_source_map_filters": "Filtros do mapa",
+    "export_source_manual_prefix": "Seleção manual",
+    "export_selection_user_points": "{n} pontos da lista enviada",
+    "export_selection_manual": "{n} conglomerados escolhidos no mapa",
+    "export_selection_whole_country": "Brasil inteiro (sem filtro)",
+    "export_count_one": "conglomerado",
+    "export_count_many": "conglomerados",
+    "export_radius_all": "Todos os raios",
+    "export_no_selection": "Nenhum conglomerado na seleção atual.",
+    "export_choose_point_first": "Escolha um ponto no mapa primeiro.",
+    "export_stage_building_point": "Montando a planilha do ponto",
+    "export_stage_waiting_age": "Aguardando a idade da vegetação…",
+    "export_stage_computing_landuse": "Calculando o uso da terra",
+    "export_stage_computing_age": "Calculando a idade da vegetação",
+    "export_stage_computing_change": "Calculando a mudança 2008→2024",
+    "export_stage_building_sheet": "Montando a planilha",
+    "export_stage_gathering": "Reunindo os conglomerados",
+    "export_stage_reading_pixel": "Lendo o pixel de cada conglomerado",
+    "export_no_datasets": "Marque pelo menos um conjunto de dados.",
+    "export_sheet_failed": "Falha ao gerar a planilha: {exc}",
+    "export_result_failed_note": " · {n} conglomerado(s) falharam",
+
+    # --- submit-coordinates dialog ------------------------------------------ #
+    "send_button": "Enviar dados",
+    "send_list_aria": "Enviar lista de coordenadas",
+    "send_dialog_title": "Enviar lista de coordenadas",
+    "send_dialog_desc": (
+        "Cole uma lista de pontos — um por linha — para usá-la no mapa no "
+        "lugar dos conglomerados do IFN: passar o mouse ou clicar em um "
+        "ponto passa a se referir a esta lista, e a análise completa de "
+        "todos os pontos pode ser baixada depois. Apenas colar texto é "
+        "aceito, não upload de arquivo."
+    ),
+    "send_format_label": "Formato: nome (opcional), latitude, longitude",
+    "send_max_points": "Até {max} pontos por lista.",
+    "send_active_points": "{n} pontos ativos",
+    "send_truncated": (
+        "A lista tem mais de {max} pontos válidos; apenas os primeiros "
+        "{max} foram mantidos."
+    ),
+    "submit_button": "Enviar",
+
+    # --- coordinate validation ------------------------------------------ #
+    "err_coord_swapped": (
+        "{point} está fora do Brasil, mas {flipped} está dentro — latitude "
+        "e longitude parecem trocadas."
+    ),
+    "err_coord_outside_brazil": (
+        "{point} está fora do Brasil. O MapBiomas cobre apenas o Brasil, "
+        "portanto não há histórico de cobertura do solo para este local."
+    ),
+
+    # --- provenance line ----------------------------------------------------- #
+    "years_unit": "anos",
+    "provenance_degraded": " · resultado degradado",
+    "provenance_summed_one": " · soma de 1 conglomerado (buffers sobrepostos são contados em cada um)",
+    "provenance_summed_many": " · soma de {n} conglomerados (buffers sobrepostos são contados em cada um)",
+
+    # --- conglomerado hover card / multi-select -------------------------- #
+    "hover_no_coverage": "Sem cobertura mapeada neste raio.",
+    "hover_natural_template": "Vegetação natural {last}% (era {first}% em {year})",
+    "hover_note_template": (
+        "Composição em {year} num raio de {radius} km. Clique para a "
+        "análise completa."
+    ),
+    "hover_coords_unavailable": "Coordenadas do conglomerado indisponíveis.",
+    "hover_read_failed": "Não foi possível ler a cobertura aqui.",
+    "multi_limit_reached": (
+        "Limite de {max} conglomerados na seleção. Remova algum para "
+        "incluir outro."
+    ),
+    "multi_analysis_failed": "Falha ao analisar {key}: {exc}",
+    "multi_area_none_new": "Nenhum conglomerado novo nessa área.",
+    "multi_area_none": "Nenhum conglomerado nessa área.",
+    "multi_area_limit_reached": "Limite de {max} conglomerados atingido.",
+    "multi_area_truncated": (
+        "Área com mais conglomerados que o limite — incluídos os "
+        "primeiros {n}."
+    ),
+    "multi_area_failed": "{n} conglomerado(s) falharam.",
+
+    # --- analysis errors --------------------------------------------------- #
+    "err_earth_engine_query": "Falha ao consultar o Earth Engine: {exc}",
+    "err_no_landcover": "Nenhuma cobertura do solo encontrada neste ponto.",
+    "err_vegetation_age_failed": "Falha ao calcular a idade da vegetação: {exc}",
+    "err_no_vegetation_age": "Sem dados de idade da vegetação neste ponto.",
+
+    # --- language switcher ---------------------------------------------- #
+    "language_label": "Idioma",
+}

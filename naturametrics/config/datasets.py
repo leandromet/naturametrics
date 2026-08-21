@@ -90,6 +90,7 @@ EE_BASEMAPS: Dict[str, Dict[str, Any]] = {
         ),
         "max_native_zoom": 16,
         "note_pt": "Mosaico SPOT ~2008, só sobre áreas florestais do Brasil.",
+        "note_en": "SPOT mosaic, ~2008, covering only Brazil's forest areas.",
     },
     "spot_2008_analytic": {
         "label_pt": "SPOT 2008 — Falsa-cor (NIR)",
@@ -105,6 +106,7 @@ EE_BASEMAPS: Dict[str, Dict[str, Any]] = {
         ),
         "max_native_zoom": 16,
         "note_pt": "Infravermelho em vermelho: vegetação de 2008 aparece realçada.",
+        "note_en": "Near-infrared shown in red: 2008 vegetation appears highlighted.",
     },
 }
 

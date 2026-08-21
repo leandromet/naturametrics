@@ -325,6 +325,7 @@ def preview_land_cover(
         {
             "class_id": class_id,
             "class_pt": mb.label(class_id, "pt"),
+            "class_en": mb.label(class_id, "en"),
             "color": mb.color(class_id),
             "pct": round(pct, 1),
             "pct_label": f"{pct:.1f}%".replace(".", ","),

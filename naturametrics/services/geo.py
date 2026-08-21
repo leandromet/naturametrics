@@ -17,9 +17,12 @@ on Earth — for Brazilian coordinates, usually the South Atlantic — and every
 downstream number is computed over open ocean. This has bitten this project's
 sibling apps before.
 
-User-facing messages here are in **Portuguese**, the source language of this
-application (doc/07-ui-ux.md §7). They will move behind i18n keys in Phase 1;
-until then PT is what the UI shows, so PT is what these raise.
+:func:`validate_for_analysis`'s user-facing message is looked up from the
+caller's ``AppState.tr`` (see ``messages`` below) so it renders in whichever
+language the UI is in. The invariant checks in ``Point.__post_init__`` stay
+Portuguese-only — they guard a programmer error (arguments passed in the
+wrong order), not a state reachable through the UI, so no caller has a
+language to hand them.
 
 **The rules, enforced below:**
 
@@ -121,21 +124,35 @@ def looks_swapped(p: Point) -> bool:
     return in_brazil(flipped)
 
 
-def validate_for_analysis(p: Point) -> None:
+#: Fallback wording if a caller does not pass ``messages`` — kept so every
+#: existing call site (and any test) that predates i18n keeps working.
+_DEFAULT_MESSAGES = {
+    "err_coord_swapped": (
+        "{point} está fora do Brasil, mas {flipped} está dentro — latitude "
+        "e longitude parecem trocadas."
+    ),
+    "err_coord_outside_brazil": (
+        "{point} está fora do Brasil. O MapBiomas cobre apenas o Brasil, "
+        "portanto não há histórico de cobertura do solo para este local."
+    ),
+}
+
+
+def validate_for_analysis(p: Point, messages: dict[str, str] | None = None) -> None:
     """Raise :class:`CoordinateError` with a user-facing message if unusable.
 
     Called before any Earth Engine work — reducing over a geometry outside
     MapBiomas' extent wastes a round-trip and returns an empty histogram that
     looks like a bug rather than an out-of-area click.
+
+    ``messages`` carries the two ``err_coord_*`` keys from the caller's
+    ``AppState.tr`` — this module stays decoupled from the translations
+    package and just formats whatever templates it is handed.
     """
     if in_brazil(p):
         return
+    messages = messages or _DEFAULT_MESSAGES
     if looks_swapped(p):
-        raise CoordinateError(
-            f"{p} está fora do Brasil, mas {Point(lat=p.lon, lon=p.lat)} está dentro "
-            f"— latitude e longitude parecem trocadas."
-        )
-    raise CoordinateError(
-        f"{p} está fora do Brasil. O MapBiomas cobre apenas o Brasil, portanto não "
-        f"há histórico de cobertura do solo para este local."
-    )
+        raise CoordinateError(messages["err_coord_swapped"].format(
+            point=str(p), flipped=str(Point(lat=p.lon, lon=p.lat))))
+    raise CoordinateError(messages["err_coord_outside_brazil"].format(point=str(p)))

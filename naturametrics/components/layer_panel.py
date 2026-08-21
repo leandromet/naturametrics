@@ -29,27 +29,18 @@ def _section(title: str, *children) -> rx.Component:
     )
 
 
-#: Notes shown under the select, keyed by basemap. Only the Earth Engine ones
-#: need explaining — a partial mosaic looks broken until you know it is partial.
-_BASEMAP_NOTES = {k: v["note_pt"] for k, v in ds.EE_BASEMAPS.items()}
-
-
 def basemap_control() -> rx.Component:
-    labels = {k: v["label_pt"] for k, v in ds.ALL_BASEMAPS.items()}
     return _section(
-        "Mapa base",
+        AppState.tr["section_basemap"],
         rx.select(
-            list(labels.values()),
-            value=rx.Var.create(labels)[AppState.basemap],
-            on_change=lambda label: AppState.set_basemap(
-                rx.Var.create({v: k for k, v in labels.items()})[label]
-            ),
+            AppState.basemap_options,
+            value=AppState.basemap_label,
+            on_change=AppState.set_basemap_by_label,
             width="100%",
         ),
         rx.cond(
-            rx.Var.create(_BASEMAP_NOTES).contains(AppState.basemap),
-            rx.text(rx.Var.create(_BASEMAP_NOTES)[AppState.basemap],
-                    size="1", color_scheme="gray"),
+            AppState.basemap_note != "",
+            rx.text(AppState.basemap_note, size="1", color_scheme="gray"),
             rx.fragment(),
         ),
         rx.cond(
@@ -63,7 +54,7 @@ def basemap_control() -> rx.Component:
 
 def mapbiomas_control() -> rx.Component:
     return _section(
-        "Cobertura do solo",
+        AppState.tr["section_landcover"],
         rx.hstack(
             rx.switch(
                 checked=AppState.show_mapbiomas,
@@ -84,7 +75,7 @@ def mapbiomas_control() -> rx.Component:
             AppState.show_mapbiomas,
             rx.vstack(
                 rx.hstack(
-                    rx.text("Ano", size="1", color_scheme="gray"),
+                    rx.text(AppState.tr["year_label"], size="1", color_scheme="gray"),
                     rx.spacer(),
                     rx.badge(AppState.mapbiomas_year.to_string(),
                              color_scheme="green", variant="solid"),
@@ -108,8 +99,8 @@ def mapbiomas_control() -> rx.Component:
                     rx.text(
                         rx.cond(
                             AppState.compare_enabled,
-                            "Opacidade — ano à direita",
-                            "Opacidade",
+                            AppState.tr["opacity_label_compare"],
+                            AppState.tr["opacity_label"],
                         ),
                         size="1", color_scheme="gray",
                     ),
@@ -135,28 +126,24 @@ def mapbiomas_control() -> rx.Component:
 def buffer_preview_control() -> rx.Component:
     """MapBiomas shown only inside the buffer of the point under the cursor."""
     return _section(
-        "Uso no buffer",
+        AppState.tr["section_buffer_preview"],
         rx.hstack(
             rx.switch(checked=AppState.show_buffer_preview,
                       on_change=AppState.toggle_buffer_preview),
-            rx.text("Mostrar Uso no Buffer", size="2"),
+            rx.text(AppState.tr["buffer_preview_toggle_label"], size="2"),
             rx.spacer(),
             rx.badge(f"{st.BUFFER_PREVIEW_RADIUS_KM:g} km", size="1",
                      variant="soft", color_scheme="gray"),
             width="100%", align="center", spacing="2",
         ),
         rx.text(
-            "Ao passar o cursor sobre um conglomerado — ou ao escolher um ponto "
-            "— o MapBiomas aparece só dentro do raio de análise, no ano "
-            "selecionado acima. Não consulta o Earth Engine: usa os mesmos "
-            "blocos já pré-carregados.",
+            AppState.tr["buffer_preview_text"],
             size="1", color_scheme="gray",
         ),
         rx.cond(
             AppState.show_mapbiomas,
             rx.text(
-                "Oculta enquanto «MapBiomas 10.1» está ligado — a cobertura já "
-                "aparece no mapa inteiro.",
+                AppState.tr["buffer_preview_hidden_note"],
                 size="1", color_scheme="amber",
             ),
             rx.fragment(),
@@ -167,18 +154,19 @@ def buffer_preview_control() -> rx.Component:
 def compare_control() -> rx.Component:
     """Two MapBiomas years at once, split by a draggable vertical divider."""
     return _section(
-        "Comparar dois anos",
+        AppState.tr["section_compare"],
         rx.hstack(
             rx.switch(checked=AppState.compare_enabled,
                       on_change=AppState.toggle_compare),
-            rx.text("Cortina deslizante", size="2"),
+            rx.text(AppState.tr["compare_toggle_label"], size="2"),
             width="100%", align="center", spacing="2",
         ),
         rx.cond(
             AppState.compare_enabled,
             rx.vstack(
                 rx.hstack(
-                    rx.text("Ano à esquerda", size="1", color_scheme="gray"),
+                    rx.text(AppState.tr["compare_year_left"], size="1",
+                            color_scheme="gray"),
                     rx.spacer(),
                     rx.badge(AppState.compare_year.to_string(),
                              color_scheme="amber", variant="solid"),
@@ -190,7 +178,7 @@ def compare_control() -> rx.Component:
                     on_change=AppState.set_compare_year, width="100%",
                 ),
                 rx.hstack(
-                    rx.text("Opacidade — ano à esquerda", size="1",
+                    rx.text(AppState.tr["compare_opacity_left"], size="1",
                             color_scheme="gray"),
                     rx.spacer(),
                     rx.text(AppState.compare_opacity_pct.to_string() + "%",
@@ -204,8 +192,7 @@ def compare_control() -> rx.Component:
                     width="100%",
                 ),
                 rx.text(
-                    "Arraste a linha branca no mapa. À direita fica o ano "
-                    "selecionado acima em «Cobertura do solo».",
+                    AppState.tr["compare_note"],
                     size="1", color_scheme="gray",
                 ),
                 spacing="2", width="100%", padding_top="0.25rem",
@@ -218,18 +205,19 @@ def compare_control() -> rx.Component:
 def change_mask_control() -> rx.Component:
     """Natural vegetation lost or regrown since the Forest Code baseline."""
     return _section(
-        "Mudança na vegetação natural",
+        AppState.tr["section_change_mask"],
         rx.hstack(
             rx.switch(checked=AppState.show_change_mask,
                       on_change=AppState.toggle_change_mask),
-            rx.text("Candidatos a recuperação", size="2"),
+            rx.text(AppState.tr["change_mask_toggle_label"], size="2"),
             width="100%", align="center", spacing="2",
         ),
         rx.cond(
             AppState.show_change_mask,
             rx.vstack(
                 rx.hstack(
-                    rx.text("Ano base", size="1", color_scheme="gray"),
+                    rx.text(AppState.tr["change_base_year"], size="1",
+                            color_scheme="gray"),
                     rx.spacer(),
                     rx.badge(AppState.change_from_year.to_string(),
                              color_scheme="red", variant="solid"),
@@ -243,20 +231,17 @@ def change_mask_control() -> rx.Component:
                 rx.hstack(
                     rx.box(width="10px", height="10px", border_radius="2px",
                            background=cm.CHANGE_COLORS[cm.CHANGE_LOSS]),
-                    rx.text("Perda de vegetação natural", size="1"),
+                    rx.text(AppState.tr["change_loss_label"], size="1"),
                     spacing="2", align="center", width="100%",
                 ),
                 rx.hstack(
                     rx.box(width="10px", height="10px", border_radius="2px",
                            background=cm.CHANGE_COLORS[cm.CHANGE_GAIN]),
-                    rx.text("Regeneração", size="1"),
+                    rx.text(AppState.tr["change_gain_label"], size="1"),
                     spacing="2", align="center", width="100%",
                 ),
                 rx.callout(
-                    "2008 é o marco do Código Florestal: vegetação nativa suprimida "
-                    "depois dessa data tem obrigação de recomposição. Esta camada é "
-                    "uma triagem, não um laudo — não considera CAR, APP/RL, porte do "
-                    "imóvel nem autorizações.",
+                    AppState.tr["change_mask_callout"],
                     icon="info", size="1", color_scheme="gray", width="100%",
                 ),
                 spacing="2", width="100%", padding_top="0.25rem",
@@ -293,10 +278,10 @@ def ifn_control() -> rx.Component:
     invisible on the map until you zoom to the right place.
     """
     return _section(
-        "Inventário Florestal Nacional",
+        AppState.tr["section_ifn"],
         rx.hstack(
             rx.switch(checked=AppState.show_ifn, on_change=AppState.toggle_ifn),
-            rx.text("Conglomerados", size="2"),
+            rx.text(AppState.tr["ifn_toggle_label"], size="2"),
             rx.spacer(),
             rx.cond(AppState.ifn_busy, rx.spinner(size="1"), rx.fragment()),
             width="100%", align="center", spacing="2",
@@ -304,15 +289,18 @@ def ifn_control() -> rx.Component:
         rx.cond(
             AppState.show_ifn,
             rx.vstack(
-                _filter_select("Região", AppState.ifn_region_options,
+                _filter_select(AppState.tr["filter_region"],
+                               AppState.ifn_region_options,
                                AppState.ifn_region_value,
                                AppState.set_ifn_region),
-                _filter_select("Bioma", AppState.ifn_biome_options,
+                _filter_select(AppState.tr["filter_biome"],
+                               AppState.ifn_biome_options,
                                AppState.ifn_biome_value,
                                AppState.set_ifn_biome),
-                _filter_select("Estado", AppState.ifn_uf_options,
+                _filter_select(AppState.tr["filter_uf"], AppState.ifn_uf_options,
                                AppState.ifn_uf_value, AppState.set_ifn_uf),
-                _filter_select("Município", AppState.ifn_municipality_options,
+                _filter_select(AppState.tr["filter_municipality"],
+                               AppState.ifn_municipality_options,
                                AppState.ifn_municipality_value,
                                AppState.set_ifn_municipality,
                                disabled=AppState.ifn_uf == ""),
@@ -330,7 +318,7 @@ def ifn_control() -> rx.Component:
                         AppState.ifn_has_filter,
                         rx.button(
                             rx.icon("rotate-ccw", size=12),
-                            "Limpar",
+                            AppState.tr["clear_button"],
                             size="1", variant="ghost",
                             on_click=AppState.clear_ifn_filters,
                         ),
@@ -341,7 +329,7 @@ def ifn_control() -> rx.Component:
                 rx.cond(
                     AppState.ifn_count == 0,
                     rx.callout(
-                        "Nenhum conglomerado nesta combinação de filtros.",
+                        AppState.tr["ifn_empty_callout"],
                         icon="info", size="1", color_scheme="amber", width="100%",
                     ),
                     rx.fragment(),
@@ -361,7 +349,7 @@ def user_points_control() -> rx.Component:
     meaning here.
     """
     return _section(
-        "Coordenadas enviadas",
+        AppState.tr["section_user_points"],
         rx.hstack(
             enviar_dados_dialog(),
             rx.spacer(),
@@ -377,11 +365,11 @@ def user_points_control() -> rx.Component:
             AppState.user_points_active,
             rx.hstack(
                 rx.text(
-                    "Ativa no mapa no lugar dos conglomerados do IFN.",
+                    AppState.tr["user_points_active_note"],
                     size="1", color_scheme="gray", flex="1",
                 ),
                 rx.button(
-                    rx.icon("rotate-ccw", size=12), "Reset",
+                    rx.icon("rotate-ccw", size=12), AppState.tr["reset_button"],
                     size="1", variant="ghost",
                     on_click=AppState.reset_user_points,
                 ),
@@ -406,11 +394,11 @@ def _multi_row(row: rx.Var) -> rx.Component:
 def multi_select_control() -> rx.Component:
     """Pick many conglomerados and read them as one landscape."""
     return _section(
-        "Seleção múltipla",
+        AppState.tr["section_multi_select"],
         rx.hstack(
             rx.switch(checked=AppState.multi_mode,
                       on_change=AppState.toggle_multi_mode),
-            rx.text("Somar vários conglomerados", size="2"),
+            rx.text(AppState.tr["multi_toggle_label"], size="2"),
             rx.spacer(),
             rx.cond(
                 AppState.multi_progress != "",
@@ -424,12 +412,7 @@ def multi_select_control() -> rx.Component:
             AppState.multi_mode,
             rx.vstack(
                 rx.text(
-                    "Clique nos conglomerados para incluir ou remover, ou "
-                    "segure Ctrl (Cmd no Mac) e arraste para selecionar uma "
-                    "área inteira. O gráfico passa a mostrar a soma das áreas "
-                    "de cada raio. Shift+arrastar continua sendo o zoom por "
-                    "área do mapa, e cliques avulsos ficam desativados enquanto "
-                    "o modo está ligado.",
+                    AppState.tr["multi_help_text"],
                     size="1", color_scheme="gray", style={"lineHeight": "1.4"},
                 ),
                 rx.hstack(
@@ -439,7 +422,7 @@ def multi_select_control() -> rx.Component:
                     rx.cond(
                         AppState.multi_count > 0,
                         rx.button(
-                            rx.icon("rotate-ccw", size=12), "Limpar",
+                            rx.icon("rotate-ccw", size=12), AppState.tr["clear_button"],
                             size="1", variant="ghost",
                             on_click=AppState.clear_multi_selection,
                         ),
@@ -491,18 +474,18 @@ def _biome_legend() -> rx.Component:
 
 def biome_control() -> rx.Component:
     return _section(
-        "Biomas (IBGE)",
+        AppState.tr["section_biomes"],
         rx.hstack(
             rx.switch(checked=AppState.show_biomes,
                       on_change=AppState.toggle_biomes),
-            rx.text("Biomas e domínios", size="2"),
+            rx.text(AppState.tr["biomes_toggle_label"], size="2"),
             width="100%", align="center", spacing="2",
         ),
         rx.cond(
             AppState.show_biomes,
             rx.vstack(
                 rx.hstack(
-                    rx.text("Opacidade", size="1", color_scheme="gray"),
+                    rx.text(AppState.tr["opacity_label"], size="1", color_scheme="gray"),
                     rx.spacer(),
                     rx.text(AppState.biome_opacity_pct.to_string() + "%", size="1"),
                     width="100%",
@@ -515,9 +498,7 @@ def biome_control() -> rx.Component:
                 ),
                 _biome_legend(),
                 rx.text(
-                    "Passe o cursor sobre um polígono para ver bioma, domínio "
-                    "fitogeográfico e região natural. Os limites estão "
-                    "simplificados (~1 km) para desenho no navegador.",
+                    AppState.tr["biomes_hover_note"],
                     size="1", color_scheme="gray",
                 ),
                 spacing="2", width="100%", padding_top="0.25rem",
@@ -548,7 +529,7 @@ def status_line() -> rx.Component:
 def point_control() -> rx.Component:
     """The clicked location. Phase 1 hangs the buffer analysis off this panel."""
     return _section(
-        "Ponto de estudo",
+        AppState.tr["section_point"],
         rx.cond(
             AppState.has_point,
             rx.vstack(
@@ -557,7 +538,7 @@ def point_control() -> rx.Component:
                     rx.text(AppState.point_label, size="2", weight="medium"),
                     spacing="2", align="center",
                 ),
-                rx.text("Clique no mapa para escolher outro ponto.",
+                rx.text(AppState.tr["point_click_other"],
                         size="1", color_scheme="gray"),
                 spacing="1", align_items="start", width="100%",
             ),
@@ -565,7 +546,7 @@ def point_control() -> rx.Component:
                 AppState.point_error != "",
                 rx.callout(AppState.point_error, icon="triangle-alert",
                            color_scheme="amber", size="1", width="100%"),
-                rx.text("Clique no mapa para escolher um ponto.",
+                rx.text(AppState.tr["point_click_choose"],
                         size="1", color_scheme="gray"),
             ),
         ),

@@ -10,8 +10,11 @@ import logging
 import reflex as rx
 
 from .api import register as register_api
+from .canada.pages.index import canada_index
+from .canada.state import CanadaState
 from .components.layout import ACCENT
 from .pages.index import index
+from .state import AppState
 
 logging.basicConfig(
     level=logging.INFO,
@@ -41,6 +44,25 @@ app.add_page(
         "Análise da história de uso da terra e da paisagem no Brasil a partir de "
         "MapBiomas, Hansen e Earth Engine."
     ),
+    on_load=AppState.adopt_lang_param,
+)
+
+# The Canada page is a self-contained sibling under naturametrics/canada/ — its
+# own state root, services, components and translations. It shares the Earth
+# Engine client, the buffer geometry, the tile cache, the ODS writer and the
+# Leaflet component, and nothing else: the two countries' datasets have
+# different years, extents and legends, so a shared state root would mean every
+# var carrying a "which country" qualifier.
+app.add_page(
+    canada_index,
+    route="/canada",
+    title="Naturametrics Canada — Crop inventory and forest change",
+    description=(
+        "Land-use history, forest stand age and forest change anywhere in "
+        "Canada, from the AAFC Annual Crop Inventory, NTEMS and Hansen Global "
+        "Forest Change on Earth Engine."
+    ),
+    on_load=CanadaState.adopt_lang_param,
 )
 
 # The biome polygons are fetched by the browser over HTTP, not pushed through

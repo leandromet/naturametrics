@@ -42,6 +42,25 @@ def language_switcher() -> rx.Component:
     )
 
 
+def canada_link() -> rx.Component:
+    """Across to the Canada page, carrying the chosen language.
+
+    A plain link rather than an event: ``/canada`` is a separate Reflex page with
+    its own state root, so this is a navigation, not a mode switch inside this
+    one.
+    """
+    return rx.link(
+        rx.button(
+            rx.text("🇨🇦", font_size="0.95rem"),
+            rx.text(AppState.tr["go_to_canada"],
+                    display=["none", "none", "block", "block"]),
+            size="1", variant="soft", color_scheme="gray",
+            aria_label=AppState.tr["go_to_canada"],
+        ),
+        href=AppState.canada_href,
+    )
+
+
 def header() -> rx.Component:
     return rx.hstack(
         rx.button(
@@ -70,6 +89,7 @@ def header() -> rx.Component:
             display=["none", "none", "none", "block"],
         ),
         rx.box(width="1rem", display=["none", "none", "none", "block"]),
+        canada_link(),
         language_switcher(),
         header_actions(),
         width="100%",

@@ -412,5 +412,6 @@ TRANSLATIONS_EN: dict[str, str] = {
     "ai_yvynation_link": "Yvynation — live application",
 
     # --- language switcher ---------------------------------------------- #
+    "go_to_canada": "Go to Canada",
     "language_label": "Language",
 }

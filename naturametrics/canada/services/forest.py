@@ -267,16 +267,23 @@ def change_stats(
 
     forest2000 = gfc.select("treecover2000").gte(threshold)
     area_ha = ee.Image.pixelArea().divide(10_000.0)
+    loss_mask = gfc.select("loss").eq(1).And(forest2000)
+    # Loss restricted to the years gain actually covers (2001–2012), so the two
+    # can be netted honestly. Without this the panel would subtract a 13-year
+    # gain from a 25-year loss and call the result a net.
+    loss_in_gain_window = loss_mask.And(
+        gfc.select("lossyear").lte(fc_cfg.HANSEN_GAIN_WINDOW_LOSS_CODE))
     stack = (
-        area_ha.updateMask(gfc.select("loss").eq(1).And(forest2000)).rename("loss_ha")
+        area_ha.updateMask(loss_mask).rename("loss_ha")
         .addBands(area_ha.updateMask(gfc.select("gain").eq(1)).rename("gain_ha"))
+        .addBands(area_ha.updateMask(loss_in_gain_window).rename("loss_gain_window_ha"))
         .addBands(area_ha.updateMask(forest2000).rename("forest2000_ha"))
     )
 
     prov = Provenance(
         name="canada_forest_change",
         dataset_id=fc_cfg.HANSEN_GFC_DATASET,
-        bands=["treecover2000", "loss", "gain"],
+        bands=["treecover2000", "loss", "lossyear", "gain"],
         scale_m=EE_DEFAULT_SCALE_M,
         reducer="sum",
         pixel_area_basis="ee.Image.pixelArea() per pixel",
@@ -287,7 +294,14 @@ def change_stats(
             "treecover_threshold_pct": threshold,
             "loss_year_range": f"{fc_cfg.HANSEN_LOSS_YEAR_START}–"
                                f"{fc_cfg.HANSEN_LOSS_YEAR_END}",
+            # Recorded in provenance because it is the single most misreadable
+            # thing about this table: gain and loss do not span the same years.
+            "gain_year_range": f"{fc_cfg.HANSEN_GAIN_YEAR_START}–"
+                               f"{fc_cfg.HANSEN_GAIN_YEAR_END}",
             "gain_is_dated": False,
+            "gain_not_updated_since": fc_cfg.HANSEN_GAIN_YEAR_END,
+            "net_comparable_window": f"{fc_cfg.HANSEN_LOSS_YEAR_START}–"
+                                     f"{fc_cfg.HANSEN_GAIN_YEAR_END}",
             "buffer_mode": mode,
             "radii_km": list(radii_km),
             "point": str(p),
@@ -306,6 +320,7 @@ def change_stats(
         stats[key] = {
             "loss_ha": round(float(props.get("loss_ha") or 0.0), 2),
             "gain_ha": round(float(props.get("gain_ha") or 0.0), 2),
+            "loss_gain_window_ha": round(float(props.get("loss_gain_window_ha") or 0.0), 2),
             "forest2000_ha": round(float(props.get("forest2000_ha") or 0.0), 2),
         }
     return stats, prov

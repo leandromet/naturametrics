@@ -171,7 +171,7 @@ def _forest_age_panel() -> rx.Component:
                           rx.text(S.tr["age_running"], size="1",
                                   color_scheme="gray"),
                           spacing="2", align="center"),
-                height="260px", width="100%",
+                height="170px", width="100%",
             ),
             rx.cond(
                 S.age_error != "",
@@ -185,7 +185,7 @@ def _forest_age_panel() -> rx.Component:
                                 data=S.age_histogram_figure,
                                 config={"displayModeBar": False,
                                         "displaylogo": False, "responsive": True},
-                                width="100%", height="280px",
+                                width="100%", height="180px",
                             ),
                             flex=["1 1 100%", "1 1 100%", "1 1 100%", "1 1 0"],
                             min_width="0", width="100%",
@@ -229,7 +229,7 @@ def _forest_age_panel() -> rx.Component:
                                 rx.text(S.age_reference_note, size="1",
                                         color_scheme="gray"),
                                 spacing="1",
-                                width=["100%", "100%", "100%", "210px"],
+                                width=["100%", "100%", "100%", "175px"],
                                 flex_shrink=["1", "1", "1", "0"],
                                 align_items="stretch",
                             ),
@@ -262,15 +262,20 @@ def _forest_change_panel() -> rx.Component:
                         data=S.loss_figure,
                         config={"displayModeBar": False, "displaylogo": False,
                                 "responsive": True},
-                        width="100%", height="170px",
+                        width="100%", height="150px",
                     ),
                     flex=["1 1 100%", "1 1 100%", "1 1 100%", "1 1 0"],
                     min_width="0", width="100%",
                 ),
                 rx.vstack(
                     rx.foreach(S.change_rows, _stat_row),
+                    # Why the green is a level and not a line. Without this the
+                    # dashed gain reference looks like a chart the app failed to
+                    # finish drawing, rather than the shape of the data.
+                    rx.text(S.tr["change_gain_undated_note"], size="1",
+                            color_scheme="gray", style={"lineHeight": "1.35"}),
                     spacing="2",
-                    width=["100%", "100%", "100%", "210px"],
+                    width=["100%", "100%", "100%", "175px"],
                     flex_shrink=["1", "1", "1", "0"],
                     align_items="stretch",
                 ),
@@ -285,22 +290,33 @@ def _forest_change_panel() -> rx.Component:
 
 
 def results_drawer() -> rx.Component:
+    """Two columns, matching the Brazil drawer's shape.
+
+    Crop inventory takes the whole left half; the two forest panels stack in the
+    right half, change above age. The land-cover chart is the tall one — 17
+    stacked columns with a legend — so pairing it with two short panels keeps
+    both columns about the same height and the drawer off the rest of the screen.
+
+    Below the desktop breakpoint the row becomes a column and the three panels
+    simply stack, which is the only thing that fits on a phone.
+    """
     return rx.box(
         rx.cond(
             S.has_point | S.analysis_running,
-            rx.vstack(
-                _land_cover_panel(),
-                rx.divider(),
-                rx.flex(
-                    rx.box(_forest_age_panel(), flex="1 1 55%", min_width="0"),
-                    rx.box(_forest_change_panel(), flex="1 1 45%", min_width="0",
-                           border_left=["none", "none", "none",
-                                        "1px solid var(--gray-5)"],
-                           padding_left=["0", "0", "0", "1rem"]),
-                    width="100%", align="start", gap="1rem",
-                    direction=rx.breakpoints(initial="column", lg="row"),
+            rx.flex(
+                rx.box(_land_cover_panel(), flex="1 1 50%", min_width="0"),
+                rx.vstack(
+                    _forest_change_panel(),
+                    rx.divider(),
+                    _forest_age_panel(),
+                    spacing="3", align_items="stretch",
+                    flex="1 1 50%", min_width="0",
+                    border_left=["none", "none", "none",
+                                 "1px solid var(--gray-5)"],
+                    padding_left=["0", "0", "0", "1rem"],
                 ),
-                width="100%", spacing="3", align_items="stretch",
+                width="100%", align="start", gap="1rem",
+                direction=rx.breakpoints(initial="column", lg="row"),
                 padding=["0.6rem 0.7rem", "0.6rem 0.75rem", "0.75rem 1rem",
                          "0.75rem 1rem"],
             ),

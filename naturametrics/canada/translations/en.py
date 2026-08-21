@@ -104,8 +104,15 @@ TRANSLATIONS_EN: dict[str, str] = {
     "age_point_not_forest": "The clicked pixel is not forest",
     "age_years_unit": "years",
     "change_title": "Forest change {first}–{last}",
-    "change_loss_ha": "Loss",
-    "change_gain_ha": "Gain",
+    "change_loss_ha": "Loss 2001\u20132025",
+    "change_gain_ha": "Gain 2000\u20132012",
+    "change_net_ha": "Net 2001\u20132012",
+    "change_gain_undated_note": (
+        "Hansen dates loss year by year, but gain is an undated flag covering "
+        "2000\u20132012 only and \u201chas not been updated in subsequent versions\u201d. "
+        "So gain is the dashed level inside the shaded window, not a series, "
+        "and the net is taken over 2001\u20132012 \u2014 the years both bands share."
+    ),
     "change_forest2000_ha": "Forest in 2000",
     "change_running": "Reading Hansen loss and gain…",
     "radius_label": "Radius",

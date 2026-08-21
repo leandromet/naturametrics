@@ -135,7 +135,7 @@ def forest_age_histogram_figure(
 
 def _style_age(fig: go.Figure, lang: str) -> go.Figure:
     fig.update_layout(
-        template="plotly_white", margin=dict(l=56, r=8, t=8, b=48), height=280,
+        template="plotly_white", margin=dict(l=48, r=8, t=8, b=44), height=180,
         bargap=0.25, showlegend=False,
         xaxis=dict(title="Idade (anos)" if lang == "pt" else "Age (years)",
                    showgrid=False, categoryorder="array",
@@ -147,30 +147,103 @@ def _style_age(fig: go.Figure, lang: str) -> go.Figure:
     return fig
 
 
-def loss_by_year_figure(df: pd.DataFrame, lang: str = "en") -> go.Figure:
-    """Annual Hansen tree-cover loss for one buffer.
+_L = {
+    "annual_loss": {"en": "Annual loss", "pt": "Perda anual"},
+    "cum_loss": {"en": "Cumulative loss", "pt": "Perda acumulada"},
+    "gain_total": {
+        "en": f"Gain {fc_cfg.HANSEN_GAIN_YEAR_START}–{fc_cfg.HANSEN_GAIN_YEAR_END}",
+        "pt": f"Ganho {fc_cfg.HANSEN_GAIN_YEAR_START}–{fc_cfg.HANSEN_GAIN_YEAR_END}",
+    },
+    "gain_window": {"en": "gain window", "pt": "janela do ganho"},
+}
 
-    Loss only. Hansen's gain is a single undated flag for the whole record, so
-    there is no gain series to pair with this — the total is shown as a number
-    beside the chart instead of a fabricated line.
+
+def loss_by_year_figure(
+    df: pd.DataFrame,
+    gain_total_ha: float = 0.0,
+    lang: str = "en",
+) -> go.Figure:
+    """Hansen tree-cover loss over time, against the gain total.
+
+    **Why gain is a horizontal line and not a series.** Hansen publishes ``loss``
+    with a per-pixel ``lossyear``, so annual loss is real data. ``gain`` carries
+    no year — it is a bitmask flag — so there is no annual gain to plot. Drawing
+    one would mean inventing the year dimension.
+
+    **And why the shaded band matters.** Gain covers **2000–2012 only** and, in
+    the dataset's own words, "has not been updated in subsequent versions". So
+    the dashed gain level is comparable with the cumulative-loss curve *only up
+    to 2012*. The shaded region marks exactly that window; past its right edge
+    the red curve keeps climbing against a green line that stopped being
+    maintained, and comparing the two there would be reading a 25-year loss
+    against a 13-year gain.
+
+    (An annual gain series *could* be derived from the AAFC crop inventory's
+    forest classes, and deliberately is not: measured on a stable forested BC
+    buffer it returns 200–800 ha of gain and 200–1100 ha of loss per year in a
+    7 854 ha area, against Hansen's ~1 500 ha of loss across 25 years. That is
+    classification flicker, not change.)
     """
     fig = go.Figure()
-    if df is None or df.empty or "loss_ha" not in df.columns or df["loss_ha"].sum() <= 0:
+    has_loss = (df is not None and not df.empty and "loss_ha" in df.columns
+                and float(df["loss_ha"].sum()) > 0)
+
+    if not has_loss and gain_total_ha <= 0:
         fig.add_annotation(text=_NO_DATA.get(lang, _NO_DATA["en"]),
                            showarrow=False, font=dict(size=11, color="#888"))
-    else:
+        return _style_loss(fig, lang)
+
+    if has_loss:
+        cumulative = df["loss_ha"].cumsum()
         fig.add_bar(
             x=df["year"], y=df["loss_ha"],
+            name=_L["annual_loss"].get(lang, _L["annual_loss"]["en"]),
             marker_color=fc_cfg.HANSEN_LOSS_COLOR, marker_line_width=0,
             hovertemplate="<b>%{x}</b><br>%{y:,.1f} ha<extra></extra>",
         )
+        fig.add_trace(go.Scatter(
+            x=df["year"], y=cumulative, mode="lines",
+            name=_L["cum_loss"].get(lang, _L["cum_loss"]["en"]),
+            line=dict(color="#7a1710", width=2),
+            hovertemplate="<b>%{x}</b><br>%{y:,.1f} ha<extra></extra>",
+        ))
+
+    if gain_total_ha > 0:
+        # The window gain actually covers. Drawn first so it sits behind the
+        # data, and drawn at all so the eye stops comparing past its right edge.
+        fig.add_vrect(
+            x0=fc_cfg.HANSEN_LOSS_YEAR_START - 0.5,
+            x1=fc_cfg.HANSEN_GAIN_YEAR_END + 0.5,
+            fillcolor=fc_cfg.HANSEN_GAIN_COLOR, opacity=0.07,
+            layer="below", line_width=0,
+            annotation_text=_L["gain_window"].get(lang, _L["gain_window"]["en"]),
+            annotation_position="top left",
+            annotation_font=dict(size=8, color="#6b8f6b"),
+        )
+        # A level, not a series — and only meaningful inside the band above.
+        fig.add_hline(
+            y=gain_total_ha,
+            line=dict(color=fc_cfg.HANSEN_GAIN_COLOR, width=2, dash="dash"),
+            annotation_text=_L["gain_total"].get(lang, _L["gain_total"]["en"]),
+            annotation_position="bottom right",
+            annotation_font=dict(size=9, color=fc_cfg.HANSEN_GAIN_COLOR),
+        )
+
+    return _style_loss(fig, lang)
+
+
+def _style_loss(fig: go.Figure, lang: str) -> go.Figure:
     fig.update_layout(
-        template="plotly_white", margin=dict(l=48, r=8, t=8, b=32), height=170,
-        showlegend=False, bargap=0.2,
+        template="plotly_white", margin=dict(l=46, r=8, t=8, b=26), height=185,
+        bargap=0.2,
+        legend=dict(orientation="h", yanchor="top", y=-0.18, x=0,
+                    font=dict(size=9)),
+        hovermode="x unified",
         xaxis=dict(title=None, tickmode="linear", dtick=4, showgrid=False,
                    tickfont=dict(size=9)),
         yaxis=dict(title="ha", showgrid=True, gridcolor="rgba(0,0,0,0.06)",
-                   zeroline=False, title_font=dict(size=10)),
+                   zeroline=False, title_font=dict(size=10),
+                   tickfont=dict(size=9)),
         plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
     )
     return fig

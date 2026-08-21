@@ -104,8 +104,16 @@ TRANSLATIONS_PT: dict[str, str] = {
     "age_point_not_forest": "O pixel clicado não é floresta",
     "age_years_unit": "anos",
     "change_title": "Mudança florestal {first}–{last}",
-    "change_loss_ha": "Perda",
-    "change_gain_ha": "Ganho",
+    "change_loss_ha": "Perda 2001\u20132025",
+    "change_gain_ha": "Ganho 2000\u20132012",
+    "change_net_ha": "Saldo 2001\u20132012",
+    "change_gain_undated_note": (
+        "O Hansen data a perda ano a ano, mas o ganho \u00e9 um indicador sem data "
+        "que cobre apenas 2000\u20132012 e \u201cn\u00e3o foi atualizado nas vers\u00f5es "
+        "seguintes\u201d. Por isso o ganho \u00e9 a linha tracejada dentro da faixa "
+        "sombreada, e n\u00e3o uma s\u00e9rie, e o saldo \u00e9 de 2001\u20132012 \u2014 os anos que "
+        "as duas bandas compartilham."
+    ),
     "change_forest2000_ha": "Floresta em 2000",
     "change_running": "Lendo perda e ganho do Hansen…",
     "radius_label": "Raio",

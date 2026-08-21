@@ -157,11 +157,19 @@ def study_point_workbook(
              ["age_bin", point_age.get("bin")]]))
 
     if change:
-        rows = [[r, v.get("loss_ha"), v.get("gain_ha"), v.get("forest2000_ha")]
+        # Column names carry their year ranges: loss spans 2001–2025 but gain
+        # only 2000–2012, and a reader who nets the two bare columns would be
+        # subtracting a 13-year figure from a 25-year one. The window column is
+        # the one that nets honestly against gain.
+        rows = [[r, v.get("loss_ha"), v.get("gain_ha"),
+                 v.get("loss_gain_window_ha"),
+                 round((v.get("gain_ha") or 0) - (v.get("loss_gain_window_ha") or 0), 2),
+                 v.get("forest2000_ha")]
                 for r, v in sorted(change.items(), key=lambda kv: float(kv[0]))]
         sheets.append(ods.Sheet(
             "forest_change",
-            ["radius_km", "loss_ha", "gain_ha", "forest2000_ha"], rows))
+            ["radius_km", "loss_2001_2025_ha", "gain_2000_2012_ha",
+             "loss_2001_2012_ha", "net_2001_2012_ha", "forest2000_ha"], rows))
 
     loss_df = pd.DataFrame(loss_series)
     if not loss_df.empty:

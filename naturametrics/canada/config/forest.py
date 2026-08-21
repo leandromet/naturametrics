@@ -106,6 +106,26 @@ HANSEN_GFC_DATASET = "UMD/hansen/global_forest_change_2025_v1_13"
 HANSEN_LOSS_YEAR_START = 2001
 HANSEN_LOSS_YEAR_END = 2025
 
+#: **Gain covers 2000–2012 only, and is frozen.** Per the dataset documentation:
+#: "Forest gain during the period 2000-2012, defined as the inverse of loss…
+#: Note that this has not been updated in subsequent versions." Confirmed
+#: empirically too — ``gain`` is a strict {0,1} bitmask with no year dimension,
+#: while ``lossyear`` spans 1..25.
+#:
+#: Two consequences the UI must respect, or it will mislead:
+#:
+#: 1. Gain cannot be plotted as an annual series. There is no year to plot it
+#:    against, and manufacturing one would be inventing data.
+#: 2. Gain must **not** be netted against loss over the full 2001–2025 record.
+#:    That compares a 13-year gain figure with a 25-year loss figure. Any net
+#:    has to be taken over the overlapping window below, and said to be so.
+HANSEN_GAIN_YEAR_START = 2000
+HANSEN_GAIN_YEAR_END = 2012
+
+#: ``lossyear`` code for the last year gain covers — the cut for the comparable
+#: window (2001..2012 inclusive).
+HANSEN_GAIN_WINDOW_LOSS_CODE = HANSEN_GAIN_YEAR_END - HANSEN_LOSS_YEAR_START + 1
+
 #: Percent canopy cover in 2000 at or above which a pixel counts as forest for
 #: the loss/gain accounting. Matches the Brazil app's
 #: ``settings.HANSEN_TREECOVER_THRESHOLD`` default so the two pages agree on

@@ -344,17 +344,34 @@ class CanadaAnalysisMixin(rx.State, mixin=True):
             text = f"{float(v):,.0f} ha"
             return text.replace(",", ".") if pt else text
 
+        loss = float(row.get("loss_ha", 0) or 0)
+        gain = float(row.get("gain_ha", 0) or 0)
+        # Net is taken over 2001–2012, the only window both bands cover. Netting
+        # gain against the full 2001–2025 loss would subtract a 13-year figure
+        # from a 25-year one and present the difference as a balance.
+        loss_window = float(row.get("loss_gain_window_ha", 0) or 0)
+        net = gain - loss_window
+        net_text = ("+" if net > 0 else "") + ha(net)
         return [
-            {"label": self.tr["change_loss_ha"], "value": ha(row.get("loss_ha", 0)),
+            {"label": self.tr["change_loss_ha"], "value": ha(loss),
              "color": fc_cfg.HANSEN_LOSS_COLOR},
-            {"label": self.tr["change_gain_ha"], "value": ha(row.get("gain_ha", 0)),
+            {"label": self.tr["change_gain_ha"], "value": ha(gain),
              "color": fc_cfg.HANSEN_GAIN_COLOR},
+            {"label": self.tr["change_net_ha"], "value": net_text,
+             "color": (fc_cfg.HANSEN_GAIN_COLOR if net > 0
+                       else fc_cfg.HANSEN_LOSS_COLOR)},
             {"label": self.tr["change_forest2000_ha"],
-             "value": ha(row.get("forest2000_ha", 0)),
+             "value": ha(float(row.get("forest2000_ha", 0) or 0)),
              "color": fc_cfg.HANSEN_FOREST_COLOR},
         ]
 
     @rx.var(cache=True)
     def loss_figure(self) -> go.Figure:
         import pandas as pd
-        return loss_by_year_figure(pd.DataFrame(self._loss_series), lang=self.language)
+
+        row = self._change_stats.get(f"{self.selected_radius:g}", {})
+        return loss_by_year_figure(
+            pd.DataFrame(self._loss_series),
+            gain_total_ha=float(row.get("gain_ha") or 0.0),
+            lang=self.language,
+        )

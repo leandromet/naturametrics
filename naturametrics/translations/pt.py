@@ -193,15 +193,17 @@ TRANSLATIONS_PT: dict[str, str] = {
     "check_buffers_label": "Histórico dos buffers ({radii} km)",
     "check_buffers_detail": (
         "Área por classe e por ano, para cada conglomerado — a mesma conta "
-        "que o gráfico faz. Uma aba por raio. É a parte cara: exportar um "
-        "raio só deixa o arquivo bem menor e mais rápido."
+        "que o gráfico faz. Uma aba por raio, mais idade da vegetação, "
+        "métricas de paisagem e biomassa. É a parte cara: exportar um raio "
+        "só deixa o arquivo bem menor e mais rápido."
     ),
     "check_full_area_label": "Área total (caixa delimitadora)",
     "check_full_area_detail": (
         "Uma caixa única envolvendo o buffer de cada conglomerado "
         "selecionado, sem sobreposição contada duas vezes — mas incluindo "
-        "também a área entre eles. Duas abas extras, uso da terra e idade "
-        "da vegetação. Só disponível na seleção manual."
+        "também a área entre eles. Quatro abas extras: uso da terra, idade "
+        "da vegetação, métricas de paisagem e biomassa. Só disponível na "
+        "seleção manual."
     ),
     "export_radii_label": "Raios a exportar",
     "cancel_button": "Cancelar",
@@ -227,6 +229,8 @@ TRANSLATIONS_PT: dict[str, str] = {
     "export_stage_computing_landuse": "Calculando o uso da terra",
     "export_stage_computing_age": "Calculando a idade da vegetação",
     "export_stage_computing_change": "Calculando a mudança 2008→2024",
+    "export_stage_computing_metrics": "Calculando as métricas de paisagem",
+    "export_stage_computing_biomass": "Calculando a biomassa",
     "export_stage_computing_full_area": "Calculando a área total",
     "export_stage_building_sheet": "Montando a planilha",
     "export_stage_gathering": "Reunindo os conglomerados",

@@ -281,7 +281,8 @@ class ExportMixin(rx.State, mixin=True):
         waited = 0.0
         while waited < 20.0:
             async with self:
-                running = self.age_running
+                running = (self.age_running or self.landscape_metrics_running
+                          or self.biomass_running)
             if not running:
                 break
             async with self:
@@ -299,6 +300,10 @@ class ExportMixin(rx.State, mixin=True):
             age_buffers_prov = plain(self._age_buffers_provenance)
             change = plain(self._change_stats)
             change_prov = plain(self._change_provenance)
+            landscape_metrics = plain(self._landscape_metrics)
+            landscape_metrics_prov = plain(self._landscape_metrics_provenance)
+            biomass = plain(self._biomass)
+            biomass_prov = plain(self._biomass_provenance)
             lat, lon = self.study_lat, self.study_lon
             identity = {
                 "source": self.point_source,
@@ -313,7 +318,8 @@ class ExportMixin(rx.State, mixin=True):
             data, name = await loop.run_in_executor(
                 None, _build_study_point, lat, lon, history, prov, pixel,
                 pixel_prov, identity, age_point, age_point_prov, age_buffers,
-                age_buffers_prov, change, change_prov, self.buffer_shape)
+                age_buffers_prov, change, change_prov, landscape_metrics,
+                landscape_metrics_prov, biomass, biomass_prov, self.buffer_shape)
         except Exception as exc:  # noqa: BLE001
             logger.exception("Study-point export failed")
             async with self:
@@ -413,7 +419,7 @@ class ExportMixin(rx.State, mixin=True):
                     self.export_error = reason
                 return
 
-        pixel = buffers = age = change = None
+        pixel = buffers = age = change = landscape_metrics = biomass = None
 
         try:
             if spec.include_pixel:
@@ -456,6 +462,11 @@ class ExportMixin(rx.State, mixin=True):
                                     self.tr["export_stage_computing_age"])
                 change = await fan_out(exports.selection_change_frame,
                                        self.tr["export_stage_computing_change"])
+                landscape_metrics = await fan_out(
+                    exports.selection_landscape_metrics_frame,
+                    self.tr["export_stage_computing_metrics"])
+                biomass = await fan_out(exports.selection_biomass_frame,
+                                        self.tr["export_stage_computing_biomass"])
 
             full_area = None
             if spec.include_full_area and spec.is_manual:
@@ -468,7 +479,7 @@ class ExportMixin(rx.State, mixin=True):
                 self.export_stage = self.tr["export_stage_building_sheet"]
             data, name = await loop.run_in_executor(
                 None, exports.selection_workbook, spec, points, pixel, buffers,
-                age, change, full_area)
+                age, change, landscape_metrics, biomass, full_area)
         except Exception as exc:  # noqa: BLE001
             logger.exception("Selection export failed")
             async with self:
@@ -481,13 +492,15 @@ class ExportMixin(rx.State, mixin=True):
             self.export_busy = False
             self.export_stage = ""
             self.export_done = self.export_total
-            # Union across the three passes: a point can fail land-cover history
+            # Union across the five passes: a point can fail land-cover history
             # but succeed at vegetation age, or vice versa, and each row is a
             # single conglomerado's worth of missing data either way.
             failed = sorted(set(
                 (buffers[2] if buffers else [])
                 + (age[2] if age else [])
                 + (change[2] if change else [])
+                + (landscape_metrics[2] if landscape_metrics else [])
+                + (biomass[2] if biomass else [])
             ))
             note = (self.tr["export_result_failed_note"].format(n=len(failed))
                     if failed else "")
@@ -498,7 +511,8 @@ class ExportMixin(rx.State, mixin=True):
 def _build_study_point(lat, lon, history, prov, pixel, pixel_prov, identity,
                        age_point=None, age_point_prov=None, age_buffers=None,
                        age_buffers_prov=None, change=None, change_prov=None,
-                       buffer_shape="circle"):
+                       landscape_metrics=None, landscape_metrics_prov=None,
+                       biomass=None, biomass_prov=None, buffer_shape="circle"):
     """Rebuild the frames and write the workbook, off the event loop."""
     import pandas as pd
 
@@ -527,5 +541,9 @@ def _build_study_point(lat, lon, history, prov, pixel, pixel_prov, identity,
         age_buffers_prov=revive(age_buffers_prov),
         change=change,
         change_prov=revive(change_prov),
+        landscape_metrics=pd.DataFrame(landscape_metrics) if landscape_metrics else None,
+        landscape_metrics_prov=revive(landscape_metrics_prov),
+        biomass=pd.DataFrame(biomass) if biomass else None,
+        biomass_prov=revive(biomass_prov),
         buffer_shape=buffer_shape,
     )

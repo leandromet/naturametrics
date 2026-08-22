@@ -191,6 +191,15 @@ EXPORT_AGE_ROWS_PER_POINT_PER_RADIUS = CENSORED_AGE
 #: buffer) — no ceiling to derive, it is just this.
 EXPORT_CHANGE_ROWS_PER_POINT_PER_RADIUS = 1
 
+#: One summary row per radius (services.landscape_metrics.landscape_metrics) —
+#: no year axis, so this is exact, not a budget.
+EXPORT_LANDSCAPE_METRICS_ROWS_PER_POINT_PER_RADIUS = 1
+
+#: One row per (radius, year); not imported from services.biomass.AGB_YEARS
+#: to avoid a config→services import cycle (that module already imports this
+#: one) — keep in sync with its length by hand if the year list ever changes.
+EXPORT_BIOMASS_ROWS_PER_POINT_PER_RADIUS = 10
+
 #: Each radius gets **its own tab**, so the spreadsheet's row limit applies per
 #: radius instead of to all four together — four times the capacity, and a tab
 #: per radius is what the study-point workbook already does.

@@ -191,14 +191,16 @@ TRANSLATIONS_EN: dict[str, str] = {
     "check_buffers_label": "Buffer history ({radii} km)",
     "check_buffers_detail": (
         "Area by class and year, for each cluster — the same computation "
-        "the chart does. One tab per radius. This is the expensive part: "
-        "exporting a single radius makes the file much smaller and faster."
+        "the chart does. One tab per radius, plus vegetation age, landscape "
+        "metrics and biomass. This is the expensive part: exporting a "
+        "single radius makes the file much smaller and faster."
     ),
     "check_full_area_label": "Full area (bounding box)",
     "check_full_area_detail": (
         "One single box enclosing every selected cluster's buffer, with no "
         "overlap counted twice — but including the area between them too. "
-        "Two extra tabs, land use and vegetation age. Manual selection only."
+        "Four extra tabs: land use, vegetation age, landscape metrics and "
+        "biomass. Manual selection only."
     ),
     "export_radii_label": "Radii to export",
     "cancel_button": "Cancel",
@@ -225,6 +227,8 @@ TRANSLATIONS_EN: dict[str, str] = {
     "export_stage_computing_landuse": "Computing land use",
     "export_stage_computing_age": "Computing vegetation age",
     "export_stage_computing_change": "Computing 2008→2024 change",
+    "export_stage_computing_metrics": "Computing landscape metrics",
+    "export_stage_computing_biomass": "Computing biomass",
     "export_stage_computing_full_area": "Computing the full area",
     "export_stage_building_sheet": "Building the spreadsheet",
     "export_stage_gathering": "Gathering the clusters",

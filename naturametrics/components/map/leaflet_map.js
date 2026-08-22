@@ -199,6 +199,12 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
             existing.clip = spec.clip || null;
             applyClips();
           }
+          if (existing.clipRadiusKm !== spec.clip_radius_km ||
+              existing.clipShape !== spec.clip_shape) {
+            existing.clipRadiusKm = spec.clip_radius_km;
+            existing.clipShape = spec.clip_shape;
+            applyClips();
+          }
           // The preview follows the cursor from conglomerado to conglomerado, so
           // the circle moves far more often than the tile source changes.
           const nextCircles = JSON.stringify(spec.clip_circles || null);
@@ -317,7 +323,7 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
     `a ${g.r} ${g.r} 0 1 0 ${-2 * g.r} 0 Z`;
 
   const squareSubpath = (g) => {
-    const half = g.r / 2;
+    const half = g.r;
     return `M ${g.x - half} ${g.y - half} ` +
       `L ${g.x + half} ${g.y - half} ` +
       `L ${g.x + half} ${g.y + half} ` +
@@ -353,7 +359,7 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
         if (shapes.length === 1 &&
             (entry.clipShape === "bbox" || entry.clipShape === "square")) {
           const g = shapes[0];
-          const half = entry.clipShape === "square" ? g.r / 2 : g.r;
+          const half = g.r;
           // rect(top, right, bottom, left) — the legacy property, which takes
           // absolute offsets in the element's own coordinate system and is
           // therefore immune to the 0×0 reference box explained below. Only ever

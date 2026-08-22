@@ -59,7 +59,7 @@ def buffer_geometries(
     radii = sorted(radii_km)
     discs = {
         r: (centre.buffer(r * 1000.0) if shape == "circle"
-            else _square_geometry(p, r))
+            else _square_geometry(p, 2.0 * r))
         for r in radii
     }
 
@@ -87,7 +87,11 @@ def buffer_collection(
     import ee
 
     return ee.FeatureCollection([
-        ee.Feature(geom, {"radius_km": r})
+        ee.Feature(geom, {
+            "radius_km": r,
+            "side_km": 2.0 * r if shape == "square" else None,
+            "shape": shape,
+        })
         for r, geom in buffer_geometries(p, radii_km, mode, shape)
     ])
 
@@ -109,6 +113,7 @@ def buffer_geojson(
     """
     from pyproj import Transformer
     from shapely.geometry import mapping
+    from shapely.geometry import box
     from shapely.ops import transform as shp_transform
     from shapely.geometry import Point as ShpPoint
 
@@ -122,7 +127,10 @@ def buffer_geojson(
     radii = sorted(radii_km)
     geometries = {
         r: (origin.buffer(r * 1000.0, quad_segs=32) if shape == "circle"
-            else origin.buffer(r * 1000.0 / 2.0, quad_segs=1))
+            else box(origin.x - r * 1000.0,
+                     origin.y - r * 1000.0,
+                     origin.x + r * 1000.0,
+                     origin.y + r * 1000.0))
         for r in radii
     }
 
@@ -143,6 +151,7 @@ def buffer_geojson(
                 "radius_km": r,
                 "mode": mode,
                 "shape": shape,
+                "side_km": 2.0 * r if shape == "square" else None,
                 "label": f"{r:g} km",
             },
         })

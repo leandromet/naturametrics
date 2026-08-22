@@ -530,34 +530,38 @@ def point_control() -> rx.Component:
     """The clicked location. Phase 1 hangs the buffer analysis off this panel."""
     return _section(
         AppState.tr["section_point"],
-        rx.cond(
-            AppState.has_point,
-            rx.vstack(
+        rx.vstack(
+            rx.cond(
+                AppState.has_point,
                 rx.hstack(
                     rx.icon("map-pin", size=14, color="var(--jade-11)"),
                     rx.text(AppState.point_label, size="2", weight="medium"),
                     spacing="2", align="center",
                 ),
-                rx.text(AppState.tr["point_click_other"],
-                        size="1", color_scheme="gray"),
-                rx.hstack(
-                    rx.switch(
-                        checked=AppState.buffer_shape == "square",
-                        on_change=AppState.toggle_buffer_shape,
-                        disabled=AppState.multi_active,
-                    ),
-                    rx.text(AppState.tr["buffer_square_toggle_label"], size="1"),
-                    spacing="2", align="center",
+                rx.cond(
+                    AppState.point_error != "",
+                    rx.callout(AppState.point_error, icon="triangle-alert",
+                               color_scheme="amber", size="1", width="100%"),
+                    rx.text(AppState.tr["point_click_choose"],
+                            size="1", color_scheme="gray"),
                 ),
-                spacing="1", align_items="start", width="100%",
             ),
             rx.cond(
-                AppState.point_error != "",
-                rx.callout(AppState.point_error, icon="triangle-alert",
-                           color_scheme="amber", size="1", width="100%"),
-                rx.text(AppState.tr["point_click_choose"],
+                AppState.has_point,
+                rx.text(AppState.tr["point_click_other"],
                         size="1", color_scheme="gray"),
+                rx.fragment(),
             ),
+            rx.hstack(
+                rx.switch(
+                    checked=AppState.buffer_shape == "square",
+                    on_change=AppState.toggle_buffer_shape,
+                    disabled=AppState.multi_active,
+                ),
+                rx.text(AppState.tr["buffer_square_toggle_label"], size="1"),
+                spacing="2", align="center",
+            ),
+            spacing="1", align_items="start", width="100%",
         ),
     )
 

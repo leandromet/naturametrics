@@ -64,7 +64,7 @@ TILE_CACHE_MAX_ENTRIES = _int("NM_TILE_CACHE_MAX", 512)
 # --------------------------------------------------------------------------- #
 # Analysis
 # --------------------------------------------------------------------------- #
-BUFFER_RADII_KM: tuple[float, ...] = (1.0, 2.0, 5.0, 10.0)
+BUFFER_RADII_KM: tuple[float, ...] = (0.5, 1.0, 2.0, 5.0, 10.0)
 
 #: D2: cumulative discs by default ("everything within N km"), rings as a toggle.
 BUFFER_MODE_DEFAULT = os.environ.get("NM_BUFFER_MODE", "disc")

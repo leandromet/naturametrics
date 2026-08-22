@@ -4,6 +4,16 @@ Lives in ``config`` rather than beside the dialog that displays it because
 constraint **C4** (doc/01-premises.md) applies to *every* way the facts leave the
 app — the "Como citar" panel and the metadata sheet of every export both have to
 say the same thing, and two copies drift.
+
+``DATA_SOURCES``/``DATA_SOURCES_EN`` below list every dataset **either** page
+draws on, Brazil and Canada alike, and both pages' "How to cite" dialogs read
+this same list (``naturametrics/components/help.py::como_citar_dialog`` and
+``naturametrics/canada/components/help.py::how_to_cite_dialog``) rather than
+each maintaining its own subset — a reader of either page should be able to see
+everything Naturametrics as a whole is built on, not just the half their
+current page happens to touch. The Canada export workbook's own metadata sheet
+(``canada/services/exports.py``) keeps a separate, page-scoped list for that
+purpose; only the two "How to cite" dialogs are unified.
 """
 
 from __future__ import annotations
@@ -55,11 +65,26 @@ DATA_SOURCES = [
      "https://mapbiomas.org"),
     ("Hansen Global Forest Change",
      "Hansen, M. C. et al. (2013). High-Resolution Global Maps of 21st-Century "
-     "Forest Cover Change. Science 342, 850–853. Licença CC-BY 4.0.",
+     "Forest Cover Change. Science 342, 850–853. Licença CC-BY 4.0. Usado nas "
+     "páginas Brasil e Canadá.",
      "https://glad.earthengine.app/view/global-forest-change"),
     ("Inventário Florestal Nacional (IFN)",
      "Serviço Florestal Brasileiro — dados abertos, licença CC-BY.",
      "https://dados.florestal.gov.br"),
+    ("AAFC — Inventário Anual de Culturas",
+     "Agriculture and Agri-Food Canada. Licença Open Government — Canadá. "
+     "Usado na página Canadá.",
+     "https://developers.google.com/earth-engine/datasets/catalog/AAFC_ACI"),
+    ("NTEMS — Idade da floresta (Canadá, 2019)",
+     "Natural Resources Canada / National Forest Information System; "
+     "Hermosilla et al. Usado na página Canadá.",
+     "https://developers.google.com/earth-engine/datasets/catalog/"
+     "CANADA_NFIS_NTEMS_CA_FOREST_AGE"),
+    ("Composições anuais Landsat",
+     "USGS/NASA Landsat Collection 2 Tier 1 Level-2, composições anuais. "
+     "Usado na página Canadá.",
+     "https://developers.google.com/earth-engine/datasets/catalog/"
+     "LANDSAT_COMPOSITES_C02_T1_L2_ANNUAL"),
     ("Google Earth Engine",
      "Gorelick, N. et al. (2017). Google Earth Engine: Planetary-scale geospatial "
      "analysis for everyone. Remote Sensing of Environment 202, 18–27.",
@@ -69,11 +94,12 @@ DATA_SOURCES = [
      "https://www.openstreetmap.org/copyright"),
 ]
 
-#: Same sources, name/description in English — used only by the "Como citar"
-#: dialog in English mode. The exported spreadsheet's metadata sheet
-#: (services/exports.py) always cites from the Portuguese list above, matching
-#: what the app's own citation string (CITATION_TEXT) says regardless of the
-#: UI language a given session happens to be in.
+#: Same sources, name/description in English — used only by the "How to cite"
+#: dialogs in English mode. The exported spreadsheets' own metadata sheets
+#: always cite from their page-scoped Portuguese/English lists (Brazil's from
+#: the Portuguese list above regardless of UI language, matching CITATION_TEXT;
+#: Canada's from canada/services/exports.py::DATA_SOURCES) — only the two "How
+#: to cite" dialogs draw from this shared, bilingual, both-countries list.
 DATA_SOURCES_EN = [
     ("MapBiomas — Collection 10.1",
      "MapBiomas Project — Annual Land Use and Land Cover Mapping in Brazil. "
@@ -84,11 +110,26 @@ DATA_SOURCES_EN = [
      "https://mapbiomas.org"),
     ("Hansen Global Forest Change",
      "Hansen, M. C. et al. (2013). High-Resolution Global Maps of 21st-Century "
-     "Forest Cover Change. Science 342, 850–853. CC-BY 4.0 license.",
+     "Forest Cover Change. Science 342, 850–853. CC-BY 4.0 license. Used on "
+     "the Brazil and Canada pages.",
      "https://glad.earthengine.app/view/global-forest-change"),
     ("National Forest Inventory (IFN)",
      "Brazilian Forest Service — open data, CC-BY license.",
      "https://dados.florestal.gov.br"),
+    ("AAFC — Annual Crop Inventory",
+     "Agriculture and Agri-Food Canada. Open Government Licence — Canada. "
+     "Used on the Canada page.",
+     "https://developers.google.com/earth-engine/datasets/catalog/AAFC_ACI"),
+    ("NTEMS — Canada forest age (2019)",
+     "Natural Resources Canada / National Forest Information System; "
+     "Hermosilla et al. Used on the Canada page.",
+     "https://developers.google.com/earth-engine/datasets/catalog/"
+     "CANADA_NFIS_NTEMS_CA_FOREST_AGE"),
+    ("Landsat annual composites",
+     "USGS/NASA Landsat Collection 2 Tier 1 Level-2 annual composites. Used "
+     "on the Canada page.",
+     "https://developers.google.com/earth-engine/datasets/catalog/"
+     "LANDSAT_COMPOSITES_C02_T1_L2_ANNUAL"),
     ("Google Earth Engine",
      "Gorelick, N. et al. (2017). Google Earth Engine: Planetary-scale geospatial "
      "analysis for everyone. Remote Sensing of Environment 202, 18–27.",

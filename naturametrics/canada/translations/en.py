@@ -241,4 +241,10 @@ TRANSLATIONS_EN: dict[str, str] = {
         "Each source has its own attribution requirements. When publishing "
         "figures or numbers obtained here, cite whichever ones were used."
     ),
+    "cite_example_title": "Example of use in text",
+    "cite_example_body": (
+        "\"The Canadian study area was analysed with Naturametrics (Biondo "
+        "et al., 2026), using the AAFC Annual Crop Inventory and Hansen "
+        "Global Forest Change data (Hansen et al., 2013).\""
+    ),
 }

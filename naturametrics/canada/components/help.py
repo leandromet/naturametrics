@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import reflex as rx
 
+from ...config.citation import DATA_SOURCES, DATA_SOURCES_EN
 from ...config.settings import BUFFER_RADII_KM
-from ..services.exports import DATA_SOURCES
 from ..state import CanadaState as S
 from ..translations import get_translations
 
@@ -79,19 +79,33 @@ def how_to_use_dialog() -> rx.Component:
                 style={"maxHeight": "60vh", "paddingRight": "1rem"},
             ),
             rx.flex(
-                rx.dialog.close(rx.button(S.tr["close_button"], size="2",
-                                          variant="soft")),
+                # A plain button driving state directly, not rx.dialog.close:
+                # any button used solely as Dialog.Close's child gets compiled
+                # by Reflex into its own standalone helper component that takes
+                # no props, so the onClick/ref Radix's "asChild" cloning tries
+                # to inject onto it at runtime never arrives. See
+                # naturametrics/components/help.py::como_usar_dialog for the trace.
+                rx.button(S.tr["close_button"], size="2", variant="soft",
+                         on_click=S.set_help_open(False)),
                 justify="end", margin_top="1rem",
             ),
             max_width=["94vw", "94vw", "640px", "640px"],
         ),
+        open=S.help_open,
+        on_open_change=S.set_help_open,
     )
 
 
-def _source_row(name: str, detail: str, url: str) -> rx.Component:
+def _source_row(name_pt: str, name_en: str, detail_pt: str, detail_en: str,
+                url: str) -> rx.Component:
+    """Bilingual, mirroring the Brazil page's cite dialog — see
+    ``naturametrics/components/help.py::_source_row``. The two pages share one
+    source list (``config/citation.py``), so this needs the same shape."""
     return rx.vstack(
-        rx.link(name, href=url, is_external=True, size="2", weight="bold"),
-        rx.text(detail, size="1", color_scheme="gray"),
+        rx.link(rx.cond(S.language == "pt", name_pt, name_en),
+               href=url, is_external=True, size="2", weight="bold"),
+        rx.text(rx.cond(S.language == "pt", detail_pt, detail_en),
+               size="1", color_scheme="gray"),
         spacing="1", align_items="start", width="100%",
     )
 
@@ -116,8 +130,20 @@ def how_to_cite_dialog() -> rx.Component:
                     rx.text(S.tr["cite_sources_title"], size="2", weight="bold"),
                     rx.text(S.tr["cite_sources_desc"], size="1", color_scheme="gray"),
                     rx.vstack(
-                        *[_source_row(n, d, u) for n, d, u in DATA_SOURCES],
+                        *[
+                            _source_row(n_pt, n_en, d_pt, d_en, u)
+                            for (n_pt, d_pt, u), (n_en, d_en, _)
+                            in zip(DATA_SOURCES, DATA_SOURCES_EN)
+                        ],
                         spacing="3", align_items="start", width="100%",
+                    ),
+                    rx.divider(),
+                    rx.text(S.tr["cite_example_title"], size="2", weight="bold"),
+                    rx.box(
+                        rx.text(S.tr["cite_example_body"], size="2",
+                               style={"lineHeight": "1.6", "fontStyle": "italic"}),
+                        padding="0.75rem", background="var(--gray-3)",
+                        border_radius="6px", width="100%",
                     ),
                     spacing="3", align_items="start", width="100%",
                 ),
@@ -125,12 +151,15 @@ def how_to_cite_dialog() -> rx.Component:
                 style={"maxHeight": "60vh", "paddingRight": "1rem"},
             ),
             rx.flex(
-                rx.dialog.close(rx.button(S.tr["close_button"], size="2",
-                                          variant="soft")),
+                # Plain button + state — see how_to_use_dialog above for why.
+                rx.button(S.tr["close_button"], size="2", variant="soft",
+                         on_click=S.set_cite_open(False)),
                 justify="end", margin_top="1rem",
             ),
             max_width=["94vw", "94vw", "620px", "620px"],
         ),
+        open=S.cite_open,
+        on_open_change=S.set_cite_open,
     )
 
 
@@ -201,8 +230,10 @@ def export_dialog() -> rx.Component:
                 spacing="3", align_items="start", width="100%",
             ),
             rx.flex(
-                rx.dialog.close(rx.button(S.tr["close_button"], size="2",
-                                          variant="soft")),
+                # A plain button driving export_open directly, not
+                # rx.dialog.close — see how_to_use_dialog above for why.
+                rx.button(S.tr["close_button"], size="2", variant="soft",
+                         on_click=S.set_export_open(False)),
                 justify="end", margin_top="1rem",
             ),
             max_width=["94vw", "94vw", "560px", "560px"],

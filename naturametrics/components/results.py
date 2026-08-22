@@ -79,6 +79,8 @@ def _land_use_panel() -> rx.Component:
                     on_change=AppState.set_selected_radius,
                     size="1",
                 ),
+                rx.text(AppState.buffer_extent_caption, size="1", color_scheme="gray",
+                        white_space="nowrap"),
                 rx.hstack(
                     rx.switch(checked=AppState.normalise_chart,
                               on_change=AppState.toggle_normalise, size="1"),
@@ -227,14 +229,19 @@ def _forest_age_panel() -> rx.Component:
                 flex=["1 1 100%", "1 1 100%", "1 1 auto", "1 1 auto"],
                 min_width="0",
             ),
-            rx.segmented_control.root(
-                rx.foreach(
-                    AppState.age_tab_options,
-                    lambda opt: rx.segmented_control.item(opt, value=opt),
+            rx.hstack(
+                rx.segmented_control.root(
+                    rx.foreach(
+                        AppState.age_tab_options,
+                        lambda opt: rx.segmented_control.item(opt, value=opt),
+                    ),
+                    value=AppState.selected_age_radius,
+                    on_change=AppState.set_selected_age_radius,
+                    size="1",
                 ),
-                value=AppState.selected_age_radius,
-                on_change=AppState.set_selected_age_radius,
-                size="1",
+                rx.text(AppState.buffer_extent_caption, size="1", color_scheme="gray",
+                        white_space="nowrap"),
+                spacing="2", align="center",
             ),
             width="100%", align="center", justify="between",
             wrap="wrap", gap="0.5rem",

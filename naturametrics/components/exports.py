@@ -284,8 +284,11 @@ def exportar_dialog() -> rx.Component:
                 style={"maxHeight": "62vh", "paddingRight": "1rem"},
             ),
             rx.flex(
-                rx.dialog.close(rx.button(AppState.tr["close_button"], size="2",
-                                          variant="soft")),
+                # A plain button driving export_open directly, not
+                # rx.dialog.close — see components/help.py::como_usar_dialog for
+                # why Dialog.Close's implicit prop-cloning silently fails here.
+                rx.button(AppState.tr["close_button"], size="2", variant="soft",
+                         on_click=AppState.set_export_open(False)),
                 justify="end", margin_top="1rem",
             ),
             max_width=["94vw", "94vw", "560px", "560px"],

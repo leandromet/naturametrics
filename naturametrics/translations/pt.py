@@ -20,7 +20,9 @@ TRANSLATIONS_PT: dict[str, str] = {
     "section_multi_select": "Seleção múltipla",
     "section_biomes": "Biomas (IBGE)",
     "section_point": "Ponto de estudo",
-    "buffer_square_toggle_label": "Usar buffers quadrados (lado = raio atual)",
+    "buffer_square_toggle_label": "Usar buffers quadrados (lado = diâmetro)",
+    "buffer_caption_square": "(lado quadrado)",
+    "buffer_caption_circle": "(raio círculo)",
     "multi_shape_change_note": "Altere o formato antes de selecionar pontos múltiplos.",
 
     "year_label": "Ano",
@@ -387,6 +389,12 @@ TRANSLATIONS_PT: dict[str, str] = {
     "cite_sources_desc": (
         "Cada base tem exigências próprias de atribuição. Ao publicar "
         "figuras ou números obtidos aqui, cite as que foram usadas."
+    ),
+    "cite_example_title": "Exemplo de uso no texto",
+    "cite_example_body": (
+        "\"A área de estudo foi analisada com o Naturametrics (Biondo et "
+        "al., 2026), a partir de dados do MapBiomas Coleção 10.1 e do "
+        "Hansen Global Forest Change (Hansen et al., 2013).\""
     ),
     "cite_spot_callout": (
         "As imagens SPOT 2008 (Brazil Forest Imagery Dataset) exigem "

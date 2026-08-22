@@ -102,6 +102,16 @@ class PointMixin(rx.State, mixin=True):
 
     def toggle_buffer_shape(self, checked: bool):
         self.buffer_shape = "square" if checked else "circle"
+        # selected_age_radius is a stored label, not a float — it must be reset
+        # here or it keeps the old shape's suffix and no longer matches any
+        # current age_tab_options entry (unlike selected_radius, whose label is
+        # derived fresh from buffer_shape on every render). Mirrors the same
+        # "Ponto" vs multi-sum condition age_tab_options uses, so the reset
+        # value is always one of the options actually on offer.
+        self.selected_age_radius = (
+            self._radius_label(BUFFER_RADII_KM[0])
+            if (self.multi_mode and self._multi_age_history) else "Ponto"
+        )
         if self.multi_mode:
             self.multi_error = self.tr["multi_shape_change_note"]
             return

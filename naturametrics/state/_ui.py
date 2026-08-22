@@ -16,6 +16,20 @@ class UIMixin(rx.State, mixin=True):
     #: always visible. Starts closed so the map is the first thing seen.
     sidebar_open: bool = False
 
+    #: The header's three info dialogs, each fully controlled. Not decorative:
+    #: rx.dialog.close's Radix "asChild" prop-cloning silently fails to reach a
+    #: button that Reflex has extracted into its own standalone helper
+    #: component (which every button used only as Dialog.Close's child is,
+    #: regardless of whether it happens to be identical elsewhere) — the
+    #: extracted function never receives the onClick Radix tries to inject, so
+    #: the close button renders but does nothing, and only Escape/overlay-click
+    #: (which go through Radix's own document-level listeners, not this prop)
+    #: still close the dialog. Driving open/close from state sidesteps the
+    #: mechanism entirely rather than fighting the compiler's extraction choice.
+    como_usar_open: bool = False
+    como_citar_open: bool = False
+    ai_disclaimer_open: bool = False
+
     def set_language(self, lang: str | list[str]):
         raw = lang[0] if isinstance(lang, (list, tuple)) and lang else lang
         if raw in st.SUPPORTED_LANGUAGES:
@@ -35,6 +49,15 @@ class UIMixin(rx.State, mixin=True):
 
     def toggle_sidebar(self):
         self.sidebar_open = not self.sidebar_open
+
+    def set_como_usar_open(self, value: bool):
+        self.como_usar_open = value
+
+    def set_como_citar_open(self, value: bool):
+        self.como_citar_open = value
+
+    def set_ai_disclaimer_open(self, value: bool):
+        self.ai_disclaimer_open = value
 
     @rx.var
     def tr(self) -> dict[str, str]:

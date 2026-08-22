@@ -96,8 +96,10 @@ def enviar_dados_dialog() -> rx.Component:
                 spacing="3", align_items="start", width="100%",
             ),
             rx.flex(
-                rx.dialog.close(rx.button(AppState.tr["close_button"], size="2",
-                                          variant="soft")),
+                # A plain button driving state directly, not rx.dialog.close —
+                # see components/help.py::como_usar_dialog for why.
+                rx.button(AppState.tr["close_button"], size="2", variant="soft",
+                         on_click=AppState.set_user_points_dialog_open(False)),
                 justify="end", margin_top="1rem",
             ),
             max_width=["94vw", "94vw", "560px", "560px"],

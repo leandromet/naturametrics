@@ -82,21 +82,21 @@ def como_usar_dialog() -> rx.Component:
                 style={"maxHeight": "60vh", "paddingRight": "1rem"},
             ),
             rx.flex(
-                # Reflex deduplicates byte-identical rx.button(...) subtrees into
-                # one shared, prop-less helper component. Dialog.Close relies on
-                # Radix's asChild cloning to inject its onClick/ref onto this
-                # button at runtime, and a deduped helper — since it takes no
-                # props — silently drops that injection: the button renders but
-                # clicking it does nothing (only Escape still closes the dialog,
-                # via a separate document-level listener). A distinguishing id
-                # is enough to keep this button's subtree unique per dialog, so
-                # Reflex compiles it inline instead of extracting it.
-                rx.dialog.close(rx.button(tr["close_button"], size="2",
-                                          variant="soft", id="dialog-close-como-usar")),
+                # A plain button driving state directly, not rx.dialog.close:
+                # any button used solely as Dialog.Close's child gets compiled
+                # by Reflex into its own standalone helper component that takes
+                # no props, so the onClick/ref Radix's "asChild" cloning tries
+                # to inject onto it at runtime never arrives — the button
+                # renders but does nothing, and only Escape/overlay-click (via
+                # Radix's own document-level listeners) still close the dialog.
+                rx.button(tr["close_button"], size="2", variant="soft",
+                         on_click=AppState.set_como_usar_open(False)),
                 justify="end", margin_top="1rem",
             ),
             max_width=["94vw", "94vw", "640px", "640px"],
         ),
+        open=AppState.como_usar_open,
+        on_open_change=AppState.set_como_usar_open,
     )
 
 
@@ -186,6 +186,15 @@ def como_citar_dialog() -> rx.Component:
                     ),
 
                     rx.divider(),
+                    rx.text(tr["cite_example_title"], size="2", weight="bold"),
+                    rx.box(
+                        rx.text(tr["cite_example_body"], size="2",
+                               style={"lineHeight": "1.6", "fontStyle": "italic"}),
+                        padding="0.75rem", background="var(--gray-3)",
+                        border_radius="6px", width="100%",
+                    ),
+
+                    rx.divider(),
                     rx.callout(
                         tr["cite_spot_callout"],
                         icon="info", color_scheme="gray", size="1", width="100%",
@@ -196,13 +205,15 @@ def como_citar_dialog() -> rx.Component:
                 style={"maxHeight": "60vh", "paddingRight": "1rem"},
             ),
             rx.flex(
-                # Unique id — see como_usar_dialog above for why this matters.
-                rx.dialog.close(rx.button(tr["close_button"], size="2",
-                                          variant="soft", id="dialog-close-como-citar")),
+                # Plain button + state — see como_usar_dialog above for why.
+                rx.button(tr["close_button"], size="2", variant="soft",
+                         on_click=AppState.set_como_citar_open(False)),
                 justify="end", margin_top="1rem",
             ),
             max_width=["94vw", "94vw", "660px", "660px"],
         ),
+        open=AppState.como_citar_open,
+        on_open_change=AppState.set_como_citar_open,
     )
 
 
@@ -250,11 +261,15 @@ def ai_disclaimer_dialog() -> rx.Component:
                 spacing="3", align_items="start", width="100%",
             ),
             rx.flex(
-                rx.dialog.close(rx.button(tr["close_button"], size="2", variant="soft")),
+                # Plain button + state — see como_usar_dialog above for why.
+                rx.button(tr["close_button"], size="2", variant="soft",
+                         on_click=AppState.set_ai_disclaimer_open(False)),
                 justify="end", margin_top="1rem",
             ),
             max_width=["94vw", "94vw", "560px", "560px"],
         ),
+        open=AppState.ai_disclaimer_open,
+        on_open_change=AppState.set_ai_disclaimer_open,
     )
 
 

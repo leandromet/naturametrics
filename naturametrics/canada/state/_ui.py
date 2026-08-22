@@ -22,6 +22,14 @@ class CanadaUIMixin(rx.State, mixin=True):
     #: Mobile overlay drawer only; the desktop sidebar is always visible.
     sidebar_open: bool = False
 
+    #: The header's two info dialogs, fully controlled for the same reason as
+    #: the Brazil page's equivalents (state/_ui.py::UIMixin) — Dialog.Close's
+    #: Radix "asChild" prop-cloning never reaches a button Reflex has extracted
+    #: into its own standalone helper component, so the close button renders
+    #: but does nothing without an explicit on_click driving this state instead.
+    help_open: bool = False
+    cite_open: bool = False
+
     def set_language(self, lang: str | list[str]):
         raw = lang[0] if isinstance(lang, (list, tuple)) and lang else lang
         if raw in SUPPORTED_LANGUAGES:
@@ -39,6 +47,12 @@ class CanadaUIMixin(rx.State, mixin=True):
 
     def toggle_sidebar(self):
         self.sidebar_open = not self.sidebar_open
+
+    def set_help_open(self, value: bool):
+        self.help_open = value
+
+    def set_cite_open(self, value: bool):
+        self.cite_open = value
 
     @rx.var
     def tr(self) -> dict[str, str]:

@@ -177,7 +177,8 @@ class AnalysisMixin(rx.State, mixin=True):
         """
         raw = value[0] if isinstance(value, (list, tuple)) and value else value
         try:
-            self.selected_radius = float(str(raw).replace(" km", "").strip())
+            num = float(str(raw).split(" km")[0].strip())
+            self.selected_radius = num / 2.0 if self.buffer_shape == "square" else num
         except (TypeError, ValueError):
             pass
 
@@ -215,11 +216,27 @@ class AnalysisMixin(rx.State, mixin=True):
 
     @rx.var(cache=True)
     def radius_options(self) -> list[str]:
-        return [f"{r:g} km" for r in BUFFER_RADII_KM]
+        return [self._radius_label(r) for r in BUFFER_RADII_KM]
 
     @rx.var(cache=True)
     def selected_radius_label(self) -> str:
-        return f"{self.selected_radius:g} km"
+        return self._radius_label(self.selected_radius)
+
+    def _radius_label(self, r: float) -> str:
+        """A buffer's on-screen label — the number is the *shown* extent, not
+        necessarily the internal ``radius_km`` key: a square's side is double
+        its radius (services.buffers), so the label doubles it too. What the
+        number means ("square side" vs. "circle radius") is spelled out once,
+        as separate caption text next to the row — see buffer_extent_caption —
+        rather than repeated inside every button."""
+        value = 2 * r if self.buffer_shape == "square" else r
+        return f"{value:g} km"
+
+    @rx.var(cache=True)
+    def buffer_extent_caption(self) -> str:
+        """Caption shown once, next to the last (largest) radius button."""
+        key = "buffer_caption_square" if self.buffer_shape == "square" else "buffer_caption_circle"
+        return self.tr[key]
 
     @rx.var(cache=True)
     def summary_rows(self) -> list[dict[str, str]]:
@@ -282,7 +299,7 @@ class AnalysisMixin(rx.State, mixin=True):
     @rx.var(cache=True)
     def age_tab_options(self) -> list[str]:
         """"Ponto" only makes sense for one pixel — dropped for a multi-sum."""
-        radii = [f"{r:g} km" for r in BUFFER_RADII_KM]
+        radii = [self._radius_label(r) for r in BUFFER_RADII_KM]
         return radii if (self.multi_mode and self._multi_age_history) else ["Ponto"] + radii
 
     @rx.var(cache=True)
@@ -292,7 +309,8 @@ class AnalysisMixin(rx.State, mixin=True):
         switched."""
         if self.selected_age_radius != "Ponto":
             try:
-                return float(self.selected_age_radius.replace(" km", "").strip())
+                num = float(self.selected_age_radius.split(" km")[0].strip())
+                return num / 2.0 if self.buffer_shape == "square" else num
             except ValueError:
                 pass
         return BUFFER_RADII_KM[0]

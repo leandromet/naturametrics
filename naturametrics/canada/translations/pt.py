@@ -246,4 +246,10 @@ TRANSLATIONS_PT: dict[str, str] = {
         "Cada base tem exigências próprias de atribuição. Ao publicar figuras "
         "ou números obtidos aqui, cite as que foram usadas."
     ),
+    "cite_example_title": "Exemplo de uso no texto",
+    "cite_example_body": (
+        "\"A área de estudo no Canadá foi analisada com o Naturametrics "
+        "(Biondo et al., 2026), a partir de dados do AAFC Annual Crop "
+        "Inventory e do Hansen Global Forest Change (Hansen et al., 2013).\""
+    ),
 }

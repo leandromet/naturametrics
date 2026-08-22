@@ -40,7 +40,7 @@ def _multi_view_toggle() -> rx.Component:
             size="1",
         ),
         rx.cond(
-            AppState.multi_bbox_loading,
+            AppState.multi_bbox_any_loading,
             rx.spinner(size="1"),
             rx.fragment(),
         ),
@@ -93,19 +93,6 @@ def _land_use_panel() -> rx.Component:
                 min_width="0",
             ),
             rx.hstack(
-                rx.cond(
-                    AppState.multi_active,
-                    rx.fragment(),
-                    rx.segmented_control.root(
-                        rx.segmented_control.item(
-                            AppState.tr["vegetation_age_title"], value="age"),
-                        rx.segmented_control.item(
-                            AppState.tr["landscape_metrics_tab"], value="metrics"),
-                        value=AppState.selected_age_view,
-                        on_change=AppState.set_selected_age_view,
-                        size="1",
-                    ),
-                ),
                 rx.cond(AppState.multi_active, _multi_view_toggle(), rx.fragment()),
                 rx.cond(
                     AppState.full_area_active,
@@ -280,7 +267,6 @@ def _landscape_metric_row(row: rx.Var) -> rx.Component:
 
 def _landscape_metrics_panel() -> rx.Component:
     return rx.vstack(
-        rx.text(AppState.tr["landscape_metrics_tab"], size="2", weight="bold"),
         rx.text(
             "NP · PD · LPI · ED · Shannon · Simpson",
             size="1", color_scheme="gray",
@@ -294,10 +280,13 @@ def _landscape_metrics_panel() -> rx.Component:
             gap="0.4rem", width="100%",
         ),
         rx.cond(
-            AppState.landscape_metrics_running,
+            AppState.landscape_metrics_busy,
             rx.spinner(size="1"),
             rx.cond(
-                AppState.landscape_metrics_error != "",
+                # landscape_metrics_error is only ever set by the single-point
+                # path (run_analysis) — showing it in multi-select would risk
+                # surfacing a stale error left over from an earlier point.
+                (AppState.landscape_metrics_error != "") & ~AppState.multi_mode,
                 rx.text(AppState.landscape_metrics_error, size="1",
                         color_scheme="amber"),
                 rx.cond(
@@ -309,107 +298,132 @@ def _landscape_metrics_panel() -> rx.Component:
                 ),
             ),
         ),
-        rx.text(AppState.provenance_line, size="1", color_scheme="gray"),
+        rx.text(AppState.landscape_metrics_provenance_line, size="1",
+                color_scheme="gray"),
         spacing="2", width="100%", overflow_x="auto",
     )
 
 
-def _forest_age_panel() -> rx.Component:
-    return rx.vstack(
-        # --- header ---------------------------------------------- #
-        rx.flex(
-            rx.hstack(
-                rx.icon("trees", size=15, color="var(--jade-11)"),
-                rx.text(AppState.tr["vegetation_age_title"], size="2", weight="bold",
-                        white_space="nowrap"),
+def _age_body() -> rx.Component:
+    return rx.cond(
+        AppState.age_running | AppState.multi_bbox_loading,
+        rx.center(
+            rx.vstack(
+                rx.spinner(size="2"),
+                rx.text(AppState.tr["age_running"],
+                        size="1", color_scheme="gray"),
                 spacing="2", align="center",
-                flex=["1 1 100%", "1 1 100%", "1 1 auto", "1 1 auto"],
-                min_width="0",
             ),
-            rx.hstack(
-                rx.cond(AppState.multi_active, _multi_view_toggle(), rx.fragment()),
+            height="280px", width="100%",
+        ),
+        rx.cond(
+            AppState.age_error != "",
+            rx.callout(AppState.age_error, icon="triangle-alert",
+                       color_scheme="amber", size="1", width="100%"),
+            rx.cond(
+                AppState.age_has_result,
                 rx.cond(
-                    AppState.full_area_active,
-                    rx.badge(AppState.full_area_radius_label, size="1",
-                             variant="soft", color_scheme="gray"),
-                    rx.segmented_control.root(
-                        rx.foreach(
-                            AppState.age_tab_options,
-                            lambda opt: rx.segmented_control.item(opt, value=opt),
+                    AppState.age_showing_point,
+                    rx.plotly(
+                        data=AppState.age_point_figure,
+                        config={"displayModeBar": False, "displaylogo": False,
+                                "responsive": True},
+                        width="100%",
+                        height=["260px", "280px", "280px", "280px"],
+                    ),
+                    rx.flex(
+                        rx.box(
+                            rx.plotly(
+                                data=AppState.age_histogram_figure,
+                                config={"displayModeBar": False,
+                                        "displaylogo": False,
+                                        "responsive": True},
+                                width="100%",
+                                height=["260px", "280px", "280px", "280px"],
+                            ),
+                            flex=["1 1 100%", "1 1 100%", "1 1 100%", "1 1 0"],
+                            min_width="0", width="100%",
                         ),
-                        value=AppState.selected_age_radius,
-                        on_change=AppState.set_selected_age_radius,
-                        size="1",
+                        rx.cond(
+                            AppState.age_has_summary,
+                            _age_summary_line(AppState.age_summary_row),
+                            rx.fragment(),
+                        ),
+                        width="100%",
+                        direction=rx.breakpoints(initial="column", lg="row"),
+                        gap="1rem", align="start",
                     ),
                 ),
-                rx.text(AppState.buffer_extent_caption, size="1", color_scheme="gray",
-                        white_space="nowrap"),
-                spacing="2", align="center",
+                rx.fragment(),
             ),
-            width="100%", align="center", justify="between",
-            wrap="wrap", gap="0.5rem",
         ),
+    )
 
-        # --- body ------------------------------------------------ #
-        rx.cond(
-            (AppState.selected_age_view == "metrics") & ~AppState.multi_active,
-            _landscape_metrics_panel(),
-            rx.cond(
-                AppState.age_running | AppState.multi_bbox_loading,
-            rx.center(
-                rx.vstack(
-                    rx.spinner(size="2"),
-                    rx.text(AppState.tr["age_running"],
-                            size="1", color_scheme="gray"),
+
+def _forest_age_panel() -> rx.Component:
+    return rx.tabs.root(
+        rx.vstack(
+            # --- header ---------------------------------------------- #
+            rx.flex(
+                rx.hstack(
+                    rx.icon("trees", size=15, color="var(--jade-11)"),
+                    rx.tabs.list(
+                        rx.tabs.trigger(AppState.tr["vegetation_age_title"],
+                                       value="age"),
+                        rx.tabs.trigger(AppState.tr["landscape_metrics_tab"],
+                                        value="metrics"),
+                    ),
+                    spacing="2", align="center",
+                    flex=["1 1 100%", "1 1 100%", "1 1 auto", "1 1 auto"],
+                    min_width="0",
+                ),
+                rx.hstack(
+                    rx.cond(AppState.multi_active, _multi_view_toggle(), rx.fragment()),
+                    # The radius selector and its caption only mean something
+                    # for the age tab — the metrics tab already lists every
+                    # radius as its own row (landscape_metrics_rows).
+                    rx.cond(
+                        AppState.selected_age_view == "age",
+                        rx.fragment(
+                            rx.cond(
+                                AppState.full_area_active,
+                                rx.badge(AppState.full_area_radius_label, size="1",
+                                         variant="soft", color_scheme="gray"),
+                                rx.segmented_control.root(
+                                    rx.foreach(
+                                        AppState.age_tab_options,
+                                        lambda opt: rx.segmented_control.item(
+                                            opt, value=opt),
+                                    ),
+                                    value=AppState.selected_age_radius,
+                                    on_change=AppState.set_selected_age_radius,
+                                    size="1",
+                                ),
+                            ),
+                            rx.text(AppState.buffer_extent_caption, size="1",
+                                    color_scheme="gray", white_space="nowrap"),
+                        ),
+                        rx.fragment(),
+                    ),
                     spacing="2", align="center",
                 ),
-                height="280px", width="100%",
+                width="100%", align="center", justify="between",
+                wrap="wrap", gap="0.5rem",
             ),
+
+            # --- body ------------------------------------------------ #
+            rx.tabs.content(_age_body(), value="age", width="100%"),
+            rx.tabs.content(_landscape_metrics_panel(), value="metrics", width="100%"),
             rx.cond(
-                AppState.age_error != "",
-                rx.callout(AppState.age_error, icon="triangle-alert",
-                           color_scheme="amber", size="1", width="100%"),
-                rx.cond(
-                    AppState.age_has_result,
-                    rx.cond(
-                        AppState.age_showing_point,
-                        rx.plotly(
-                            data=AppState.age_point_figure,
-                            config={"displayModeBar": False, "displaylogo": False,
-                                    "responsive": True},
-                            width="100%",
-                            height=["260px", "280px", "280px", "280px"],
-                        ),
-                        rx.flex(
-                            rx.box(
-                                rx.plotly(
-                                    data=AppState.age_histogram_figure,
-                                    config={"displayModeBar": False,
-                                            "displaylogo": False,
-                                            "responsive": True},
-                                    width="100%",
-                                    height=["260px", "280px", "280px", "280px"],
-                                ),
-                                flex=["1 1 100%", "1 1 100%", "1 1 100%", "1 1 0"],
-                                min_width="0", width="100%",
-                            ),
-                            rx.cond(
-                                AppState.age_has_summary,
-                                _age_summary_line(AppState.age_summary_row),
-                                rx.fragment(),
-                            ),
-                            width="100%",
-                            direction=rx.breakpoints(initial="column", lg="row"),
-                            gap="1rem", align="start",
-                        ),
-                    ),
-                    rx.fragment(),
-                ),
-                ),
+                AppState.selected_age_view == "age",
+                rx.text(AppState.age_provenance_line, size="1", color_scheme="gray"),
+                rx.fragment(),
             ),
+            width="100%", spacing="3", align_items="stretch",
         ),
-        rx.text(AppState.age_provenance_line, size="1", color_scheme="gray"),
-        width="100%", spacing="3", align_items="stretch",
+        value=AppState.selected_age_view,
+        on_change=AppState.set_selected_age_view,
+        width="100%",
     )
 
 

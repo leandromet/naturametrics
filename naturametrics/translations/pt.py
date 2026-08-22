@@ -129,6 +129,7 @@ TRANSLATIONS_PT: dict[str, str] = {
     "vegetation_age_title": "Idade da vegetação",
     "landscape_metrics_tab": "Métricas de paisagem",
     "landscape_metrics_empty": "Métricas ainda não disponíveis.",
+    "err_landscape_metrics_failed": "Falha ao calcular as métricas de paisagem: {exc}",
     "metrics_buffer": "Buffer",
     "metrics_area": "Área (ha)",
     "metrics_patches": "Manchas",

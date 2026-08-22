@@ -76,7 +76,7 @@ def header() -> rx.Component:
             rx.icon("layers", size=20, color=f"var(--{ACCENT}-11)"),
             rx.heading("Naturametrics", size=rx.breakpoints(initial="3", md="4"),
                        weight="bold", white_space="nowrap"),
-            rx.badge("v0.1", variant="soft", color_scheme="gray", size="1",
+            rx.badge("v0.3.1", variant="soft", color_scheme="gray", size="1",
                      display=["none", "flex", "flex", "flex"]),
             spacing="2",
             align="center",

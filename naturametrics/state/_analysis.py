@@ -136,29 +136,34 @@ class AnalysisMixin(rx.State, mixin=True):
             self.age_running = True
             self.age_error = ""
 
-        # A separate try/except on purpose: the land-use chart above already has
-        # its answer by this point, and an Earth Engine hiccup specific to the DSV
-        # asset (services/vegetation_age.py) must not blank out a result that worked.
+        # Both fetch off the same buffers but are otherwise independent products
+        # (services.vegetation_age vs services.landscape_metrics) with different
+        # failure modes — issued together so neither waits on the other's
+        # wall-clock, but resolved through separate try/excepts below so a
+        # hiccup in one cannot blank a result the other already produced. This
+        # matters more than it might for the age/change pair: landscape_metrics
+        # has no retry ladder and makes five sequential Earth Engine round-trips
+        # (services/landscape_metrics.py), so it fails more often.
+        age_point_task = loop.run_in_executor(None, point_forest_age_series, p)
+        age_buffer_task = loop.run_in_executor(
+            None, buffer_forest_age_histogram, p, BUFFER_RADII_KM,
+            BUFFER_MODE_DEFAULT, self.buffer_shape)
+        # services.change_mask.change_stats — 2008→2024 loss/gain per buffer,
+        # shown as the small bar next to the age summary. Cheap (~1-2 s) and
+        # unrelated in failure mode to the age counter above, but it lives in
+        # the same panel and the same "vegetation over time" question, so it
+        # shares this try/except rather than getting a third error channel.
+        change_task = loop.run_in_executor(
+            None, functools.partial(
+                change_stats, p, BUFFER_RADII_KM,
+                mode=BUFFER_MODE_DEFAULT, shape=self.buffer_shape))
+        metrics_task = loop.run_in_executor(
+            None, landscape_metrics, p, BUFFER_RADII_KM,
+            BUFFER_MODE_DEFAULT, self.buffer_shape)
+
         try:
-            age_point_task = loop.run_in_executor(None, point_forest_age_series, p)
-            age_buffer_task = loop.run_in_executor(
-                None, buffer_forest_age_histogram, p, BUFFER_RADII_KM,
-                BUFFER_MODE_DEFAULT, self.buffer_shape)
-            # services.change_mask.change_stats — 2008→2024 loss/gain per buffer,
-            # shown as the small bar next to the age summary. Cheap (~1-2 s) and
-            # unrelated in failure mode to the age counter above, but it lives in
-            # the same panel and the same "vegetation over time" question, so it
-            # shares this try/except rather than getting a third error channel.
-            change_task = loop.run_in_executor(
-                None, functools.partial(
-                    change_stats, p, BUFFER_RADII_KM,
-                    mode=BUFFER_MODE_DEFAULT, shape=self.buffer_shape))
-            metrics_task = loop.run_in_executor(
-                None, landscape_metrics, p, BUFFER_RADII_KM,
-                BUFFER_MODE_DEFAULT, self.buffer_shape)
-            (age_df, age_prov), (age_buf_df, age_buf_prov), (change, change_prov), \
-                (metrics_df, metrics_prov) = await asyncio.gather(
-                    age_point_task, age_buffer_task, change_task, metrics_task)
+            (age_df, age_prov), (age_buf_df, age_buf_prov), (change, change_prov) = \
+                await asyncio.gather(age_point_task, age_buffer_task, change_task)
         except Exception as exc:  # noqa: BLE001
             logger.exception("Forest-age analysis failed")
             async with self:
@@ -166,27 +171,36 @@ class AnalysisMixin(rx.State, mixin=True):
                     self.age_running = False
                     self.age_error = self.tr["err_vegetation_age_failed"].format(
                         exc=exc)
+        else:
+            async with self:
+                if token == self._run_token:
+                    self._age_point = age_df.to_dict("records")
+                    self._age_point_provenance = age_prov.to_dict()
+                    self._age_buffers = age_buf_df.to_dict("records")
+                    self._age_buffers_provenance = age_buf_prov.to_dict()
+                    self._change_stats = {f"{r:g}": v for r, v in change.items()}
+                    self._change_provenance = change_prov.to_dict()
+                    self.age_running = False
+                    if age_buf_df.empty and age_df.empty:
+                        self.age_error = self.tr["err_no_vegetation_age"]
+
+        try:
+            metrics_df, _metrics_hist_df, metrics_prov = await metrics_task
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("Landscape metrics failed")
+            async with self:
+                if token == self._run_token:
                     self.landscape_metrics_running = False
-                    self.landscape_metrics_error = str(exc)
+                    self.landscape_metrics_error = \
+                        self.tr["err_landscape_metrics_failed"].format(exc=exc)
                     self._landscape_metrics = []
                     self._landscape_metrics_provenance = {}
-            return
-
-        async with self:
-            if token != self._run_token:
-                return
-            self._age_point = age_df.to_dict("records")
-            self._age_point_provenance = age_prov.to_dict()
-            self._age_buffers = age_buf_df.to_dict("records")
-            self._age_buffers_provenance = age_buf_prov.to_dict()
-            self._change_stats = {f"{r:g}": v for r, v in change.items()}
-            self._change_provenance = change_prov.to_dict()
-            self._landscape_metrics = metrics_df.to_dict("records")
-            self._landscape_metrics_provenance = metrics_prov.to_dict()
-            self.landscape_metrics_running = False
-            self.age_running = False
-            if age_buf_df.empty and age_df.empty:
-                self.age_error = self.tr["err_no_vegetation_age"]
+        else:
+            async with self:
+                if token == self._run_token:
+                    self._landscape_metrics = metrics_df.to_dict("records")
+                    self._landscape_metrics_provenance = metrics_prov.to_dict()
+                    self.landscape_metrics_running = False
 
     def set_selected_radius(self, value: str | list[str]):
         """Set the buffer whose history is charted.
@@ -355,14 +369,32 @@ class AnalysisMixin(rx.State, mixin=True):
     def age_has_result(self) -> bool:
         return bool(self._age_point) or bool(self._age_buffers) or bool(self._multi_age_history)
 
+    def _landscape_metrics_records(self) -> list[dict[str, Any]]:
+        """Same switch as _chart_records/_age_buffer_records, for the
+        landscape-metrics table."""
+        if (self.multi_mode and self.multi_view_mode == "full_area"
+                and self._multi_bbox_landscape_metrics):
+            return self._multi_bbox_landscape_metrics
+        if self.multi_mode and self._multi_landscape_metrics:
+            return self._multi_landscape_metrics
+        return self._landscape_metrics
+
     @rx.var(cache=True)
     def landscape_metrics_has_result(self) -> bool:
-        return bool(self._landscape_metrics) and not self.multi_mode
+        return bool(self._landscape_metrics_records())
+
+    @rx.var(cache=True)
+    def landscape_metrics_busy(self) -> bool:
+        if self.multi_mode and self.multi_view_mode == "full_area":
+            return self.multi_bbox_landscape_busy
+        if self.multi_mode:
+            return self.multi_busy
+        return self.landscape_metrics_running
 
     @rx.var(cache=True)
     def landscape_metrics_rows(self) -> list[dict[str, str]]:
         rows = []
-        for record in self._landscape_metrics:
+        for record in self._landscape_metrics_records():
             rows.append({
                 "buffer": self._radius_label(float(record["radius_km"])),
                 "area": f'{record["area_ha"]:,.1f}',
@@ -375,6 +407,37 @@ class AnalysisMixin(rx.State, mixin=True):
                 "evenness": f'{record["simpson_evenness"]:.2f}',
             })
         return rows
+
+    @rx.var(cache=True)
+    def landscape_metrics_provenance_line(self) -> str:
+        """Its own line — services.landscape_metrics has a different dataset
+        year/reducer than the land-cover history (provenance_line above), so
+        showing that one here would describe the wrong computation."""
+        full_area = (self.multi_mode and self.multi_view_mode == "full_area"
+                     and self._multi_bbox_landscape_metrics)
+        multi = self.multi_mode and self._multi_landscape_metrics
+        if full_area:
+            p = self._multi_bbox_landscape_provenance
+        elif multi:
+            p = self._multi_landscape_provenance
+        else:
+            p = self._landscape_metrics_provenance
+        if not p:
+            return ""
+        degraded = self.tr["provenance_degraded"] if p.get("degraded") else ""
+        note = ""
+        if full_area:
+            n = len(self.multi_points)
+            note = self.tr["provenance_full_area_one" if n == 1
+                            else "provenance_full_area_many"].format(n=n)
+        elif multi:
+            n = len(self.multi_points)
+            note = self.tr["provenance_summed_one" if n == 1
+                            else "provenance_summed_many"].format(n=n)
+        return (
+            f"MapBiomas {p.get('extra', {}).get('year', '')} · {p.get('scale_m')} m · "
+            f"{p.get('reducer')}{degraded}{note}"
+        )
 
     @rx.var(cache=True)
     def age_tab_options(self) -> list[str]:

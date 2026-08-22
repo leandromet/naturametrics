@@ -51,6 +51,13 @@ IBGE_VEG_CLASS_FIELD = "leg2_id"
 IBGE_VEG_COUNT = 145_458
 IBGE_VEG_ATTRIBUTION = "IBGE — Mapa de Vegetação do Brasil, escala 1:250.000 (2022)"
 
+#: The one MapBiomas year this asset is ever compared against — a 2022
+#: snapshot has no other year to be honestly compared with. Shared by
+#: services.ibge_vegetation's default ``mb_year`` and the map's IBGE-vs-
+#: MapBiomas swipe curtain (state._layers), so the two always agree on which
+#: year "MapBiomas 2022" means.
+IBGE_COMPARE_YEAR = 2022
+
 # --------------------------------------------------------------------------- #
 # Class labels and official colours, leg2_id 1-54
 # --------------------------------------------------------------------------- #

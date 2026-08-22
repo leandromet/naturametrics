@@ -23,6 +23,7 @@ TRANSLATIONS_PT: dict[str, str] = {
     "section_biomes": "Biomas (IBGE)",
     "section_biomass": "Biomassa (ESA CCI)",
     "section_ibge_veg": "Vegetação (IBGE 2022)",
+    "section_ibge_compare": "Comparar — IBGE × MapBiomas",
     "section_forest_change": "Mudança florestal (Hansen)",
     "hansen_treecover_toggle": "Cobertura arbórea 2000",
     "hansen_change_toggle": "Perda e ganho",
@@ -160,6 +161,11 @@ TRANSLATIONS_PT: dict[str, str] = {
     "ibge_veg_layer_note": (
         "Vegetação IBGE, 1:250.000 (2022) — 54 classes oficiais, cores do "
         "estilo cartográfico do próprio IBGE."
+    ),
+    "ibge_compare_note": (
+        "Arraste a linha branca no mapa. À direita fica o MapBiomas 2022, "
+        "à esquerda a Vegetação IBGE 2022 — desliga a cortina de comparação "
+        "de anos acima, já que o mapa tem apenas um divisor."
     ),
     "ibge_veg_caveat": (
         "Os dois conjuntos de dados são simplificados para uma taxonomia "

@@ -111,6 +111,14 @@ class LayersMixin(rx.State, mixin=True):
     show_ibge_veg: bool = False
     ibge_veg_opacity: float = 0.6
 
+    #: IBGE Vegetação 2022 vs. MapBiomas 2022, split by the same draggable
+    #: divider as ``compare_enabled`` — mutually exclusive with it (see
+    #: toggle_ibge_compare/toggle_compare), since the map has one swipe
+    #: handle. No year picker needed: both sides are fixed to 2022, so unlike
+    #: compare_control this reuses mapbiomas_opacity/ibge_veg_opacity rather
+    #: than its own opacity sliders.
+    ibge_compare_enabled: bool = False
+
     # --- Hansen Global Forest Change, ported from the Canada page ---------
     #: One threshold governs both sub-layers (tree cover 2000, loss/gain), so
     #: it lives outside either toggle rather than under one of them.
@@ -284,6 +292,35 @@ class LayersMixin(rx.State, mixin=True):
                 "max_native_zoom": 13,
             })
 
+        if self.ibge_compare_enabled:
+            # Independent of show_mapbiomas/show_ibge_veg on purpose — both
+            # sides are fixed to 2022 (there is nothing to pick), so the
+            # curtain does not depend on whichever year the plain MapBiomas
+            # layer happens to be showing. z-index above both layers' own
+            # (13/10) so this pair always wins if a plain toggle is also on.
+            mb_url = self._mb_urls.get(ds_ibge_veg.IBGE_COMPARE_YEAR)
+            if mb_url:
+                specs.append({
+                    "id": f"mapbiomas:{mb.MAPBIOMAS_DEFAULT_COLLECTION}"
+                          f":{ds_ibge_veg.IBGE_COMPARE_YEAR}:ibgecmp",
+                    "url": mb_url,
+                    "opacity": self.mapbiomas_opacity,
+                    "attribution": "MapBiomas Collection 10.1",
+                    "z_index": 14,
+                    "max_native_zoom": 15,
+                    "clip": "right",
+                })
+            if self._ibge_veg_url:
+                specs.append({
+                    "id": "ibge_vegetation:leg2:cmp",
+                    "url": self._ibge_veg_url,
+                    "opacity": self.ibge_veg_opacity,
+                    "attribution": ds_ibge_veg.IBGE_VEG_ATTRIBUTION,
+                    "z_index": 15,
+                    "max_native_zoom": 13,
+                    "clip": "left",
+                })
+
         if self.show_hansen_treecover:
             url = self._hansen_urls.get(f"hansen_tc:{self.hansen_treecover_threshold}")
             if url:
@@ -415,6 +452,8 @@ class LayersMixin(rx.State, mixin=True):
             if not checked:
                 self._refresh_layers()
                 return
+            # Only one curtain at a time — the map has a single swipe handle.
+            self.ibge_compare_enabled = False
             if not self.show_mapbiomas:
                 self.show_mapbiomas = True
             needed = self.compare_year not in self._mb_urls
@@ -695,6 +734,52 @@ class LayersMixin(rx.State, mixin=True):
         raw = value[0] if isinstance(value, (list, tuple)) else value
         self.ibge_veg_opacity = round(float(raw) / 100.0, 2)
         self._refresh_layers()
+
+    @rx.event(background=True)
+    async def toggle_ibge_compare(self, checked: bool):
+        """Show IBGE Vegetação 2022 and MapBiomas 2022 side by side, split by
+        the same draggable divider as toggle_compare. No year picker — both
+        sides are fixed to IBGE_COMPARE_YEAR — so this only needs to make
+        sure both tile URLs exist, not manage a slider."""
+        async with self:
+            self.ibge_compare_enabled = checked
+            if not checked:
+                self._refresh_layers()
+                return
+            # Only one curtain at a time — same reasoning as toggle_compare.
+            self.compare_enabled = False
+            needed_mb = ds_ibge_veg.IBGE_COMPARE_YEAR not in self._mb_urls
+            needed_ibge = not self._ibge_veg_url
+            if not needed_mb and not needed_ibge:
+                self._refresh_layers()
+                return
+            self.layer_busy = True
+
+        loop = asyncio.get_running_loop()
+        mb_task = (loop.run_in_executor(
+            None, layer_service.mapbiomas_spec, ds_ibge_veg.IBGE_COMPARE_YEAR)
+            if needed_mb else None)
+        ibge_task = (loop.run_in_executor(None, layer_service.ibge_vegetation_spec)
+                     if needed_ibge else None)
+        try:
+            mb_spec = await mb_task if mb_task else None
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Could not build MapBiomas %s for IBGE compare: %s",
+                           ds_ibge_veg.IBGE_COMPARE_YEAR, exc)
+            mb_spec = None
+        try:
+            ibge_spec = await ibge_task if ibge_task else None
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Could not build IBGE vegetation layer for compare: %s", exc)
+            ibge_spec = None
+
+        async with self:
+            if mb_spec:
+                self._mb_urls[ds_ibge_veg.IBGE_COMPARE_YEAR] = mb_spec["url"]
+            if ibge_spec:
+                self._ibge_veg_url = ibge_spec["url"]
+            self.layer_busy = False
+            self._refresh_layers()
 
     # ---------------------------------------------------------------------- #
     # Hansen Global Forest Change (ported from the Canada page)

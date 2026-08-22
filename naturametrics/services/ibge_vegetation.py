@@ -329,7 +329,7 @@ def mapbiomas_comparison(
     radii_km: tuple[float, ...] = BUFFER_RADII_KM,
     mode: BufferMode = "disc",
     shape: BufferShape = "circle",
-    mb_year: int = 2022,
+    mb_year: int = iv.IBGE_COMPARE_YEAR,
 ) -> tuple[pd.DataFrame, Provenance]:
     """Joint IBGE-vegetation × MapBiomas area histogram, one buffer at a time."""
     get_ee()
@@ -345,7 +345,7 @@ def full_area_mapbiomas_comparison(
     points: list[Point],
     radii_km: tuple[float, ...] = BUFFER_RADII_KM,
     shape: BufferShape = "circle",
-    mb_year: int = 2022,
+    mb_year: int = iv.IBGE_COMPARE_YEAR,
 ) -> tuple[pd.DataFrame, Provenance]:
     get_ee()
     bbox = full_area_bbox(points, radii_km, shape)

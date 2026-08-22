@@ -625,6 +625,29 @@ def ibge_vegetation_control() -> rx.Component:
     )
 
 
+def ibge_compare_control() -> rx.Component:
+    """IBGE Vegetação 2022 vs. MapBiomas 2022, split by the same draggable
+    divider as compare_control — no year picker (both sides are fixed to
+    2022) and no opacity sliders of its own, since it reuses whatever
+    mapbiomas_opacity/ibge_veg_opacity are already set to."""
+    return _section(
+        AppState.tr["section_ibge_compare"],
+        rx.hstack(
+            rx.switch(checked=AppState.ibge_compare_enabled,
+                      on_change=AppState.toggle_ibge_compare),
+            rx.text(AppState.tr["compare_toggle_label"], size="2"),
+            rx.spacer(),
+            rx.cond(AppState.layer_busy, rx.spinner(size="1"), rx.fragment()),
+            width="100%", align="center", spacing="2",
+        ),
+        rx.cond(
+            AppState.ibge_compare_enabled,
+            rx.text(AppState.tr["ibge_compare_note"], size="1", color_scheme="gray"),
+            rx.fragment(),
+        ),
+    )
+
+
 def hansen_control() -> rx.Component:
     """Hansen Global Forest Change, ported from the Canada page — same
     asset, same visualization (config.datasets.HANSEN_GFC), so the two
@@ -809,6 +832,8 @@ def layer_panel() -> rx.Component:
         biomass_control(),
         rx.divider(),
         ibge_vegetation_control(),
+        rx.divider(),
+        ibge_compare_control(),
         rx.divider(),
         hansen_control(),
         rx.spacer(),

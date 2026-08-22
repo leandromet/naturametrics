@@ -17,6 +17,7 @@ from ..components.charts import (
 from ..config.settings import BUFFER_MODE_DEFAULT, BUFFER_RADII_KM
 from ..services.buffers import buffer_geojson
 from ..services.change_mask import change_stats
+from ..services.landscape_metrics import landscape_metrics
 from ..services.vegetation_age import age_summary, buffer_forest_age_histogram, point_forest_age_series
 from ..services.geo import CoordinateError, point
 from ..services.mapbiomas_history import land_cover_history, point_pixel_series
@@ -76,6 +77,11 @@ class AnalysisMixin(rx.State, mixin=True):
     #: as the point-age line above: no multi-selection sum yet.
     _change_stats: dict[str, dict[str, float]] = {}
     _change_provenance: dict[str, Any] = {}
+    landscape_metrics_running: bool = False
+    landscape_metrics_error: str = ""
+    _landscape_metrics: list[dict[str, Any]] = []
+    _landscape_metrics_provenance: dict[str, Any] = {}
+    selected_age_view: str = "age"
 
     @rx.event(background=True)
     async def run_analysis(self, lat: float, lon: float):
@@ -86,6 +92,10 @@ class AnalysisMixin(rx.State, mixin=True):
             self.analysis_running = True
             self.analysis_error = ""
             self.has_result = False
+            self.landscape_metrics_running = True
+            self.landscape_metrics_error = ""
+            self._landscape_metrics = []
+            self._landscape_metrics_provenance = {}
 
         loop = asyncio.get_running_loop()
         try:
@@ -143,8 +153,12 @@ class AnalysisMixin(rx.State, mixin=True):
                 None, functools.partial(
                     change_stats, p, BUFFER_RADII_KM,
                     mode=BUFFER_MODE_DEFAULT, shape=self.buffer_shape))
-            (age_df, age_prov), (age_buf_df, age_buf_prov), (change, change_prov) = \
-                await asyncio.gather(age_point_task, age_buffer_task, change_task)
+            metrics_task = loop.run_in_executor(
+                None, landscape_metrics, p, BUFFER_RADII_KM,
+                BUFFER_MODE_DEFAULT, self.buffer_shape)
+            (age_df, age_prov), (age_buf_df, age_buf_prov), (change, change_prov), \
+                (metrics_df, metrics_prov) = await asyncio.gather(
+                    age_point_task, age_buffer_task, change_task, metrics_task)
         except Exception as exc:  # noqa: BLE001
             logger.exception("Forest-age analysis failed")
             async with self:
@@ -152,6 +166,10 @@ class AnalysisMixin(rx.State, mixin=True):
                     self.age_running = False
                     self.age_error = self.tr["err_vegetation_age_failed"].format(
                         exc=exc)
+                    self.landscape_metrics_running = False
+                    self.landscape_metrics_error = str(exc)
+                    self._landscape_metrics = []
+                    self._landscape_metrics_provenance = {}
             return
 
         async with self:
@@ -163,6 +181,9 @@ class AnalysisMixin(rx.State, mixin=True):
             self._age_buffers_provenance = age_buf_prov.to_dict()
             self._change_stats = {f"{r:g}": v for r, v in change.items()}
             self._change_provenance = change_prov.to_dict()
+            self._landscape_metrics = metrics_df.to_dict("records")
+            self._landscape_metrics_provenance = metrics_prov.to_dict()
+            self.landscape_metrics_running = False
             self.age_running = False
             if age_buf_df.empty and age_df.empty:
                 self.age_error = self.tr["err_no_vegetation_age"]
@@ -189,6 +210,10 @@ class AnalysisMixin(rx.State, mixin=True):
         """"Ponto" or a radius label — see selected_age_radius."""
         raw = value[0] if isinstance(value, (list, tuple)) and value else value
         self.selected_age_radius = str(raw)
+
+    def set_selected_age_view(self, value: str | list[str]):
+        raw = value[0] if isinstance(value, (list, tuple)) and value else value
+        self.selected_age_view = str(raw)
 
     # ---------------------------------------------------------------------- #
     # Derived
@@ -329,6 +354,27 @@ class AnalysisMixin(rx.State, mixin=True):
     @rx.var(cache=True)
     def age_has_result(self) -> bool:
         return bool(self._age_point) or bool(self._age_buffers) or bool(self._multi_age_history)
+
+    @rx.var(cache=True)
+    def landscape_metrics_has_result(self) -> bool:
+        return bool(self._landscape_metrics) and not self.multi_mode
+
+    @rx.var(cache=True)
+    def landscape_metrics_rows(self) -> list[dict[str, str]]:
+        rows = []
+        for record in self._landscape_metrics:
+            rows.append({
+                "buffer": self._radius_label(float(record["radius_km"])),
+                "area": f'{record["area_ha"]:,.1f}',
+                "patches": f'{record["patches"]:,.0f}',
+                "patch_density": f'{record["patch_density"]:.2f}',
+                "largest": f'{record["largest_patch_pct"]:.1f}%',
+                "edge": f'{record["edge_density"]:.1f}',
+                "shannon": f'{record["shannon"]:.2f}',
+                "simpson": f'{record["simpson"]:.2f}',
+                "evenness": f'{record["simpson_evenness"]:.2f}',
+            })
+        return rows
 
     @rx.var(cache=True)
     def age_tab_options(self) -> list[str]:

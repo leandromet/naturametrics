@@ -93,6 +93,19 @@ def _land_use_panel() -> rx.Component:
                 min_width="0",
             ),
             rx.hstack(
+                rx.cond(
+                    AppState.multi_active,
+                    rx.fragment(),
+                    rx.segmented_control.root(
+                        rx.segmented_control.item(
+                            AppState.tr["vegetation_age_title"], value="age"),
+                        rx.segmented_control.item(
+                            AppState.tr["landscape_metrics_tab"], value="metrics"),
+                        value=AppState.selected_age_view,
+                        on_change=AppState.set_selected_age_view,
+                        size="1",
+                    ),
+                ),
                 rx.cond(AppState.multi_active, _multi_view_toggle(), rx.fragment()),
                 rx.cond(
                     AppState.full_area_active,
@@ -250,6 +263,57 @@ def _age_summary_line(row: rx.Var) -> rx.Component:
     )
 
 
+def _landscape_metric_row(row: rx.Var) -> rx.Component:
+    return rx.grid(
+        rx.text(row["buffer"], size="1", weight="medium"),
+        rx.text(row["patches"], size="1"),
+        rx.text(row["patch_density"], size="1"),
+        rx.text(row["largest"], size="1"),
+        rx.text(row["edge"], size="1"),
+        rx.text(row["shannon"], size="1"),
+        rx.text(row["simpson"], size="1"),
+        rx.text(row["evenness"], size="1"),
+        columns="repeat(8, minmax(0, 1fr))",
+        gap="0.4rem", width="100%",
+    )
+
+
+def _landscape_metrics_panel() -> rx.Component:
+    return rx.vstack(
+        rx.text(AppState.tr["landscape_metrics_tab"], size="2", weight="bold"),
+        rx.text(
+            "NP · PD · LPI · ED · Shannon · Simpson",
+            size="1", color_scheme="gray",
+        ),
+        rx.grid(
+            *[rx.text(AppState.tr[key], size="1", weight="bold") for key in (
+                "metrics_buffer", "metrics_patches", "metrics_patch_density",
+                "metrics_lpi", "metrics_edge_density", "metrics_shannon",
+                "metrics_simpson", "metrics_evenness")],
+            columns="repeat(8, minmax(0, 1fr))",
+            gap="0.4rem", width="100%",
+        ),
+        rx.cond(
+            AppState.landscape_metrics_running,
+            rx.spinner(size="1"),
+            rx.cond(
+                AppState.landscape_metrics_error != "",
+                rx.text(AppState.landscape_metrics_error, size="1",
+                        color_scheme="amber"),
+                rx.cond(
+                    AppState.landscape_metrics_has_result,
+                    rx.foreach(AppState.landscape_metrics_rows,
+                               _landscape_metric_row),
+                    rx.text(AppState.tr["landscape_metrics_empty"], size="1",
+                            color_scheme="gray"),
+                ),
+            ),
+        ),
+        rx.text(AppState.provenance_line, size="1", color_scheme="gray"),
+        spacing="2", width="100%", overflow_x="auto",
+    )
+
+
 def _forest_age_panel() -> rx.Component:
     return rx.vstack(
         # --- header ---------------------------------------------- #
@@ -288,7 +352,10 @@ def _forest_age_panel() -> rx.Component:
 
         # --- body ------------------------------------------------ #
         rx.cond(
-            AppState.age_running | AppState.multi_bbox_loading,
+            (AppState.selected_age_view == "metrics") & ~AppState.multi_active,
+            _landscape_metrics_panel(),
+            rx.cond(
+                AppState.age_running | AppState.multi_bbox_loading,
             rx.center(
                 rx.vstack(
                     rx.spinner(size="2"),
@@ -337,6 +404,7 @@ def _forest_age_panel() -> rx.Component:
                         ),
                     ),
                     rx.fragment(),
+                ),
                 ),
             ),
         ),

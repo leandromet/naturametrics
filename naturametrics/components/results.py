@@ -340,6 +340,55 @@ def _biomass_panel() -> rx.Component:
     )
 
 
+def _ibge_comparison_panel() -> rx.Component:
+    """IBGE Vegetação 2022 x MapBiomas 2022 — a QC cross-tabulation, not a
+    time series, so unlike _biomass_panel it leads with two headline numbers
+    (forest %, natural % per dataset) above the heatmap rather than a bare
+    figure."""
+    return rx.vstack(
+        rx.cond(
+            AppState.veg_compare_busy,
+            rx.center(
+                rx.vstack(
+                    rx.spinner(size="2"),
+                    rx.text(AppState.tr["ibge_veg_running"], size="1", color_scheme="gray"),
+                    spacing="2", align="center",
+                ),
+                height="280px", width="100%",
+            ),
+            rx.cond(
+                (AppState.veg_compare_error != "") & ~AppState.multi_mode,
+                rx.callout(AppState.veg_compare_error, icon="triangle-alert",
+                           color_scheme="amber", size="1", width="100%"),
+                rx.cond(
+                    AppState.veg_compare_has_result,
+                    rx.vstack(
+                        rx.hstack(
+                            rx.badge(AppState.veg_compare_forest_label,
+                                     size="2", variant="soft", color_scheme="green"),
+                            rx.badge(AppState.veg_compare_natural_label,
+                                     size="2", variant="soft", color_scheme="grass"),
+                            spacing="2", wrap="wrap",
+                        ),
+                        rx.plotly(
+                            data=AppState.veg_compare_figure,
+                            config={"displayModeBar": False, "displaylogo": False,
+                                    "responsive": True},
+                            width="100%",
+                            height=["340px", "380px", "380px", "380px"],
+                        ),
+                        spacing="2", width="100%",
+                    ),
+                    rx.text(AppState.tr["ibge_veg_empty"], size="1", color_scheme="gray"),
+                ),
+            ),
+        ),
+        rx.text(AppState.tr["ibge_veg_caveat"], size="1", color_scheme="gray"),
+        rx.text(AppState.veg_compare_provenance_line, size="1", color_scheme="gray"),
+        spacing="2", width="100%",
+    )
+
+
 def _age_body() -> rx.Component:
     return rx.cond(
         AppState.age_running | AppState.multi_bbox_loading,
@@ -410,6 +459,8 @@ def _forest_age_panel() -> rx.Component:
                                         value="metrics"),
                         rx.tabs.trigger(AppState.tr["biomass_tab"],
                                         value="biomass"),
+                        rx.tabs.trigger(AppState.tr["ibge_veg_tab"],
+                                        value="ibge_compare"),
                     ),
                     spacing="2", align="center",
                     flex=["1 1 100%", "1 1 100%", "1 1 auto", "1 1 auto"],
@@ -423,7 +474,8 @@ def _forest_age_panel() -> rx.Component:
                     # radius as its own row (landscape_metrics_rows).
                     rx.cond(
                         (AppState.selected_age_view == "age")
-                        | (AppState.selected_age_view == "biomass"),
+                        | (AppState.selected_age_view == "biomass")
+                        | (AppState.selected_age_view == "ibge_compare"),
                         rx.fragment(
                             rx.cond(
                                 AppState.full_area_active,
@@ -455,6 +507,7 @@ def _forest_age_panel() -> rx.Component:
             rx.tabs.content(_age_body(), value="age", width="100%"),
             rx.tabs.content(_landscape_metrics_panel(), value="metrics", width="100%"),
             rx.tabs.content(_biomass_panel(), value="biomass", width="100%"),
+            rx.tabs.content(_ibge_comparison_panel(), value="ibge_compare", width="100%"),
             rx.cond(
                 AppState.selected_age_view == "age",
                 rx.text(AppState.age_provenance_line, size="1", color_scheme="gray"),

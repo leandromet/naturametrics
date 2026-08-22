@@ -12,6 +12,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 from ..config import vegetation_age as fa
+from ..config import ibge_vegetation as iv
 from ..config import mapbiomas as mb
 
 #: Classes are stacked in this order so the reading is stable across years:
@@ -350,6 +351,59 @@ def _style_biomass(fig: go.Figure, lang: str, years: list[int]) -> go.Figure:
             showgrid=True, gridcolor="rgba(0,0,0,0.06)", zeroline=True,
             rangemode="tozero",
         ),
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+    )
+    return fig
+
+
+# --------------------------------------------------------------------------- #
+# IBGE Vegetação 2022 x MapBiomas 2022 (services.ibge_vegetation) — a joint
+# histogram over a shared 6-bucket taxonomy, not a class-by-class comparison;
+# see config.ibge_vegetation for why the two legends get reduced to it.
+# --------------------------------------------------------------------------- #
+
+def ibge_comparison_figure(matrix: dict[str, Any], lang: str = "pt") -> go.Figure:
+    """Heatmap: rows are the IBGE-side bucket, columns the MapBiomas-side
+    bucket, cell value the % of the buffer's area with that combination.
+    Reading straight down a column shows what MapBiomas calls the polygons
+    IBGE puts in that row — a diagonal-heavy matrix is where the two datasets
+    agree."""
+    fig = go.Figure()
+    groups: list[str] = matrix.get("groups") or []
+    cell_matrix: dict[str, dict[str, float]] = matrix.get("matrix") or {}
+
+    if not groups or not cell_matrix:
+        fig.add_annotation(
+            text="Sem dados" if lang == "pt" else "No data",
+            showarrow=False, font=dict(size=13, color="#888"),
+        )
+        fig.update_layout(height=280, plot_bgcolor="rgba(0,0,0,0)",
+                          paper_bgcolor="rgba(0,0,0,0)")
+        return fig
+
+    labels = iv.GROUP_LABELS_PT if lang == "pt" else iv.GROUP_LABELS_EN
+    axis_labels = [labels.get(g, g) for g in groups]
+    z = [[cell_matrix.get(row_g, {}).get(col_g, 0.0) for col_g in groups]
+         for row_g in groups]
+
+    fig.add_trace(go.Heatmap(
+        z=z, x=axis_labels, y=axis_labels,
+        colorscale="YlGnBu",
+        hovertemplate=(
+            ("IBGE: %{y}<br>MapBiomas: %{x}<br>%{z:.1f}% da área<extra></extra>")
+            if lang == "pt" else
+            ("IBGE: %{y}<br>MapBiomas: %{x}<br>%{z:.1f}% of buffer area<extra></extra>")
+        ),
+        colorbar=dict(title="%", thickness=14),
+    ))
+
+    fig.update_layout(
+        template="plotly_white",
+        margin=dict(l=8, r=8, t=8, b=8),
+        height=380,
+        xaxis=dict(title="MapBiomas", side="bottom", automargin=True),
+        yaxis=dict(title="IBGE", automargin=True, autorange="reversed"),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
     )

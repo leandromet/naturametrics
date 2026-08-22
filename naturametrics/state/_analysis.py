@@ -12,13 +12,14 @@ import reflex as rx
 
 from ..components.charts import (
     biomass_history_figure, change_bar_figure, forest_age_histogram_figure,
-    forest_age_line_figure, land_cover_history_figure,
+    forest_age_line_figure, ibge_comparison_figure, land_cover_history_figure,
 )
 from ..config.settings import BUFFER_MODE_DEFAULT, BUFFER_RADII_KM
 from ..services.buffers import buffer_geojson
 from ..services.change_mask import change_stats
 from ..services.landscape_metrics import landscape_metrics
 from ..services.biomass import biomass_history
+from ..services.ibge_vegetation import bucket_matrix, mapbiomas_comparison
 from ..services.vegetation_age import age_summary, buffer_forest_age_histogram, point_forest_age_series
 from ..services.geo import CoordinateError, point
 from ..services.mapbiomas_history import land_cover_history, point_pixel_series
@@ -90,6 +91,15 @@ class AnalysisMixin(rx.State, mixin=True):
     _biomass: list[dict[str, Any]] = []
     _biomass_provenance: dict[str, Any] = {}
 
+    #: services.ibge_vegetation (IBGE Vegetação 2022 x MapBiomas 2022) — a
+    #: fourth, independent product read alongside age/landscape-metrics/
+    #: biomass, same isolation reasoning: one dataset's hiccup must not blank
+    #: results the others already produced.
+    veg_compare_running: bool = False
+    veg_compare_error: str = ""
+    _veg_compare: list[dict[str, Any]] = []
+    _veg_compare_provenance: dict[str, Any] = {}
+
     selected_age_view: str = "age"
 
     @rx.event(background=True)
@@ -109,6 +119,10 @@ class AnalysisMixin(rx.State, mixin=True):
             self.biomass_error = ""
             self._biomass = []
             self._biomass_provenance = {}
+            self.veg_compare_running = True
+            self.veg_compare_error = ""
+            self._veg_compare = []
+            self._veg_compare_provenance = {}
 
         loop = asyncio.get_running_loop()
         try:
@@ -180,6 +194,13 @@ class AnalysisMixin(rx.State, mixin=True):
         biomass_task = loop.run_in_executor(
             None, biomass_history, p, BUFFER_RADII_KM,
             BUFFER_MODE_DEFAULT, self.buffer_shape)
+        # Fourth and last independent product: the IBGE x MapBiomas QC
+        # comparison shares no dataset with any of the three above (it reads
+        # both MapBiomas 2022 AND the IBGE vegetation asset in one combined
+        # image), so it gets the same isolation.
+        veg_compare_task = loop.run_in_executor(
+            None, mapbiomas_comparison, p, BUFFER_RADII_KM,
+            BUFFER_MODE_DEFAULT, self.buffer_shape)
 
         try:
             (age_df, age_prov), (age_buf_df, age_buf_prov), (change, change_prov) = \
@@ -238,6 +259,23 @@ class AnalysisMixin(rx.State, mixin=True):
                     self._biomass = biomass_df.to_dict("records")
                     self._biomass_provenance = biomass_prov.to_dict()
                     self.biomass_running = False
+
+        try:
+            veg_compare_df, veg_compare_prov = await veg_compare_task
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("IBGE vegetation comparison failed")
+            async with self:
+                if token == self._run_token:
+                    self.veg_compare_running = False
+                    self.veg_compare_error = self.tr["err_ibge_veg_failed"].format(exc=exc)
+                    self._veg_compare = []
+                    self._veg_compare_provenance = {}
+        else:
+            async with self:
+                if token == self._run_token:
+                    self._veg_compare = veg_compare_df.to_dict("records")
+                    self._veg_compare_provenance = veg_compare_prov.to_dict()
+                    self.veg_compare_running = False
 
     def set_selected_radius(self, value: str | list[str]):
         """Set the buffer whose history is charted.
@@ -542,6 +580,84 @@ class AnalysisMixin(rx.State, mixin=True):
         year_span = f"{years[0]}–{years[-1]}" if years else ""
         return (
             f"ESA CCI Biomass v6.0 · {year_span} · {p.get('scale_m')} m · "
+            f"{p.get('reducer')}{degraded}{note}"
+        )
+
+    # --- IBGE vegetation x MapBiomas comparison (services.ibge_vegetation) - #
+
+    def _veg_compare_records(self) -> list[dict[str, Any]]:
+        """Same switch as _biomass_records, for the QC comparison."""
+        if (self.multi_mode and self.multi_view_mode == "full_area"
+                and self._multi_bbox_veg_compare):
+            return self._multi_bbox_veg_compare
+        if self.multi_mode and self._multi_veg_compare:
+            return self._multi_veg_compare
+        return self._veg_compare
+
+    @rx.var(cache=True)
+    def veg_compare_has_result(self) -> bool:
+        return bool(self._veg_compare_records())
+
+    @rx.var(cache=True)
+    def veg_compare_busy(self) -> bool:
+        if self.multi_mode and self.multi_view_mode == "full_area":
+            return self.multi_bbox_veg_compare_busy
+        if self.multi_mode:
+            return self.multi_busy
+        return self.veg_compare_running
+
+    @rx.var(cache=True)
+    def veg_compare_matrix(self) -> dict[str, Any]:
+        import pandas as pd
+
+        df = pd.DataFrame(self._veg_compare_records())
+        return bucket_matrix(df, self.age_effective_radius)
+
+    @rx.var(cache=True)
+    def veg_compare_figure(self) -> go.Figure:
+        return ibge_comparison_figure(self.veg_compare_matrix, lang=self.language)
+
+    @rx.var(cache=True)
+    def veg_compare_forest_label(self) -> str:
+        m = self.veg_compare_matrix
+        return (f"{self.tr['ibge_veg_forest_label']}: IBGE {m.get('forest_ibge', 0):.1f}% "
+                f"× MapBiomas {m.get('forest_mb', 0):.1f}%")
+
+    @rx.var(cache=True)
+    def veg_compare_natural_label(self) -> str:
+        m = self.veg_compare_matrix
+        return (f"{self.tr['ibge_veg_natural_label']}: IBGE {m.get('natural_ibge', 0):.1f}% "
+                f"× MapBiomas {m.get('natural_mb', 0):.1f}%")
+
+    @rx.var(cache=True)
+    def veg_compare_provenance_line(self) -> str:
+        """Its own line — services.ibge_vegetation reads two datasets at once
+        (IBGE Vegetação AND MapBiomas 2022), so neither provenance_line above
+        nor biomass_provenance_line would describe this computation."""
+        full_area = (self.multi_mode and self.multi_view_mode == "full_area"
+                     and self._multi_bbox_veg_compare)
+        multi = self.multi_mode and self._multi_veg_compare
+        if full_area:
+            p = self._multi_bbox_veg_compare_provenance
+        elif multi:
+            p = self._multi_veg_compare_provenance
+        else:
+            p = self._veg_compare_provenance
+        if not p:
+            return ""
+        degraded = self.tr["provenance_degraded"] if p.get("degraded") else ""
+        note = ""
+        if full_area:
+            n = len(self.multi_points)
+            note = self.tr["provenance_full_area_one" if n == 1
+                            else "provenance_full_area_many"].format(n=n)
+        elif multi:
+            n = len(self.multi_points)
+            note = self.tr["provenance_summed_one" if n == 1
+                            else "provenance_summed_many"].format(n=n)
+        mb_year = p.get("extra", {}).get("mapbiomas_year", "")
+        return (
+            f"IBGE Vegetação 2022 × MapBiomas {mb_year} · {p.get('scale_m')} m · "
             f"{p.get('reducer')}{degraded}{note}"
         )
 

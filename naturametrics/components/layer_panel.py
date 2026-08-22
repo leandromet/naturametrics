@@ -590,6 +590,41 @@ def biomass_control() -> rx.Component:
     )
 
 
+def ibge_vegetation_control() -> rx.Component:
+    """IBGE Vegetação 2022 — a single 1:250.000 snapshot, so unlike
+    ``biomass_control`` there is no year slider, just a toggle and opacity."""
+    return _section(
+        AppState.tr["section_ibge_veg"],
+        rx.hstack(
+            rx.switch(checked=AppState.show_ibge_veg,
+                      on_change=AppState.toggle_ibge_veg),
+            rx.text("IBGE Vegetação 2022", size="2"),
+            rx.spacer(),
+            rx.cond(AppState.layer_busy, rx.spinner(size="1"), rx.fragment()),
+            width="100%", align="center", spacing="2",
+        ),
+        rx.cond(
+            AppState.show_ibge_veg,
+            rx.vstack(
+                rx.hstack(
+                    rx.text(AppState.tr["opacity_label"], size="1", color_scheme="gray"),
+                    rx.spacer(),
+                    rx.text(AppState.ibge_veg_opacity_pct.to_string() + "%", size="1"),
+                    width="100%",
+                ),
+                rx.slider(
+                    min=0, max=100, step=5, default_value=[60],
+                    on_change=AppState.set_ibge_veg_opacity,
+                    width="100%",
+                ),
+                rx.text(AppState.tr["ibge_veg_layer_note"], size="1", color_scheme="gray"),
+                spacing="2", width="100%", padding_top="0.25rem",
+            ),
+            rx.fragment(),
+        ),
+    )
+
+
 def hansen_control() -> rx.Component:
     """Hansen Global Forest Change, ported from the Canada page — same
     asset, same visualization (config.datasets.HANSEN_GFC), so the two
@@ -772,6 +807,8 @@ def layer_panel() -> rx.Component:
         biome_control(),
         rx.divider(),
         biomass_control(),
+        rx.divider(),
+        ibge_vegetation_control(),
         rx.divider(),
         hansen_control(),
         rx.spacer(),

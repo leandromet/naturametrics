@@ -177,6 +177,33 @@ def prefetch_window(
     return prefetch_mapbiomas_years(list(range(lo, hi + 1)), collection)
 
 
+def ibge_vegetation_spec(opacity: float = 0.6, z_index: int = 13) -> LayerSpec | None:
+    """IBGE Vegetação 2022 (services.ibge_vegetation), rasterized from its
+    145,458-feature source asset once per mint via ``reduceToImage`` — a single
+    snapshot, so unlike MapBiomas/biomass there is no year key, and unlike
+    services.biomes this never leaves Earth Engine as browser-side geometry."""
+    from .ibge_vegetation import _classified_image
+    from ..config.ibge_vegetation import IBGE_VEG_ATTRIBUTION, IBGE_VEG_VIS
+
+    cache_key = "ibge_vegetation:leg2"
+
+    def build():
+        return _classified_image()
+
+    url = get_tile_url(cache_key, build, IBGE_VEG_VIS)
+    if url is None:
+        return None
+
+    return {
+        "id": cache_key,
+        "url": url,
+        "opacity": opacity,
+        "attribution": IBGE_VEG_ATTRIBUTION,
+        "z_index": z_index,
+        "max_native_zoom": 13,
+    }
+
+
 def biomass_spec(year: int, opacity: float = 0.75, z_index: int = 14) -> LayerSpec | None:
     """ESA CCI Biomass_cci above-ground biomass for one year.
 

@@ -22,6 +22,7 @@ TRANSLATIONS_PT: dict[str, str] = {
     "section_multi_select": "Seleção múltipla",
     "section_biomes": "Biomas (IBGE)",
     "section_biomass": "Biomassa (ESA CCI)",
+    "section_ibge_veg": "Vegetação (IBGE 2022)",
     "section_forest_change": "Mudança florestal (Hansen)",
     "hansen_treecover_toggle": "Cobertura arbórea 2000",
     "hansen_change_toggle": "Perda e ganho",
@@ -150,6 +151,24 @@ TRANSLATIONS_PT: dict[str, str] = {
     "biomass_running": "Lendo a biomassa acima do solo (ESA CCI)…",
     "biomass_empty": "Biomassa ainda não disponível.",
     "err_biomass_failed": "Falha ao calcular a biomassa: {exc}",
+    "ibge_veg_tab": "IBGE × MapBiomas",
+    "ibge_veg_running": "Comparando a vegetação do IBGE com o MapBiomas 2022…",
+    "ibge_veg_empty": "Comparação ainda não disponível.",
+    "err_ibge_veg_failed": "Falha ao comparar a vegetação do IBGE com o MapBiomas: {exc}",
+    "ibge_veg_forest_label": "Floresta",
+    "ibge_veg_natural_label": "Natural",
+    "ibge_veg_layer_note": (
+        "Vegetação IBGE, 1:250.000 (2022) — 54 classes oficiais, cores do "
+        "estilo cartográfico do próprio IBGE."
+    ),
+    "ibge_veg_caveat": (
+        "Os dois conjuntos de dados são simplificados para uma taxonomia "
+        "compartilhada natural/antrópico × floresta nesta comparação — não é "
+        "a classificação original de nenhum dos dois. \"Antrópico — "
+        "Vegetação Secundária\" (IBGE) não tem equivalente direto no "
+        "MapBiomas por definição; a matriz mostra como o MapBiomas "
+        "atualmente lê esses polígonos."
+    ),
     "age_running": "Lendo a série de desmatamento e vegetação secundária…",
     "empty_state_title": "Clique no mapa para escolher um ponto",
     "empty_state_body": (

@@ -22,6 +22,7 @@ TRANSLATIONS_EN: dict[str, str] = {
     "section_multi_select": "Multiple selection",
     "section_biomes": "Biomes (IBGE)",
     "section_biomass": "Biomass (ESA CCI)",
+    "section_ibge_veg": "Vegetation (IBGE 2022)",
     "section_forest_change": "Forest change (Hansen)",
     "hansen_treecover_toggle": "Tree cover 2000",
     "hansen_change_toggle": "Loss and gain",
@@ -148,6 +149,23 @@ TRANSLATIONS_EN: dict[str, str] = {
     "biomass_running": "Reading above-ground biomass (ESA CCI)…",
     "biomass_empty": "Biomass is not available yet.",
     "err_biomass_failed": "Failed to compute biomass: {exc}",
+    "ibge_veg_tab": "IBGE × MapBiomas",
+    "ibge_veg_running": "Comparing IBGE vegetation against MapBiomas 2022…",
+    "ibge_veg_empty": "Comparison is not available yet.",
+    "err_ibge_veg_failed": "Failed to compare IBGE vegetation with MapBiomas: {exc}",
+    "ibge_veg_forest_label": "Forest",
+    "ibge_veg_natural_label": "Natural",
+    "ibge_veg_layer_note": (
+        "IBGE Vegetação, 1:250,000 (2022) — 54 official classes, colours from "
+        "IBGE's own map style."
+    ),
+    "ibge_veg_caveat": (
+        "Both datasets are simplified to a shared natural/anthropic × forest "
+        "taxonomy for this comparison — it is not either dataset's own "
+        "classification. \"Anthropic — Secondary Vegetation\" (IBGE) has no "
+        "direct MapBiomas equivalent by design; the matrix shows what "
+        "MapBiomas currently reads those polygons as instead."
+    ),
     "age_running": "Reading the deforestation and secondary-vegetation series…",
     "empty_state_title": "Click the map to choose a point",
     "empty_state_body": (

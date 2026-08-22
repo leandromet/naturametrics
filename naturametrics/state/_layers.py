@@ -15,6 +15,7 @@ from typing import Any
 import reflex as rx
 
 from ..config import datasets as ds
+from ..config import ibge_vegetation as ds_ibge_veg
 from ..config import mapbiomas as mb
 from ..config import settings as st
 from ..services import biomes as biome_service
@@ -104,6 +105,12 @@ class LayersMixin(rx.State, mixin=True):
     biomass_year: int = AGB_YEARS[-1]
     biomass_opacity: float = 0.75
 
+    # --- IBGE Vegetação 2022 (services.ibge_vegetation) ---------------------
+    #: A single 2022 snapshot, not a series, so unlike biomass there is no
+    #: year to pick — just a toggle and an opacity slider.
+    show_ibge_veg: bool = False
+    ibge_veg_opacity: float = 0.6
+
     # --- Hansen Global Forest Change, ported from the Canada page ---------
     #: One threshold governs both sub-layers (tree cover 2000, loss/gain), so
     #: it lives outside either toggle rather than under one of them.
@@ -148,6 +155,10 @@ class LayersMixin(rx.State, mixin=True):
     #: Same, for biomass — keyed by year rather than the layer service's own
     #: cache key string, since year is the only thing that varies here.
     _biomass_urls: dict[int, str] = {}
+
+    #: Same, for IBGE vegetation — a single URL, not year-keyed, since there
+    #: is only ever one snapshot to mint.
+    _ibge_veg_url: str = ""
 
     #: Same, for both Hansen sub-layers — keyed by the layer service's own
     #: cache key string (e.g. "hansen_tc:30", "hansen_change:2015:30") since
@@ -262,6 +273,16 @@ class LayersMixin(rx.State, mixin=True):
                     "z_index": 14,
                     "max_native_zoom": 13,
                 })
+
+        if self.show_ibge_veg and self._ibge_veg_url:
+            specs.append({
+                "id": "ibge_vegetation:leg2",
+                "url": self._ibge_veg_url,
+                "opacity": self.ibge_veg_opacity,
+                "attribution": ds_ibge_veg.IBGE_VEG_ATTRIBUTION,
+                "z_index": 13,
+                "max_native_zoom": 13,
+            })
 
         if self.show_hansen_treecover:
             url = self._hansen_urls.get(f"hansen_tc:{self.hansen_treecover_threshold}")
@@ -645,6 +666,37 @@ class LayersMixin(rx.State, mixin=True):
             self._refresh_layers()
 
     # ---------------------------------------------------------------------- #
+    # IBGE Vegetação 2022
+    # ---------------------------------------------------------------------- #
+
+    @rx.event(background=True)
+    async def toggle_ibge_veg(self, checked: bool):
+        async with self:
+            self.show_ibge_veg = checked
+            if not checked or self._ibge_veg_url:
+                self._refresh_layers()
+                return
+            self.layer_busy = True
+
+        loop = asyncio.get_running_loop()
+        try:
+            spec = await loop.run_in_executor(None, layer_service.ibge_vegetation_spec)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Could not build IBGE vegetation layer: %s", exc)
+            spec = None
+
+        async with self:
+            if spec:
+                self._ibge_veg_url = spec["url"]
+            self.layer_busy = False
+            self._refresh_layers()
+
+    def set_ibge_veg_opacity(self, value: list[int | float]):
+        raw = value[0] if isinstance(value, (list, tuple)) else value
+        self.ibge_veg_opacity = round(float(raw) / 100.0, 2)
+        self._refresh_layers()
+
+    # ---------------------------------------------------------------------- #
     # Hansen Global Forest Change (ported from the Canada page)
     # ---------------------------------------------------------------------- #
 
@@ -950,6 +1002,10 @@ class LayersMixin(rx.State, mixin=True):
     @rx.var
     def biomass_opacity_pct(self) -> int:
         return int(round(self.biomass_opacity * 100))
+
+    @rx.var
+    def ibge_veg_opacity_pct(self) -> int:
+        return int(round(self.ibge_veg_opacity * 100))
 
     @rx.var
     def hansen_treecover_opacity_pct(self) -> int:

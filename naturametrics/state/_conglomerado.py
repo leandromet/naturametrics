@@ -43,6 +43,9 @@ from ..services.landscape_metrics import (
 from ..services.biomass import (
     aggregate_biomass, biomass_history, full_area_biomass_history,
 )
+from ..services.ibge_vegetation import (
+    aggregate_veg_comparison, full_area_mapbiomas_comparison, mapbiomas_comparison,
+)
 from ._proxy import plain
 
 logger = logging.getLogger(__name__)
@@ -116,6 +119,13 @@ class ConglomeradoMixin(rx.State, mixin=True):
     _multi_biomass: list[dict[str, Any]] = []
     _multi_biomass_provenance: dict[str, Any] = {}
 
+    #: Same shape again, for services.ibge_vegetation's joint IBGE x MapBiomas
+    #: histogram — one dict, summed straight from each point's own long-form
+    #: frame via aggregate_veg_comparison, same reasoning as biomass above.
+    _multi_veg_compare_frames: dict[str, list[dict[str, Any]]] = {}
+    _multi_veg_compare: list[dict[str, Any]] = []
+    _multi_veg_compare_provenance: dict[str, Any] = {}
+
     #: "sum" (existing, per-point overlap-counted-twice) vs "full_area" (one
     #: bounding box enclosing every selected point's buffer — no overlap, but
     #: it also covers land between clusters). Independent EE computation, so
@@ -128,6 +138,8 @@ class ConglomeradoMixin(rx.State, mixin=True):
     multi_bbox_landscape_busy: bool = False
     #: Same reasoning again, for services.biomass.
     multi_bbox_biomass_busy: bool = False
+    #: Same reasoning again, for services.ibge_vegetation.
+    multi_bbox_veg_compare_busy: bool = False
     #: True whenever the selection has changed since the cached full-area
     #: result was computed — the sum recomputes for free (pure pandas), the
     #: bounding box does not, so it is only paid for again when asked for.
@@ -140,6 +152,8 @@ class ConglomeradoMixin(rx.State, mixin=True):
     _multi_bbox_landscape_provenance: dict[str, Any] = {}
     _multi_bbox_biomass: list[dict[str, Any]] = []
     _multi_bbox_biomass_provenance: dict[str, Any] = {}
+    _multi_bbox_veg_compare: list[dict[str, Any]] = []
+    _multi_bbox_veg_compare_provenance: dict[str, Any] = {}
     #: full_area_geojson() output, drawn on the map instead of the per-point
     #: rings while multi_view_mode == "full_area".
     _multi_bbox_overlay: dict[str, Any] = {}
@@ -456,6 +470,8 @@ class ConglomeradoMixin(rx.State, mixin=True):
         self._multi_landscape_metrics = []
         self._multi_biomass_frames = {}
         self._multi_biomass = []
+        self._multi_veg_compare_frames = {}
+        self._multi_veg_compare = []
         self._multi_coords = {}
         self._multi_meta = {}
         self._multi_history = []
@@ -464,6 +480,7 @@ class ConglomeradoMixin(rx.State, mixin=True):
         self._multi_bbox_age_history = []
         self._multi_bbox_landscape_metrics = []
         self._multi_bbox_biomass = []
+        self._multi_bbox_veg_compare = []
         self._multi_bbox_overlay = {}
         self.multi_view_mode = "sum"
         self.multi_bbox_stale = True
@@ -492,6 +509,7 @@ class ConglomeradoMixin(rx.State, mixin=True):
                 self._multi_landscape_summaries.pop(key, None)
                 self._multi_landscape_histograms.pop(key, None)
                 self._multi_biomass_frames.pop(key, None)
+                self._multi_veg_compare_frames.pop(key, None)
                 self.multi_error = ""
                 self._recompute_multi()
                 return
@@ -545,6 +563,9 @@ class ConglomeradoMixin(rx.State, mixin=True):
         biomass_task = loop.run_in_executor(
             None, biomass_history, p, BUFFER_RADII_KM,
             BUFFER_MODE_DEFAULT, self.buffer_shape)
+        veg_compare_task = loop.run_in_executor(
+            None, mapbiomas_comparison, p, BUFFER_RADII_KM,
+            BUFFER_MODE_DEFAULT, self.buffer_shape)
 
         try:
             (df, prov), (age_df, age_prov) = await asyncio.gather(history_task, age_task)
@@ -596,6 +617,18 @@ class ConglomeradoMixin(rx.State, mixin=True):
                 self._multi_biomass_provenance = biomass_prov.to_dict()
                 self._recompute_multi()
 
+        try:
+            veg_compare_df, veg_compare_prov = await veg_compare_task
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Multi-select IBGE vegetation comparison failed for %s: %s", key, exc)
+            return  # the point stays selected; it just has no comparison to sum
+
+        async with self:
+            if key in self._multi_coords:
+                self._multi_veg_compare_frames[key] = veg_compare_df.to_dict("records")
+                self._multi_veg_compare_provenance = veg_compare_prov.to_dict()
+                self._recompute_multi()
+
     @rx.event(background=True)
     async def select_multi_area(self, bounds: dict):
         """Add every conglomerado inside a dragged box.
@@ -628,6 +661,8 @@ class ConglomeradoMixin(rx.State, mixin=True):
             self._multi_landscape_metrics = []
             self._multi_biomass_frames = {}
             self._multi_biomass = []
+            self._multi_veg_compare_frames = {}
+            self._multi_veg_compare = []
             self._multi_coords = {}
             self._multi_meta = {}
             self._multi_history = []
@@ -636,6 +671,7 @@ class ConglomeradoMixin(rx.State, mixin=True):
             self._multi_bbox_age_history = []
             self._multi_bbox_landscape_metrics = []
             self._multi_bbox_biomass = []
+            self._multi_bbox_veg_compare = []
             self._multi_bbox_overlay = {}
             self.multi_view_mode = "sum"
             self.multi_bbox_stale = True
@@ -832,6 +868,35 @@ class ConglomeradoMixin(rx.State, mixin=True):
                 if biomass_results:
                     self._recompute_multi()
 
+            # A fourth, equally separate fan-out for the IBGE x MapBiomas
+            # comparison (services.ibge_vegetation) — same reasoning again.
+            def collect_veg_compare():
+                futures = {
+                    executor.submit(
+                        mapbiomas_comparison, point(lat=row["lat"], lon=row["lon"]),
+                        BUFFER_RADII_KM, BUFFER_MODE_DEFAULT, self.buffer_shape):
+                    str(row["ponto_id"]) for row in surviving
+                }
+                done: dict[str, Any] = {}
+                for future in futures:
+                    key = futures[future]
+                    try:
+                        df, prov = future.result(timeout=180)
+                        done[key] = (df.to_dict("records"), prov.to_dict())
+                    except Exception as exc:  # noqa: BLE001
+                        logger.warning("Area select IBGE vegetation comparison "
+                                       "failed for %s: %s", key, exc)
+                return done
+
+            veg_compare_results = await loop.run_in_executor(None, collect_veg_compare)
+            async with self:
+                for key, (records, prov) in veg_compare_results.items():
+                    if key in self._multi_coords:
+                        self._multi_veg_compare_frames[key] = records
+                        self._multi_veg_compare_provenance = prov
+                if veg_compare_results:
+                    self._recompute_multi()
+
     # --- internals ---------------------------------------------------------
 
     def _recompute_multi(self) -> None:
@@ -853,6 +918,9 @@ class ConglomeradoMixin(rx.State, mixin=True):
         biomass_frames = [pd.DataFrame(plain(records))
                           for records in self._multi_biomass_frames.values()]
         self._multi_biomass = aggregate_biomass(biomass_frames).to_dict("records")
+        veg_compare_frames = [pd.DataFrame(plain(records))
+                              for records in self._multi_veg_compare_frames.values()]
+        self._multi_veg_compare = aggregate_veg_comparison(veg_compare_frames).to_dict("records")
         # The cached full-area result was computed for the selection as it
         # stood before this add/remove — it no longer describes what is on
         # screen, so it is marked stale rather than silently left to look current.
@@ -920,6 +988,7 @@ class ConglomeradoMixin(rx.State, mixin=True):
             self.multi_bbox_busy = True
             self.multi_bbox_landscape_busy = True
             self.multi_bbox_biomass_busy = True
+            self.multi_bbox_veg_compare_busy = True
             self.multi_error = ""
             shape = self.buffer_shape
 
@@ -938,6 +1007,9 @@ class ConglomeradoMixin(rx.State, mixin=True):
         # Same isolation, third time — services.biomass.
         biomass_task = loop.run_in_executor(
             None, full_area_biomass_history, pts, BUFFER_RADII_KM, shape)
+        # Same isolation, fourth time — services.ibge_vegetation.
+        veg_compare_task = loop.run_in_executor(
+            None, full_area_mapbiomas_comparison, pts, BUFFER_RADII_KM, shape)
 
         try:
             (df, prov), (age_df, age_prov) = await asyncio.gather(history_task, age_task)
@@ -947,6 +1019,7 @@ class ConglomeradoMixin(rx.State, mixin=True):
                 self.multi_bbox_busy = False
                 self.multi_bbox_landscape_busy = False
                 self.multi_bbox_biomass_busy = False
+                self.multi_bbox_veg_compare_busy = False
                 self.multi_error = self.tr["multi_full_area_failed"].format(exc=exc)
             return
 
@@ -986,6 +1059,19 @@ class ConglomeradoMixin(rx.State, mixin=True):
             self._multi_bbox_biomass = biomass_df.to_dict("records")
             self._multi_bbox_biomass_provenance = biomass_prov.to_dict()
             self.multi_bbox_biomass_busy = False
+
+        try:
+            veg_compare_df, veg_compare_prov = await veg_compare_task
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Full-area IBGE vegetation comparison failed: %s", exc)
+            async with self:
+                self.multi_bbox_veg_compare_busy = False
+            return
+
+        async with self:
+            self._multi_bbox_veg_compare = veg_compare_df.to_dict("records")
+            self._multi_bbox_veg_compare_provenance = veg_compare_prov.to_dict()
+            self.multi_bbox_veg_compare_busy = False
 
     def _restore_single_view(self) -> None:
         """Hand the map back to the study point when the mode is switched off."""
@@ -1035,14 +1121,14 @@ class ConglomeradoMixin(rx.State, mixin=True):
 
     @rx.var
     def multi_bbox_any_loading(self) -> bool:
-        """Whether *any* of the four full-area tables — land-use, age,
-        landscape metrics, biomass — is still being computed. Drives the
-        shared Soma/Área total toggle's spinner (results.py
-        _multi_view_toggle), which is not scoped to one panel the way
-        multi_bbox_loading is."""
+        """Whether *any* of the five full-area tables — land-use, age,
+        landscape metrics, biomass, IBGE vegetation comparison — is still
+        being computed. Drives the shared Soma/Área total toggle's spinner
+        (results.py _multi_view_toggle), which is not scoped to one panel the
+        way multi_bbox_loading is."""
         return self.multi_view_mode == "full_area" and (
             self.multi_bbox_busy or self.multi_bbox_landscape_busy
-            or self.multi_bbox_biomass_busy)
+            or self.multi_bbox_biomass_busy or self.multi_bbox_veg_compare_busy)
 
     @rx.var
     def full_area_active(self) -> bool:

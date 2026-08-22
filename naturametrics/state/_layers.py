@@ -197,7 +197,7 @@ class LayersMixin(rx.State, mixin=True):
                     "clip_circles": [{"lat": lat, "lon": lon}
                                      for lat, lon in self.preview_points],
                     "clip_radius_km": st.BUFFER_PREVIEW_RADIUS_KM,
-                    "clip_shape": st.BUFFER_PREVIEW_SHAPE,
+                    "clip_shape": self.buffer_shape,
                 })
 
         if self.show_ifn and self.ifn_url:

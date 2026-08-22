@@ -540,6 +540,15 @@ def point_control() -> rx.Component:
                 ),
                 rx.text(AppState.tr["point_click_other"],
                         size="1", color_scheme="gray"),
+                rx.hstack(
+                    rx.switch(
+                        checked=AppState.buffer_shape == "square",
+                        on_change=AppState.toggle_buffer_shape,
+                        disabled=AppState.multi_active,
+                    ),
+                    rx.text(AppState.tr["buffer_square_toggle_label"], size="1"),
+                    spacing="2", align="center",
+                ),
                 spacing="1", align_items="start", width="100%",
             ),
             rx.cond(

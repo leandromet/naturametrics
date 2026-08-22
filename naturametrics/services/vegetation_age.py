@@ -20,7 +20,7 @@ from ..config import vegetation_age as fa
 from ..config.settings import (
     BUFFER_RADII_KM, EE_MAX_PIXELS, EE_TILE_SCALE, EE_DEFAULT_SCALE_M,
 )
-from .buffers import BufferMode, buffer_collection
+from .buffers import BufferMode, BufferShape, buffer_collection
 from .ee_client import get_ee
 from .geo import Point, validate_for_analysis
 from .mapbiomas_history import _pixel_area_call  # shared D3 area-per-buffer basis
@@ -136,6 +136,7 @@ def buffer_forest_age_histogram(
     p: Point,
     radii_km: tuple[float, ...] = BUFFER_RADII_KM,
     mode: BufferMode = "disc",
+    shape: BufferShape = "circle",
 ) -> tuple[pd.DataFrame, Provenance]:
     """Age-class distribution of *currently* vegetated pixels, per buffer.
 
@@ -158,7 +159,7 @@ def buffer_forest_age_histogram(
     last = age_img.select(last_band)
     age_final = last.updateMask(last.gt(0)).rename("age")
 
-    fc = buffer_collection(p, radii_km, mode)
+    fc = buffer_collection(p, radii_km, mode, shape)
 
     prov = Provenance(
         name="buffer_forest_age",
@@ -170,7 +171,7 @@ def buffer_forest_age_histogram(
         max_pixels=EE_MAX_PIXELS,
         tile_scale=EE_TILE_SCALE,
         geometry=p.to_geojson(),
-        extra={"buffer_mode": mode, "radii_km": list(radii_km), "point": str(p),
+        extra={"buffer_mode": mode, "buffer_shape": shape, "radii_km": list(radii_km), "point": str(p),
                "estimator": "E1 (MapBiomas DSV v3)", "reference_year": fa.DSV_YEAR_END},
     )
 

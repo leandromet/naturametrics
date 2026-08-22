@@ -316,6 +316,14 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
     `a ${g.r} ${g.r} 0 1 0 ${2 * g.r} 0 ` +
     `a ${g.r} ${g.r} 0 1 0 ${-2 * g.r} 0 Z`;
 
+  const squareSubpath = (g) => {
+    const half = g.r / 2;
+    return `M ${g.x - half} ${g.y - half} ` +
+      `L ${g.x + half} ${g.y - half} ` +
+      `L ${g.x + half} ${g.y + half} ` +
+      `L ${g.x - half} ${g.y + half} Z`;
+  };
+
   const applyClips = () => {
     const map = mapRef.current;
     if (!map) return;
@@ -342,14 +350,16 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
           .filter(Boolean);
         if (!shapes.length) return;
 
-        if (shapes.length === 1 && entry.clipShape === "bbox") {
+        if (shapes.length === 1 &&
+            (entry.clipShape === "bbox" || entry.clipShape === "square")) {
           const g = shapes[0];
+          const half = entry.clipShape === "square" ? g.r / 2 : g.r;
           // rect(top, right, bottom, left) — the legacy property, which takes
           // absolute offsets in the element's own coordinate system and is
           // therefore immune to the 0×0 reference box explained below. Only ever
           // one rectangle, so a multiple selection falls through to the path.
-          el.style.clip = `rect(${g.y - g.r}px, ${g.x + g.r}px, ` +
-                          `${g.y + g.r}px, ${g.x - g.r}px)`;
+          el.style.clip = `rect(${g.y - half}px, ${g.x + half}px, ` +
+                          `${g.y + half}px, ${g.x - half}px)`;
         } else if (shapes.length === 1) {
           // Absolute lengths, not percentages: the reason `clip-path: inset(%)`
           // fails here is that percentages resolve against a 0×0 box, and `px`
@@ -361,7 +371,9 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
           // the union of the subpaths, so overlapping buffers merge rather than
           // punching holes in each other (which is what the even-odd fill rule
           // would do, and is why the rule is left at its nonzero default).
-          el.style.clipPath = `path("${shapes.map(circleSubpath).join(" ")}")`;
+          const subpath = entry.clipShape === "square"
+            ? squareSubpath : circleSubpath;
+          el.style.clipPath = `path("${shapes.map(subpath).join(" ")}")`;
         }
         return;
       }

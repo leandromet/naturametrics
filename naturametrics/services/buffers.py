@@ -22,12 +22,31 @@ from .geo import Point
 logger = logging.getLogger(__name__)
 
 BufferMode = Literal["disc", "ring"]
+BufferShape = Literal["circle", "square"]
+
+
+def _square_geometry(p: Point, side_km: float):
+    """Return a metric square centred on ``p`` as an Earth Engine polygon."""
+    from pyproj import Transformer
+
+    aeqd = f"+proj=aeqd +lat_0={p.lat} +lon_0={p.lon} +units=m +datum=WGS84 +no_defs"
+    to_aeqd = Transformer.from_crs("EPSG:4326", aeqd, always_xy=True).transform
+    to_wgs = Transformer.from_crs(aeqd, "EPSG:4326", always_xy=True).transform
+    origin = to_aeqd(p.lon, p.lat)
+    half = side_km * 1000.0 / 2.0
+    corners = [(origin[0] + x, origin[1] + y)
+               for x, y in ((-half, -half), (half, -half),
+                            (half, half), (-half, half), (-half, -half))]
+    coordinates = [to_wgs(x, y) for x, y in corners]
+    import ee
+    return ee.Geometry.Polygon([coordinates])
 
 
 def buffer_geometries(
     p: Point,
     radii_km: tuple[float, ...] = BUFFER_RADII_KM,
     mode: BufferMode = "disc",
+    shape: BufferShape = "circle",
 ) -> list[tuple[float, Any]]:
     """Build ``(radius_km, ee.Geometry)`` pairs, smallest first.
 
@@ -38,7 +57,11 @@ def buffer_geometries(
 
     centre = p.to_ee_point()
     radii = sorted(radii_km)
-    discs = {r: centre.buffer(r * 1000.0) for r in radii}
+    discs = {
+        r: (centre.buffer(r * 1000.0) if shape == "circle"
+            else _square_geometry(p, r))
+        for r in radii
+    }
 
     out: list[tuple[float, Any]] = []
     for i, r in enumerate(radii):
@@ -53,6 +76,7 @@ def buffer_collection(
     p: Point,
     radii_km: tuple[float, ...] = BUFFER_RADII_KM,
     mode: BufferMode = "disc",
+    shape: BufferShape = "circle",
 ):
     """All buffers as one ``ee.FeatureCollection``.
 
@@ -64,7 +88,7 @@ def buffer_collection(
 
     return ee.FeatureCollection([
         ee.Feature(geom, {"radius_km": r})
-        for r, geom in buffer_geometries(p, radii_km, mode)
+        for r, geom in buffer_geometries(p, radii_km, mode, shape)
     ])
 
 
@@ -72,6 +96,7 @@ def buffer_geojson(
     p: Point,
     radii_km: tuple[float, ...] = BUFFER_RADII_KM,
     mode: BufferMode = "disc",
+    shape: BufferShape = "circle",
     max_error_m: float = 50.0,
 ) -> dict[str, Any]:
     """Buffer outlines as GeoJSON, for drawing on the map.
@@ -95,7 +120,11 @@ def buffer_geojson(
 
     origin = shp_transform(to_aeqd, ShpPoint(p.lon, p.lat))
     radii = sorted(radii_km)
-    discs = {r: origin.buffer(r * 1000.0, quad_segs=32) for r in radii}
+    geometries = {
+        r: (origin.buffer(r * 1000.0, quad_segs=32) if shape == "circle"
+            else origin.buffer(r * 1000.0 / 2.0, quad_segs=1))
+        for r in radii
+    }
 
     features = [{
         "type": "Feature",
@@ -104,14 +133,16 @@ def buffer_geojson(
     }]
 
     for i, r in enumerate(radii):
-        shape = discs[r] if (mode == "disc" or i == 0) else discs[r].difference(discs[radii[i - 1]])
+        geometry = (geometries[r] if (mode == "disc" or i == 0)
+                    else geometries[r].difference(geometries[radii[i - 1]]))
         features.append({
             "type": "Feature",
-            "geometry": mapping(shp_transform(to_wgs, shape)),
+            "geometry": mapping(shp_transform(to_wgs, geometry)),
             "properties": {
                 "role": "buffer",
                 "radius_km": r,
                 "mode": mode,
+                "shape": shape,
                 "label": f"{r:g} km",
             },
         })
@@ -128,6 +159,7 @@ def disc_area_ha(radius_km: float) -> float:
 def buffer_circles_geojson(
     points: list[tuple[float, float]],
     radii_km: tuple[float, ...] = BUFFER_RADII_KM,
+    shape: BufferShape = "circle",
 ) -> dict[str, Any]:
     """Buffer rings for many points, as centres and radii rather than polygons.
 
@@ -150,13 +182,20 @@ def buffer_circles_geojson(
             "properties": {"role": "selected_point"},
         })
         for radius in sorted(radii_km):
-            features.append({
-                "type": "Feature",
-                "geometry": {"type": "Point", "coordinates": [lon, lat]},
-                "properties": {
-                    "role": "buffer_circle",
-                    "radius_km": radius,
-                    "radius_m": radius * 1000.0,
-                },
-            })
+            if shape == "circle":
+                features.append({
+                    "type": "Feature",
+                    "geometry": {"type": "Point", "coordinates": [lon, lat]},
+                    "properties": {
+                        "role": "buffer_circle",
+                        "radius_km": radius,
+                        "radius_m": radius * 1000.0,
+                    },
+                })
+            else:
+                feature = buffer_geojson(
+                    Point(lat=lat, lon=lon), (radius,), shape="square"
+                )["features"][1]
+                feature["properties"]["role"] = "buffer"
+                features.append(feature)
     return {"type": "FeatureCollection", "features": features}

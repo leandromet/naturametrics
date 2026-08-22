@@ -131,7 +131,7 @@ def change_mask_spec(
 def change_stats(p, radii_km, year_from: int = FOREST_CODE_BASELINE_YEAR,
                  year_to: int = mb.MAPBIOMAS_YEAR_END,
                  collection: str = mb.MAPBIOMAS_DEFAULT_COLLECTION,
-                 mode: str = "disc") -> tuple[dict[float, dict[str, float]], Provenance]:
+                 mode: str = "disc", shape: str = "circle") -> tuple[dict[float, dict[str, float]], Provenance]:
     """Area of loss / gain per buffer, in hectares.
 
     One ``reduceRegions`` for all buffers, using the same mean-pixel-area basis
@@ -156,7 +156,7 @@ def change_stats(p, radii_km, year_from: int = FOREST_CODE_BASELINE_YEAR,
     # an empty result that reads as a bug rather than an out-of-area click.
     validate_for_analysis(p)
 
-    fc = buffer_collection(p, radii_km, mode)
+    fc = buffer_collection(p, radii_km, mode, shape)
     img = change_mask_image(year_from, year_to, collection, include_stable=True)
     asset = mb.MAPBIOMAS_COLLECTIONS[collection]
 
@@ -169,7 +169,8 @@ def change_stats(p, radii_km, year_from: int = FOREST_CODE_BASELINE_YEAR,
         pixel_area_basis="mean ee.Image.pixelArea() per buffer (same basis as land-use history)",
         tile_scale=4,
         geometry=p.to_geojson(),
-        extra={"year_from": year_from, "year_to": year_to, "buffer_mode": mode,
+         extra={"year_from": year_from, "year_to": year_to, "buffer_mode": mode,
+             "buffer_shape": shape,
                "radii_km": list(radii_km), "point": str(p)},
     )
 

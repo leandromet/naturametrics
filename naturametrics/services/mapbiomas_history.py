@@ -27,7 +27,7 @@ from ..config import mapbiomas as mb
 from ..config.settings import (
     BUFFER_RADII_KM, EE_MAX_PIXELS, EE_TILE_SCALE, EE_DEFAULT_SCALE_M,
 )
-from .buffers import BufferMode, buffer_collection
+from .buffers import BufferMode, BufferShape, buffer_collection
 from .ee_client import get_ee
 from .geo import Point, validate_for_analysis
 from .provenance import Provenance
@@ -69,6 +69,7 @@ def land_cover_history(
     p: Point,
     radii_km: tuple[float, ...] = BUFFER_RADII_KM,
     mode: BufferMode = "disc",
+    shape: BufferShape = "circle",
     collection: str = mb.MAPBIOMAS_DEFAULT_COLLECTION,
     years: list[int] | None = None,
 ) -> tuple[pd.DataFrame, Provenance]:
@@ -94,7 +95,7 @@ def land_cover_history(
     years = years or mb.MAPBIOMAS_YEARS
     bands = [mb.band_for_year(y) for y in years]
     asset = mb.MAPBIOMAS_COLLECTIONS[collection]
-    fc = buffer_collection(p, radii_km, mode)
+    fc = buffer_collection(p, radii_km, mode, shape)
 
     prov = Provenance(
         name="landuse_history",
@@ -106,7 +107,7 @@ def land_cover_history(
         max_pixels=EE_MAX_PIXELS,
         tile_scale=EE_TILE_SCALE,
         geometry=p.to_geojson(),
-        extra={"collection": collection, "buffer_mode": mode,
+        extra={"collection": collection, "buffer_mode": mode, "buffer_shape": shape,
                "radii_km": list(radii_km), "point": str(p)},
     )
 

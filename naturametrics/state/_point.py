@@ -8,6 +8,7 @@ coordinate → UI). Phase 1 hangs buffers and the MapBiomas history off
 from __future__ import annotations
 
 import logging
+from typing import Literal
 
 import reflex as rx
 
@@ -35,6 +36,7 @@ class PointMixin(rx.State, mixin=True):
     point_uf: str = ""
     point_municipio: str = ""
     point_bioma: str = ""
+    buffer_shape: Literal["circle", "square"] = "circle"
 
     def _clear_identity(self) -> None:
         self.point_source = "clique no mapa"
@@ -82,7 +84,7 @@ class PointMixin(rx.State, mixin=True):
         # Engine to render a circle would make the app feel broken
         # (doc/07-ui-ux.md §2).
         self.buffer_overlays = buffer_geojson(
-            p, BUFFER_RADII_KM, BUFFER_MODE_DEFAULT
+            p, BUFFER_RADII_KM, BUFFER_MODE_DEFAULT, self.buffer_shape
         )
         # Show the land cover inside the largest buffer straight away — it needs
         # no Earth Engine call, so it lands well before the analysis does.
@@ -97,6 +99,19 @@ class PointMixin(rx.State, mixin=True):
         self.has_result = False
         self._clear_identity()
         self._clear_preview()
+
+    def toggle_buffer_shape(self, checked: bool):
+        self.buffer_shape = "square" if checked else "circle"
+        if self.multi_mode:
+            self.multi_error = self.tr["multi_shape_change_note"]
+            return
+        if self.has_point:
+            from ..services.geo import point
+            p = point(lat=self.study_lat, lon=self.study_lon)
+            self.buffer_overlays = buffer_geojson(
+                p, BUFFER_RADII_KM, BUFFER_MODE_DEFAULT, self.buffer_shape)
+            self._set_preview(p.lat, p.lon)
+            return type(self).run_analysis(p.lat, p.lon)
 
     @rx.var
     def point_identity_label(self) -> str:

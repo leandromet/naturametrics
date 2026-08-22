@@ -20,6 +20,8 @@ TRANSLATIONS_EN: dict[str, str] = {
     "section_multi_select": "Multiple selection",
     "section_biomes": "Biomes (IBGE)",
     "section_point": "Study point",
+    "buffer_square_toggle_label": "Use square buffers (side = current radius)",
+    "multi_shape_change_note": "Change the shape before selecting multiple points.",
 
     "year_label": "Year",
     "opacity_label": "Opacity",

@@ -458,9 +458,11 @@ class ConglomeradoMixin(rx.State, mixin=True):
             # Earth Engine round-trips for the same point, so the pair costs one
             # wall-clock wait rather than two (same reasoning as run_analysis).
             history_task = loop.run_in_executor(
-                None, land_cover_history, p, BUFFER_RADII_KM, BUFFER_MODE_DEFAULT)
+                None, land_cover_history, p, BUFFER_RADII_KM,
+                BUFFER_MODE_DEFAULT, self.buffer_shape)
             age_task = loop.run_in_executor(
-                None, buffer_forest_age_histogram, p, BUFFER_RADII_KM, BUFFER_MODE_DEFAULT)
+                None, buffer_forest_age_histogram, p, BUFFER_RADII_KM,
+                BUFFER_MODE_DEFAULT, self.buffer_shape)
             (df, prov), (age_df, age_prov) = await asyncio.gather(history_task, age_task)
         except Exception as exc:  # noqa: BLE001
             logger.warning("Multi-select analysis failed for %s: %s", key, exc)
@@ -570,9 +572,10 @@ class ConglomeradoMixin(rx.State, mixin=True):
             each other across the pool, which is what actually bounds a box
             select's total time.
             """
-            df, prov = land_cover_history(p, BUFFER_RADII_KM, BUFFER_MODE_DEFAULT)
+            df, prov = land_cover_history(
+                p, BUFFER_RADII_KM, BUFFER_MODE_DEFAULT, shape=self.buffer_shape)
             age_df, age_prov = buffer_forest_age_histogram(
-                p, BUFFER_RADII_KM, BUFFER_MODE_DEFAULT)
+                p, BUFFER_RADII_KM, BUFFER_MODE_DEFAULT, shape=self.buffer_shape)
             return df, prov, age_df, age_prov
 
         def collect():
@@ -661,7 +664,8 @@ class ConglomeradoMixin(rx.State, mixin=True):
             self.buffer_overlays = {}
             self._clear_preview()
             return
-        self.buffer_overlays = buffer_circles_geojson(coords, BUFFER_RADII_KM)
+        self.buffer_overlays = buffer_circles_geojson(
+            coords, BUFFER_RADII_KM, shape=self.buffer_shape)
         self._set_preview_many([[lat, lon] for lat, lon in coords])
 
     def _restore_single_view(self) -> None:
@@ -672,8 +676,8 @@ class ConglomeradoMixin(rx.State, mixin=True):
             return
         from ..services.geo import point
         p = point(lat=self.study_lat, lon=self.study_lon)
-        self.buffer_overlays = buffer_geojson(p, BUFFER_RADII_KM,
-                                              BUFFER_MODE_DEFAULT)
+        self.buffer_overlays = buffer_geojson(
+            p, BUFFER_RADII_KM, BUFFER_MODE_DEFAULT, self.buffer_shape)
         self._set_preview(p.lat, p.lon)
 
     # --- derived -----------------------------------------------------------

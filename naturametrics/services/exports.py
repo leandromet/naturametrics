@@ -41,6 +41,7 @@ from ..config.settings import (
     EXPORT_ROWS_PER_POINT, EXPORT_SECONDS_PER_POINT, EXPORT_WARN_FILE_MB,
 )
 from . import ifn, ods
+from .buffers import BufferShape
 from .change_mask import FOREST_CODE_BASELINE_YEAR, change_stats
 from .geo import Point, point
 from .mapbiomas_history import land_cover_history, point_pixel_series
@@ -201,6 +202,7 @@ def study_point_workbook(
     age_buffers_prov: Provenance | None = None,
     change: dict[float, dict[str, float]] | None = None,
     change_prov: Provenance | None = None,
+    buffer_shape: BufferShape = "circle",
 ) -> tuple[bytes, str]:
     """One spreadsheet for the location currently under analysis.
 
@@ -235,6 +237,7 @@ def study_point_workbook(
     context += [
         ["raios dos buffers (km)", ", ".join(f"{r:g}" for r in BUFFER_RADII_KM)],
         ["modo dos buffers", BUFFER_MODE_DEFAULT],
+        ["formato dos buffers", buffer_shape],
         ["anos (uso da terra)", f"{mb.MAPBIOMAS_YEAR_START}–{mb.MAPBIOMAS_YEAR_END}"],
         ["anos (idade da vegetação)", f"{va.DSV_YEAR_START}–{va.DSV_YEAR_END}"],
         ["classe censurada (idade)", va.censored_label()],
@@ -334,6 +337,7 @@ class SelectionSpec:
     #: Which buffer radii the export covers. Fewer radii mean fewer rows, a
     #: smaller Earth Engine geometry per point, and a higher ceiling.
     radii: tuple[float, ...] = tuple(sorted(BUFFER_RADII_KM))
+    buffer_shape: BufferShape = "circle"
     include_points: bool = True
     include_pixel: bool = True
     include_buffers: bool = False
@@ -490,6 +494,7 @@ def selection_buffer_frame(
         pixel_area_basis="mean ee.Image.pixelArea() per buffer",
         extra={"filters": spec.filter_label(),
                "buffer_mode": BUFFER_MODE_DEFAULT,
+               "buffer_shape": spec.buffer_shape,
                "n_requested": len(points)},
     )
 
@@ -499,7 +504,7 @@ def selection_buffer_frame(
     futures = {
         executor.submit(land_cover_history,
                         point(lat=row["lat"], lon=row["lon"]),
-                        radii, BUFFER_MODE_DEFAULT): row
+                        radii, BUFFER_MODE_DEFAULT, spec.buffer_shape): row
         for row in points
     }
 
@@ -578,7 +583,8 @@ def selection_age_frame(
         bands=[va.dsv_band_for_year(va.DSV_YEAR_END)],
         reducer="frequencyHistogram",
         pixel_area_basis="mean ee.Image.pixelArea() per buffer",
-        extra={"filters": spec.filter_label(), "buffer_mode": BUFFER_MODE_DEFAULT,
+         extra={"filters": spec.filter_label(), "buffer_mode": BUFFER_MODE_DEFAULT,
+             "buffer_shape": spec.buffer_shape,
                "n_requested": len(points), "reference_year": va.DSV_YEAR_END,
                "censored_age": va.CENSORED_AGE},
     )
@@ -589,7 +595,7 @@ def selection_age_frame(
     futures = {
         executor.submit(buffer_forest_age_histogram,
                         point(lat=row["lat"], lon=row["lon"]),
-                        radii, BUFFER_MODE_DEFAULT): row
+                        radii, BUFFER_MODE_DEFAULT, spec.buffer_shape): row
         for row in points
     }
 
@@ -662,7 +668,8 @@ def selection_change_frame(
                mb.band_for_year(mb.MAPBIOMAS_YEAR_END)],
         reducer="frequencyHistogram + mean(pixelArea)",
         pixel_area_basis="mean ee.Image.pixelArea() per buffer",
-        extra={"filters": spec.filter_label(), "buffer_mode": BUFFER_MODE_DEFAULT,
+         extra={"filters": spec.filter_label(), "buffer_mode": BUFFER_MODE_DEFAULT,
+             "buffer_shape": spec.buffer_shape,
                "n_requested": len(points), "year_from": FOREST_CODE_BASELINE_YEAR,
                "year_to": mb.MAPBIOMAS_YEAR_END},
     )
@@ -671,7 +678,8 @@ def selection_change_frame(
     radii = tuple(sorted(spec.radii)) or tuple(sorted(BUFFER_RADII_KM))
     prov.extra["radii_km"] = list(radii)
     futures = {
-        executor.submit(change_stats, point(lat=row["lat"], lon=row["lon"]), radii):
+        executor.submit(change_stats, point(lat=row["lat"], lon=row["lon"]), radii,
+                mode=BUFFER_MODE_DEFAULT, shape=spec.buffer_shape):
         row for row in points
     }
 
@@ -811,6 +819,7 @@ def selection_workbook(
         ["fonte dos pontos",
          "colado pelo usuário (services.user_points)" if spec.is_user_points
          else ifn.asset_id()],
+        ["formato dos buffers", spec.buffer_shape],
         ["", ""],
     ]
 

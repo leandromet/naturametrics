@@ -82,7 +82,17 @@ def como_usar_dialog() -> rx.Component:
                 style={"maxHeight": "60vh", "paddingRight": "1rem"},
             ),
             rx.flex(
-                rx.dialog.close(rx.button(tr["close_button"], size="2", variant="soft")),
+                # Reflex deduplicates byte-identical rx.button(...) subtrees into
+                # one shared, prop-less helper component. Dialog.Close relies on
+                # Radix's asChild cloning to inject its onClick/ref onto this
+                # button at runtime, and a deduped helper — since it takes no
+                # props — silently drops that injection: the button renders but
+                # clicking it does nothing (only Escape still closes the dialog,
+                # via a separate document-level listener). A distinguishing id
+                # is enough to keep this button's subtree unique per dialog, so
+                # Reflex compiles it inline instead of extracting it.
+                rx.dialog.close(rx.button(tr["close_button"], size="2",
+                                          variant="soft", id="dialog-close-como-usar")),
                 justify="end", margin_top="1rem",
             ),
             max_width=["94vw", "94vw", "640px", "640px"],
@@ -186,7 +196,9 @@ def como_citar_dialog() -> rx.Component:
                 style={"maxHeight": "60vh", "paddingRight": "1rem"},
             ),
             rx.flex(
-                rx.dialog.close(rx.button(tr["close_button"], size="2", variant="soft")),
+                # Unique id — see como_usar_dialog above for why this matters.
+                rx.dialog.close(rx.button(tr["close_button"], size="2",
+                                          variant="soft", id="dialog-close-como-citar")),
                 justify="end", margin_top="1rem",
             ),
             max_width=["94vw", "94vw", "660px", "660px"],

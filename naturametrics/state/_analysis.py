@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import functools
 import logging
 from typing import Any
 
@@ -13,7 +14,7 @@ from ..components.charts import (
     change_bar_figure, forest_age_histogram_figure, forest_age_line_figure,
     land_cover_history_figure,
 )
-from ..config.settings import BUFFER_RADII_KM
+from ..config.settings import BUFFER_MODE_DEFAULT, BUFFER_RADII_KM
 from ..services.buffers import buffer_geojson
 from ..services.change_mask import change_stats
 from ..services.vegetation_age import age_summary, buffer_forest_age_histogram, point_forest_age_series
@@ -90,7 +91,8 @@ class AnalysisMixin(rx.State, mixin=True):
         try:
             p = point(lat=lat, lon=lon)
             history_task = loop.run_in_executor(
-                None, land_cover_history, p, BUFFER_RADII_KM)
+                None, land_cover_history, p, BUFFER_RADII_KM,
+                BUFFER_MODE_DEFAULT, self.buffer_shape)
             pixel_task = loop.run_in_executor(None, point_pixel_series, p)
             (df, prov), (pixel_df, pixel_prov) = await asyncio.gather(
                 history_task, pixel_task)
@@ -130,14 +132,17 @@ class AnalysisMixin(rx.State, mixin=True):
         try:
             age_point_task = loop.run_in_executor(None, point_forest_age_series, p)
             age_buffer_task = loop.run_in_executor(
-                None, buffer_forest_age_histogram, p, BUFFER_RADII_KM)
+                None, buffer_forest_age_histogram, p, BUFFER_RADII_KM,
+                BUFFER_MODE_DEFAULT, self.buffer_shape)
             # services.change_mask.change_stats — 2008→2024 loss/gain per buffer,
             # shown as the small bar next to the age summary. Cheap (~1-2 s) and
             # unrelated in failure mode to the age counter above, but it lives in
             # the same panel and the same "vegetation over time" question, so it
             # shares this try/except rather than getting a third error channel.
             change_task = loop.run_in_executor(
-                None, change_stats, p, BUFFER_RADII_KM)
+                None, functools.partial(
+                    change_stats, p, BUFFER_RADII_KM,
+                    mode=BUFFER_MODE_DEFAULT, shape=self.buffer_shape))
             (age_df, age_prov), (age_buf_df, age_buf_prov), (change, change_prov) = \
                 await asyncio.gather(age_point_task, age_buffer_task, change_task)
         except Exception as exc:  # noqa: BLE001

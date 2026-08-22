@@ -127,6 +127,7 @@ class ExportMixin(rx.State, mixin=True):
             return exports.SelectionSpec(
                 user_points=plain(self.user_points),
                 radii=self._radii(),
+                buffer_shape=self.buffer_shape,
                 include_points=self.exp_points, include_pixel=self.exp_pixel,
                 include_buffers=self.exp_buffers,
             )
@@ -136,6 +137,7 @@ class ExportMixin(rx.State, mixin=True):
             municipality=self.ifn_municipality, biome=self.ifn_biome,
             conglomerados=plain(self.multi_conglomerados) if manual else None,
             radii=self._radii(),
+            buffer_shape=self.buffer_shape,
             include_points=self.exp_points, include_pixel=self.exp_pixel,
             include_buffers=self.exp_buffers,
         )
@@ -300,7 +302,7 @@ class ExportMixin(rx.State, mixin=True):
             data, name = await loop.run_in_executor(
                 None, _build_study_point, lat, lon, history, prov, pixel,
                 pixel_prov, identity, age_point, age_point_prov, age_buffers,
-                age_buffers_prov, change, change_prov)
+                age_buffers_prov, change, change_prov, self.buffer_shape)
         except Exception as exc:  # noqa: BLE001
             logger.exception("Study-point export failed")
             async with self:
@@ -477,7 +479,8 @@ class ExportMixin(rx.State, mixin=True):
 
 def _build_study_point(lat, lon, history, prov, pixel, pixel_prov, identity,
                        age_point=None, age_point_prov=None, age_buffers=None,
-                       age_buffers_prov=None, change=None, change_prov=None):
+                       age_buffers_prov=None, change=None, change_prov=None,
+                       buffer_shape="circle"):
     """Rebuild the frames and write the workbook, off the event loop."""
     import pandas as pd
 
@@ -506,4 +509,5 @@ def _build_study_point(lat, lon, history, prov, pixel, pixel_prov, identity,
         age_buffers_prov=revive(age_buffers_prov),
         change=change,
         change_prov=revive(change_prov),
+        buffer_shape=buffer_shape,
     )

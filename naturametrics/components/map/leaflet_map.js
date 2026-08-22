@@ -552,6 +552,18 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
         interactive: false,
         style: (feature) => {
           const props = feature.properties || {};
+          // The full-area rectangle (multi-select "área total") — outline
+          // only, same reasoning as the per-point buffers below: a filled
+          // box would hide whatever land-cover layer is on underneath it,
+          // which is the one thing this overlay exists to let through.
+          if (props.role === "full_area") {
+            return {
+              color: "#ffffff",
+              weight: 2.5,
+              opacity: 0.95,
+              fill: false,
+            };
+          }
           if (props.role !== "buffer") return {};
           return {
             color: "#ffffff",

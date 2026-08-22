@@ -16,6 +16,8 @@ TRANSLATIONS_EN: dict[str, str] = {
     "section_compare": "Compare two years",
     "section_change_mask": "Natural vegetation change",
     "section_ifn": "National Forest Inventory",
+    "filters_label": "Filters",
+    "ifn_filters_title": "IFN filters",
     "section_user_points": "Submitted coordinates",
     "section_multi_select": "Multiple selection",
     "section_biomes": "Biomes (IBGE)",
@@ -87,6 +89,9 @@ TRANSLATIONS_EN: dict[str, str] = {
         "Multiple selection is on: click clusters to add or remove them. "
         "Turn the mode off to choose a single point."
     ),
+    "multi_view_sum": "Sum",
+    "multi_view_full_area": "Full area",
+    "multi_full_area_failed": "Failed to compute the full area: {exc}",
 
     "biomes_toggle_label": "Biomes and domains",
     "biomes_hover_note": (
@@ -113,6 +118,7 @@ TRANSLATIONS_EN: dict[str, str] = {
     "download_button": "Download data",
     "download_point_aria": "Download data for this point",
     "analysis_running": "Reducing 40 years over 4 buffers…",
+    "full_area_running": "Reducing 40 years over the bounding box…",
     "top_classes_title": "Top classes (2024)",
     "area_natural_label": "Natural area (recorded)",
     "median_label": "Median (dated)",
@@ -165,6 +171,12 @@ TRANSLATIONS_EN: dict[str, str] = {
         "the chart does. One tab per radius. This is the expensive part: "
         "exporting a single radius makes the file much smaller and faster."
     ),
+    "check_full_area_label": "Full area (bounding box)",
+    "check_full_area_detail": (
+        "One single box enclosing every selected cluster's buffer, with no "
+        "overlap counted twice — but including the area between them too. "
+        "Two extra tabs, land use and vegetation age. Manual selection only."
+    ),
     "export_radii_label": "Radii to export",
     "cancel_button": "Cancel",
     "confirm_download_button": "Confirm and download",
@@ -190,6 +202,7 @@ TRANSLATIONS_EN: dict[str, str] = {
     "export_stage_computing_landuse": "Computing land use",
     "export_stage_computing_age": "Computing vegetation age",
     "export_stage_computing_change": "Computing 2008→2024 change",
+    "export_stage_computing_full_area": "Computing the full area",
     "export_stage_building_sheet": "Building the spreadsheet",
     "export_stage_gathering": "Gathering the clusters",
     "export_stage_reading_pixel": "Reading each cluster's pixel",
@@ -232,6 +245,8 @@ TRANSLATIONS_EN: dict[str, str] = {
     "provenance_degraded": " · degraded result",
     "provenance_summed_one": " · sum of 1 cluster (overlapping buffers are counted in each)",
     "provenance_summed_many": " · sum of {n} clusters (overlapping buffers are counted in each)",
+    "provenance_full_area_one": " · full area of 1 cluster (bounding box, includes area between points)",
+    "provenance_full_area_many": " · full area of {n} clusters (bounding box, includes area between points)",
 
     # --- conglomerado hover card / multi-select -------------------------- #
     "hover_no_coverage": "No mapped coverage in this radius.",

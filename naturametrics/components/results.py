@@ -25,6 +25,29 @@ def _legend_row(row: rx.Var) -> rx.Component:
     )
 
 
+def _multi_view_toggle() -> rx.Component:
+    """"Soma" vs "Área total" — only meaningful once several points are
+    selected, so it stays hidden the rest of the time (results.py callers
+    gate this behind AppState.multi_active)."""
+    return rx.hstack(
+        rx.segmented_control.root(
+            rx.foreach(
+                AppState.multi_view_options,
+                lambda opt: rx.segmented_control.item(opt, value=opt),
+            ),
+            value=AppState.multi_view_value,
+            on_change=AppState.set_multi_view_mode,
+            size="1",
+        ),
+        rx.cond(
+            AppState.multi_bbox_loading,
+            rx.spinner(size="1"),
+            rx.fragment(),
+        ),
+        spacing="1", align="center",
+    )
+
+
 def _land_use_panel() -> rx.Component:
     return rx.vstack(
         # --- header ---------------------------------------------- #
@@ -70,14 +93,20 @@ def _land_use_panel() -> rx.Component:
                 min_width="0",
             ),
             rx.hstack(
-                rx.segmented_control.root(
-                    rx.foreach(
-                        AppState.radius_options,
-                        lambda opt: rx.segmented_control.item(opt, value=opt),
+                rx.cond(AppState.multi_active, _multi_view_toggle(), rx.fragment()),
+                rx.cond(
+                    AppState.full_area_active,
+                    rx.badge(AppState.full_area_radius_label, size="1",
+                             variant="soft", color_scheme="gray"),
+                    rx.segmented_control.root(
+                        rx.foreach(
+                            AppState.radius_options,
+                            lambda opt: rx.segmented_control.item(opt, value=opt),
+                        ),
+                        value=AppState.selected_radius_label,
+                        on_change=AppState.set_selected_radius,
+                        size="1",
                     ),
-                    value=AppState.selected_radius_label,
-                    on_change=AppState.set_selected_radius,
-                    size="1",
                 ),
                 rx.text(AppState.buffer_extent_caption, size="1", color_scheme="gray",
                         white_space="nowrap"),
@@ -95,12 +124,16 @@ def _land_use_panel() -> rx.Component:
 
         # --- body ------------------------------------------------ #
         rx.cond(
-            AppState.analysis_running,
+            AppState.analysis_running | AppState.multi_bbox_loading,
             rx.center(
                 rx.vstack(
                     rx.spinner(size="2"),
-                    rx.text(AppState.tr["analysis_running"],
-                            size="1", color_scheme="gray"),
+                    rx.text(
+                        rx.cond(AppState.multi_bbox_loading,
+                               AppState.tr["full_area_running"],
+                               AppState.tr["analysis_running"]),
+                        size="1", color_scheme="gray",
+                    ),
                     spacing="2", align="center",
                 ),
                 height="300px", width="100%",
@@ -230,14 +263,20 @@ def _forest_age_panel() -> rx.Component:
                 min_width="0",
             ),
             rx.hstack(
-                rx.segmented_control.root(
-                    rx.foreach(
-                        AppState.age_tab_options,
-                        lambda opt: rx.segmented_control.item(opt, value=opt),
+                rx.cond(AppState.multi_active, _multi_view_toggle(), rx.fragment()),
+                rx.cond(
+                    AppState.full_area_active,
+                    rx.badge(AppState.full_area_radius_label, size="1",
+                             variant="soft", color_scheme="gray"),
+                    rx.segmented_control.root(
+                        rx.foreach(
+                            AppState.age_tab_options,
+                            lambda opt: rx.segmented_control.item(opt, value=opt),
+                        ),
+                        value=AppState.selected_age_radius,
+                        on_change=AppState.set_selected_age_radius,
+                        size="1",
                     ),
-                    value=AppState.selected_age_radius,
-                    on_change=AppState.set_selected_age_radius,
-                    size="1",
                 ),
                 rx.text(AppState.buffer_extent_caption, size="1", color_scheme="gray",
                         white_space="nowrap"),
@@ -249,7 +288,7 @@ def _forest_age_panel() -> rx.Component:
 
         # --- body ------------------------------------------------ #
         rx.cond(
-            AppState.age_running,
+            AppState.age_running | AppState.multi_bbox_loading,
             rx.center(
                 rx.vstack(
                     rx.spinner(size="2"),

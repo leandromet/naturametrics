@@ -27,7 +27,10 @@ from ..config import mapbiomas as mb
 from ..config.settings import (
     BUFFER_RADII_KM, EE_MAX_PIXELS, EE_TILE_SCALE, EE_DEFAULT_SCALE_M,
 )
-from .buffers import BufferMode, BufferShape, buffer_collection
+from .buffers import (
+    BufferMode, BufferShape, buffer_collection,
+    full_area_bbox, full_area_collection, full_area_geojson,
+)
 from .ee_client import get_ee
 from .geo import Point, validate_for_analysis
 from .provenance import Provenance
@@ -81,9 +84,6 @@ def land_cover_history(
     Long format rather than wide-by-year: 40 years × ~15 classes × 4 buffers is a
     natural long table, and wide-by-year breaks the moment the year range changes.
     """
-    import ee
-    from concurrent.futures import ThreadPoolExecutor
-
     # First statement, before validation, and idempotent: see the note in
     # ee_client.get_ee. A browser tab that was open across a backend restart
     # never re-runs the app's on_mount initialiser, so any path that assumes
@@ -97,6 +97,71 @@ def land_cover_history(
     asset = mb.MAPBIOMAS_COLLECTIONS[collection]
     fc = buffer_collection(p, radii_km, mode, shape)
 
+    return _history_from_collection(
+        fc, asset=asset, bands=bands, years=years, geometry=p.to_geojson(),
+        point_label=str(p), collection=collection, mode=mode, shape=shape,
+        radii_km=radii_km,
+    )
+
+
+def full_area_land_cover_history(
+    points: list[Point],
+    radii_km: tuple[float, ...] = BUFFER_RADII_KM,
+    shape: BufferShape = "circle",
+    collection: str = mb.MAPBIOMAS_DEFAULT_COLLECTION,
+    years: list[int] | None = None,
+) -> tuple[pd.DataFrame, Provenance]:
+    """Land-cover history over the single bounding box enclosing every
+    selected point's *outer* buffer, instead of summing per-point buffers
+    (``aggregate_histories``).
+
+    No overlap to double-count — the trade is that the box also covers
+    whatever land sits between clusters, which is not part of any individual
+    buffer. One box at the largest radius, not one per radius — a smaller
+    radius's box would nest entirely inside it. See
+    ``services.buffers.full_area_bbox`` for how the box itself is built, and
+    doc/01-premises.md for how this differs from the sum.
+    """
+    get_ee()
+
+    years = years or mb.MAPBIOMAS_YEARS
+    bands = [mb.band_for_year(y) for y in years]
+    asset = mb.MAPBIOMAS_COLLECTIONS[collection]
+    bbox = full_area_bbox(points, radii_km, shape)
+    fc = full_area_collection(points, radii_km, shape, bbox=bbox)
+
+    df, prov = _history_from_collection(
+        fc, asset=asset, bands=bands, years=years,
+        geometry=full_area_geojson(points, radii_km, shape, bbox=bbox),
+        point_label=f"{len(points)} points (full area)", collection=collection,
+        mode="full_area", shape=shape, radii_km=radii_km,
+    )
+    prov.extra["n_points"] = len(points)
+    prov.extra["outer_radius_km"] = max(radii_km)
+    prov.extra["bbox_wgs84"] = list(bbox)
+    return df, prov
+
+
+def _history_from_collection(
+    fc: Any,
+    *,
+    asset: str,
+    bands: list[str],
+    years: list[int],
+    geometry: dict[str, Any] | None,
+    point_label: str,
+    collection: str,
+    mode: str,
+    shape: str,
+    radii_km: tuple[float, ...],
+) -> tuple[pd.DataFrame, Provenance]:
+    """Shared reduceRegions/retry/parsing body behind :func:`land_cover_history`
+    and :func:`full_area_land_cover_history` — everything downstream of "here is
+    one ``ee.FeatureCollection`` with a ``radius_km`` property per feature" is
+    generic over where that collection's geometry came from.
+    """
+    from concurrent.futures import ThreadPoolExecutor
+
     prov = Provenance(
         name="landuse_history",
         dataset_id=asset,
@@ -106,9 +171,9 @@ def land_cover_history(
         pixel_area_basis="mean ee.Image.pixelArea() per buffer",
         max_pixels=EE_MAX_PIXELS,
         tile_scale=EE_TILE_SCALE,
-        geometry=p.to_geojson(),
+        geometry=geometry,
         extra={"collection": collection, "buffer_mode": mode, "buffer_shape": shape,
-               "radii_km": list(radii_km), "point": str(p)},
+               "radii_km": list(radii_km), "point": point_label},
     )
 
     scale, tile_scale = EE_DEFAULT_SCALE_M, EE_TILE_SCALE
@@ -186,7 +251,7 @@ def land_cover_history(
 
     prov.extra["mean_pixel_area_m2"] = {str(k): round(v, 2) for k, v in px_area.items()}
     prov.extra["n_records"] = len(df)
-    logger.info("History for %s: %s records across %s buffers", p, len(df), len(px_area))
+    logger.info("History for %s: %s records across %s buffers", point_label, len(df), len(px_area))
     return df, prov
 
 

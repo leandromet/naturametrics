@@ -200,9 +200,20 @@ class AnalysisMixin(rx.State, mixin=True):
         One switch, used by every derived value, so the chart, the legend and the
         provenance line can never end up describing different selections.
         """
+        if self.multi_mode and self.multi_view_mode == "full_area" and self._multi_bbox_history:
+            return self._multi_bbox_history
         if self.multi_mode and self._multi_history:
             return self._multi_history
         return self._history
+
+    @rx.var(cache=True)
+    def _chart_radius(self) -> float:
+        """The radius the chart actually reads — the outer/largest radius in
+        full-area mode (there is only the one box, see services.buffers.
+        full_area_bbox), otherwise whatever the radius selector is set to."""
+        if self.multi_mode and self.multi_view_mode == "full_area":
+            return max(BUFFER_RADII_KM)
+        return self.selected_radius
 
     @rx.var(cache=True)
     def history_figure(self) -> go.Figure:
@@ -210,7 +221,7 @@ class AnalysisMixin(rx.State, mixin=True):
 
         df = pd.DataFrame(self._chart_records())
         return land_cover_history_figure(
-            df, self.selected_radius, lang=self.language,
+            df, self._chart_radius, lang=self.language,
             normalise=self.normalise_chart
         )
 
@@ -233,6 +244,13 @@ class AnalysisMixin(rx.State, mixin=True):
         return f"{value:g} km"
 
     @rx.var(cache=True)
+    def full_area_radius_label(self) -> str:
+        """The one radius full-area mode reads — shown in place of the radius
+        selector, which has nothing to switch between once there is only the
+        single outer box (services.buffers.full_area_bbox)."""
+        return self._radius_label(max(BUFFER_RADII_KM))
+
+    @rx.var(cache=True)
     def buffer_extent_caption(self) -> str:
         """Caption shown once, next to the last (largest) radius button."""
         key = "buffer_caption_square" if self.buffer_shape == "square" else "buffer_caption_circle"
@@ -246,7 +264,7 @@ class AnalysisMixin(rx.State, mixin=True):
         df = pd.DataFrame(self._chart_records())
         if df.empty or "radius_km" not in df.columns:
             return []
-        sub = df[df["radius_km"] == self.selected_radius]
+        sub = df[df["radius_km"] == self._chart_radius]
         if sub.empty:
             return []
         latest = sub[sub["year"] == sub["year"].max()]
@@ -266,28 +284,44 @@ class AnalysisMixin(rx.State, mixin=True):
 
     @rx.var(cache=True)
     def provenance_line(self) -> str:
+        full_area = (self.multi_mode and self.multi_view_mode == "full_area"
+                     and self._multi_bbox_history)
         multi = self.multi_mode and self._multi_history
-        p = self._multi_provenance if multi else self._provenance
+        if full_area:
+            p = self._multi_bbox_provenance
+        elif multi:
+            p = self._multi_provenance
+        else:
+            p = self._provenance
         if not p:
             return ""
         degraded = self.tr["provenance_degraded"] if p.get("degraded") else ""
         # The overlap warning belongs here rather than in a tooltip: it is the
-        # one thing that makes a sum over sampling units easy to misread.
-        summed = ""
-        if multi:
+        # one thing that makes a sum over sampling units easy to misread. The
+        # full-area caveat is the mirror image — no overlap, but it covers
+        # land outside any individual buffer too.
+        note = ""
+        if full_area:
             n = len(self.multi_points)
-            summed = self.tr["provenance_summed_one" if n == 1
-                              else "provenance_summed_many"].format(n=n)
+            note = self.tr["provenance_full_area_one" if n == 1
+                            else "provenance_full_area_many"].format(n=n)
+        elif multi:
+            n = len(self.multi_points)
+            note = self.tr["provenance_summed_one" if n == 1
+                            else "provenance_summed_many"].format(n=n)
         return (
             f"MapBiomas {p.get('extra', {}).get('collection', '')} · "
             f"{len(p.get('bands', []))} {self.tr['years_unit']} · {p.get('scale_m')} m · "
-            f"{p.get('reducer')}{degraded}{summed}"
+            f"{p.get('reducer')}{degraded}{note}"
         )
 
     # --- forest age ----------------------------------------------------- #
 
     def _age_buffer_records(self) -> list[dict[str, Any]]:
         """Same switch as _chart_records, for the age histogram."""
+        if (self.multi_mode and self.multi_view_mode == "full_area"
+                and self._multi_bbox_age_history):
+            return self._multi_bbox_age_history
         if self.multi_mode and self._multi_age_history:
             return self._multi_age_history
         return self._age_buffers
@@ -306,7 +340,10 @@ class AnalysisMixin(rx.State, mixin=True):
     def age_effective_radius(self) -> float:
         """The radius the histogram actually reads — falls back off "Ponto" in
         multi mode rather than showing nothing just because the tab never got
-        switched."""
+        switched. In full-area mode there is only the one outer box (see
+        services.buffers.full_area_bbox), so the radius tab is not read at all."""
+        if self.multi_mode and self.multi_view_mode == "full_area":
+            return max(BUFFER_RADII_KM)
         if self.selected_age_radius != "Ponto":
             try:
                 num = float(self.selected_age_radius.split(" km")[0].strip())

@@ -20,7 +20,10 @@ from ..config import vegetation_age as fa
 from ..config.settings import (
     BUFFER_RADII_KM, EE_MAX_PIXELS, EE_TILE_SCALE, EE_DEFAULT_SCALE_M,
 )
-from .buffers import BufferMode, BufferShape, buffer_collection
+from .buffers import (
+    BufferMode, BufferShape, buffer_collection,
+    full_area_bbox, full_area_collection, full_area_geojson,
+)
 from .ee_client import get_ee
 from .geo import Point, validate_for_analysis
 from .mapbiomas_history import _pixel_area_call  # shared D3 area-per-buffer basis
@@ -148,18 +151,73 @@ def buffer_forest_age_histogram(
     "freshly established forest", a different and wrong claim.
     """
     import ee
-    from concurrent.futures import ThreadPoolExecutor
 
     get_ee()
     validate_for_analysis(p)
 
     dsv = ee.Image(fa.DSV_ASSET)
     age_img = _forest_age_bands(dsv)
-    last_band = f"age_{fa.DSV_YEAR_END}"
-    last = age_img.select(last_band)
+    last = age_img.select(f"age_{fa.DSV_YEAR_END}")
     age_final = last.updateMask(last.gt(0)).rename("age")
 
     fc = buffer_collection(p, radii_km, mode, shape)
+    return _forest_age_from_collection(
+        fc, age_final, geometry=p.to_geojson(), point_label=str(p),
+        mode=mode, shape=shape, radii_km=radii_km,
+    )
+
+
+def full_area_forest_age_histogram(
+    points: list[Point],
+    radii_km: tuple[float, ...] = BUFFER_RADII_KM,
+    shape: BufferShape = "circle",
+) -> tuple[pd.DataFrame, Provenance]:
+    """Forest-age histogram over the single bounding box enclosing every
+    selected point's outer buffer — the age-model counterpart of
+    ``mapbiomas_history.full_area_land_cover_history``, same trade: no overlap
+    to double-count, at the cost of also covering land between clusters.
+    """
+    import ee
+
+    get_ee()
+
+    dsv = ee.Image(fa.DSV_ASSET)
+    age_img = _forest_age_bands(dsv)
+    last = age_img.select(f"age_{fa.DSV_YEAR_END}")
+    age_final = last.updateMask(last.gt(0)).rename("age")
+
+    bbox = full_area_bbox(points, radii_km, shape)
+    fc = full_area_collection(points, radii_km, shape, bbox=bbox)
+
+    df, prov = _forest_age_from_collection(
+        fc, age_final,
+        geometry=full_area_geojson(points, radii_km, shape, bbox=bbox),
+        point_label=f"{len(points)} points (full area)",
+        mode="full_area", shape=shape, radii_km=radii_km,
+    )
+    prov.extra["n_points"] = len(points)
+    prov.extra["outer_radius_km"] = max(radii_km)
+    prov.extra["bbox_wgs84"] = list(bbox)
+    return df, prov
+
+
+def _forest_age_from_collection(
+    fc: Any,
+    age_final: Any,
+    *,
+    geometry: dict[str, Any] | None,
+    point_label: str,
+    mode: str,
+    shape: str,
+    radii_km: tuple[float, ...],
+) -> tuple[pd.DataFrame, Provenance]:
+    """Shared reduceRegions/retry/parsing body behind
+    :func:`buffer_forest_age_histogram` and :func:`full_area_forest_age_histogram`.
+    """
+    import ee
+    from concurrent.futures import ThreadPoolExecutor
+
+    last_band = f"age_{fa.DSV_YEAR_END}"
 
     prov = Provenance(
         name="buffer_forest_age",
@@ -170,9 +228,10 @@ def buffer_forest_age_histogram(
         pixel_area_basis="mean ee.Image.pixelArea() per buffer (same basis as land-use history)",
         max_pixels=EE_MAX_PIXELS,
         tile_scale=EE_TILE_SCALE,
-        geometry=p.to_geojson(),
-        extra={"buffer_mode": mode, "buffer_shape": shape, "radii_km": list(radii_km), "point": str(p),
-               "estimator": "E1 (MapBiomas DSV v3)", "reference_year": fa.DSV_YEAR_END},
+        geometry=geometry,
+        extra={"buffer_mode": mode, "buffer_shape": shape, "radii_km": list(radii_km),
+               "point": point_label, "estimator": "E1 (MapBiomas DSV v3)",
+               "reference_year": fa.DSV_YEAR_END},
     )
 
     def _hist_call(fc, scale, tile_scale):
@@ -245,7 +304,7 @@ def buffer_forest_age_histogram(
 
     prov.extra["mean_pixel_area_m2"] = {str(k): round(v, 2) for k, v in px_area.items()}
     prov.extra["n_records"] = len(df)
-    logger.info("Forest age for %s: %s records across %s buffers", p, len(df), len(px_area))
+    logger.info("Forest age for %s: %s records across %s buffers", point_label, len(df), len(px_area))
     return df, prov
 
 

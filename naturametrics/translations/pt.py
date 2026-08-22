@@ -16,6 +16,8 @@ TRANSLATIONS_PT: dict[str, str] = {
     "section_compare": "Comparar dois anos",
     "section_change_mask": "Mudança na vegetação natural",
     "section_ifn": "Inventário Florestal Nacional",
+    "filters_label": "Filtros",
+    "ifn_filters_title": "Filtros do IFN",
     "section_user_points": "Coordenadas enviadas",
     "section_multi_select": "Seleção múltipla",
     "section_biomes": "Biomas (IBGE)",
@@ -89,6 +91,9 @@ TRANSLATIONS_PT: dict[str, str] = {
         "Seleção múltipla ativa: clique nos conglomerados para incluí-los "
         "ou removê-los. Desligue o modo para escolher um ponto avulso."
     ),
+    "multi_view_sum": "Soma",
+    "multi_view_full_area": "Área total",
+    "multi_full_area_failed": "Falha ao calcular a área total: {exc}",
 
     "biomes_toggle_label": "Biomas e domínios",
     "biomes_hover_note": (
@@ -115,6 +120,7 @@ TRANSLATIONS_PT: dict[str, str] = {
     "download_button": "Baixar dados",
     "download_point_aria": "Baixar dados deste ponto",
     "analysis_running": "Reduzindo 40 anos sobre 4 buffers…",
+    "full_area_running": "Reduzindo 40 anos sobre a caixa delimitadora…",
     "top_classes_title": "Classes principais (2024)",
     "area_natural_label": "Área natural (registrada)",
     "median_label": "Mediana (datada)",
@@ -167,6 +173,13 @@ TRANSLATIONS_PT: dict[str, str] = {
         "que o gráfico faz. Uma aba por raio. É a parte cara: exportar um "
         "raio só deixa o arquivo bem menor e mais rápido."
     ),
+    "check_full_area_label": "Área total (caixa delimitadora)",
+    "check_full_area_detail": (
+        "Uma caixa única envolvendo o buffer de cada conglomerado "
+        "selecionado, sem sobreposição contada duas vezes — mas incluindo "
+        "também a área entre eles. Duas abas extras, uso da terra e idade "
+        "da vegetação. Só disponível na seleção manual."
+    ),
     "export_radii_label": "Raios a exportar",
     "cancel_button": "Cancelar",
     "confirm_download_button": "Confirmar e baixar",
@@ -191,6 +204,7 @@ TRANSLATIONS_PT: dict[str, str] = {
     "export_stage_computing_landuse": "Calculando o uso da terra",
     "export_stage_computing_age": "Calculando a idade da vegetação",
     "export_stage_computing_change": "Calculando a mudança 2008→2024",
+    "export_stage_computing_full_area": "Calculando a área total",
     "export_stage_building_sheet": "Montando a planilha",
     "export_stage_gathering": "Reunindo os conglomerados",
     "export_stage_reading_pixel": "Lendo o pixel de cada conglomerado",
@@ -233,6 +247,8 @@ TRANSLATIONS_PT: dict[str, str] = {
     "provenance_degraded": " · resultado degradado",
     "provenance_summed_one": " · soma de 1 conglomerado (buffers sobrepostos são contados em cada um)",
     "provenance_summed_many": " · soma de {n} conglomerados (buffers sobrepostos são contados em cada um)",
+    "provenance_full_area_one": " · área total de 1 conglomerado (caixa delimitadora, inclui área entre pontos)",
+    "provenance_full_area_many": " · área total de {n} conglomerados (caixa delimitadora, inclui área entre pontos)",
 
     # --- conglomerado hover card / multi-select -------------------------- #
     "hover_no_coverage": "Sem cobertura mapeada neste raio.",

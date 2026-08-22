@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any
+from typing import Any, Literal
 
 import reflex as rx
 
@@ -29,10 +29,13 @@ from ..config.settings import (
     BUFFER_MODE_DEFAULT, BUFFER_RADII_KM, MULTI_SELECT_MAX_POINTS,
 )
 from ..services import ifn as ifn_service
-from ..services.buffers import buffer_circles_geojson, buffer_geojson
-from ..services.vegetation_age import aggregate_forest_age, buffer_forest_age_histogram
+from ..services.buffers import buffer_circles_geojson, buffer_geojson, full_area_geojson
+from ..services.vegetation_age import (
+    aggregate_forest_age, buffer_forest_age_histogram, full_area_forest_age_histogram,
+)
 from ..services.mapbiomas_history import (
     aggregate_histories, land_cover_history, preview_land_cover,
+    full_area_land_cover_history,
 )
 from ._proxy import plain
 
@@ -89,6 +92,24 @@ class ConglomeradoMixin(rx.State, mixin=True):
     _multi_age_frames: dict[str, list[dict[str, Any]]] = {}
     _multi_age_history: list[dict[str, Any]] = []
     _multi_age_provenance: dict[str, Any] = {}
+
+    #: "sum" (existing, per-point overlap-counted-twice) vs "full_area" (one
+    #: bounding box enclosing every selected point's buffer — no overlap, but
+    #: it also covers land between clusters). Independent EE computation, so
+    #: it is cached and only recomputed on demand, not on every click.
+    multi_view_mode: Literal["sum", "full_area"] = "sum"
+    multi_bbox_busy: bool = False
+    #: True whenever the selection has changed since the cached full-area
+    #: result was computed — the sum recomputes for free (pure pandas), the
+    #: bounding box does not, so it is only paid for again when asked for.
+    multi_bbox_stale: bool = True
+    _multi_bbox_history: list[dict[str, Any]] = []
+    _multi_bbox_age_history: list[dict[str, Any]] = []
+    _multi_bbox_provenance: dict[str, Any] = {}
+    _multi_bbox_age_provenance: dict[str, Any] = {}
+    #: full_area_geojson() output, drawn on the map instead of the per-point
+    #: rings while multi_view_mode == "full_area".
+    _multi_bbox_overlay: dict[str, Any] = {}
 
     @rx.event(background=True)
     async def preview_conglomerado(self, props: dict):
@@ -388,6 +409,10 @@ class ConglomeradoMixin(rx.State, mixin=True):
         if checked:
             self._apply_multi_view()
         else:
+            # Re-entering multi mode later should start from the cheap,
+            # already-current sum rather than silently reusing a full-area
+            # result that may no longer match whatever gets selected next.
+            self.multi_view_mode = "sum"
             self._restore_single_view()
 
     def clear_multi_selection(self):
@@ -397,6 +422,11 @@ class ConglomeradoMixin(rx.State, mixin=True):
         self._multi_meta = {}
         self._multi_history = []
         self._multi_age_history = []
+        self._multi_bbox_history = []
+        self._multi_bbox_age_history = []
+        self._multi_bbox_overlay = {}
+        self.multi_view_mode = "sum"
+        self.multi_bbox_stale = True
         self.multi_points = []
         self.multi_error = ""
         if self.multi_mode:
@@ -643,6 +673,10 @@ class ConglomeradoMixin(rx.State, mixin=True):
         age_frames = [pd.DataFrame(plain(records))
                       for records in self._multi_age_frames.values()]
         self._multi_age_history = aggregate_forest_age(age_frames).to_dict("records")
+        # The cached full-area result was computed for the selection as it
+        # stood before this add/remove — it no longer describes what is on
+        # screen, so it is marked stale rather than silently left to look current.
+        self.multi_bbox_stale = True
         self._refresh_multi_rows()
         if self.multi_mode:
             self._apply_multi_view()
@@ -657,16 +691,82 @@ class ConglomeradoMixin(rx.State, mixin=True):
         ]
 
     def _apply_multi_view(self) -> None:
-        """Draw every selected conglomerado, with its rings and its land cover."""
+        """Draw every selected conglomerado, with its rings and its land cover.
+
+        In full-area mode, once a bounding box has actually been computed, the
+        rectangles replace the per-point rings — that is the region the chart
+        is reading, and the map should show the same thing.
+        """
         coords = [(lat, lon) for lat, lon in
                   (plain(v) for v in self._multi_coords.values())]
         if not coords:
             self.buffer_overlays = {}
             self._clear_preview()
             return
-        self.buffer_overlays = buffer_circles_geojson(
-            coords, BUFFER_RADII_KM, shape=self.buffer_shape)
+        if self.multi_view_mode == "full_area" and self._multi_bbox_overlay:
+            self.buffer_overlays = plain(self._multi_bbox_overlay)
+        else:
+            self.buffer_overlays = buffer_circles_geojson(
+                coords, BUFFER_RADII_KM, shape=self.buffer_shape)
         self._set_preview_many([[lat, lon] for lat, lon in coords])
+
+    # --- full-area (bounding box) view --------------------------------- #
+
+    def set_multi_view_mode(self, value: str | list[str]):
+        """Switch between "sum" and "full_area" for the charts and the map.
+
+        The sum is always ready (pure pandas, recomputed on every add/remove);
+        full-area is a real Earth Engine round-trip, so switching to it kicks
+        off the computation only if the cache is empty or stale, rather than
+        on every selection change.
+        """
+        raw = value[0] if isinstance(value, (list, tuple)) and value else value
+        mode = "full_area" if str(raw) == self.tr["multi_view_full_area"] else "sum"
+        self.multi_view_mode = mode
+        if mode == "full_area" and (self.multi_bbox_stale or not self._multi_bbox_history):
+            return type(self).compute_full_area()
+        self._apply_multi_view()
+
+    @rx.event(background=True)
+    async def compute_full_area(self):
+        """The bounding-box equivalent of the per-point sum, computed once for
+        whatever is currently selected — not fanned out, since this is one EE
+        call per table rather than one per point."""
+        async with self:
+            coords = [(lat, lon) for lat, lon in
+                      (plain(v) for v in self._multi_coords.values())]
+            if not coords:
+                return
+            self.multi_bbox_busy = True
+            self.multi_error = ""
+            shape = self.buffer_shape
+
+        loop = asyncio.get_running_loop()
+        try:
+            from ..services.geo import point
+            pts = [point(lat=lat, lon=lon) for lat, lon in coords]
+            history_task = loop.run_in_executor(
+                None, full_area_land_cover_history, pts, BUFFER_RADII_KM, shape)
+            age_task = loop.run_in_executor(
+                None, full_area_forest_age_histogram, pts, BUFFER_RADII_KM, shape)
+            (df, prov), (age_df, age_prov) = await asyncio.gather(history_task, age_task)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Full-area computation failed: %s", exc)
+            async with self:
+                self.multi_bbox_busy = False
+                self.multi_error = self.tr["multi_full_area_failed"].format(exc=exc)
+            return
+
+        async with self:
+            self._multi_bbox_history = df.to_dict("records")
+            self._multi_bbox_provenance = prov.to_dict()
+            self._multi_bbox_age_history = age_df.to_dict("records")
+            self._multi_bbox_age_provenance = age_prov.to_dict()
+            self._multi_bbox_overlay = full_area_geojson(pts, BUFFER_RADII_KM, shape)
+            self.multi_bbox_stale = False
+            self.multi_bbox_busy = False
+            if self.multi_mode:
+                self._apply_multi_view()
 
     def _restore_single_view(self) -> None:
         """Hand the map back to the study point when the mode is switched off."""
@@ -700,3 +800,23 @@ class ConglomeradoMixin(rx.State, mixin=True):
         """Names, for the export."""
         return [str(r.get("conglomerado", "")) for r in self.multi_points
                 if r.get("conglomerado")]
+
+    @rx.var
+    def multi_view_options(self) -> list[str]:
+        return [self.tr["multi_view_sum"], self.tr["multi_view_full_area"]]
+
+    @rx.var
+    def multi_view_value(self) -> str:
+        return (self.tr["multi_view_full_area"] if self.multi_view_mode == "full_area"
+                else self.tr["multi_view_sum"])
+
+    @rx.var
+    def multi_bbox_loading(self) -> bool:
+        return self.multi_view_mode == "full_area" and self.multi_bbox_busy
+
+    @rx.var
+    def full_area_active(self) -> bool:
+        """Full-area mode, with a selection to show it for — gates the radius
+        selector swap in results.py: full area reads only the single outer
+        box (services.buffers.full_area_bbox), so there is no radius to pick."""
+        return self.multi_active and self.multi_view_mode == "full_area"

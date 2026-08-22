@@ -54,6 +54,10 @@ class ExportMixin(rx.State, mixin=True):
     #: "" means every radius; otherwise the one radius asked for, as a string
     #: so it can drive a select directly.
     exp_radius: str = ""
+    #: Bounding-box tables (services.exports.selection_full_area_frame),
+    #: alongside the per-conglomerado ones above. Only offered for a manual
+    #: selection — see export_source.
+    exp_full_area: bool = False
 
     # --- progress ---------------------------------------------------------
     export_busy: bool = False
@@ -94,6 +98,10 @@ class ExportMixin(rx.State, mixin=True):
 
     def toggle_exp_buffers(self, checked: bool):
         self.exp_buffers = checked
+        self.export_confirm_pending = False
+
+    def toggle_exp_full_area(self, checked: bool):
+        self.exp_full_area = checked
         self.export_confirm_pending = False
 
     def set_exp_radius(self, value: str | list[str]):
@@ -140,6 +148,7 @@ class ExportMixin(rx.State, mixin=True):
             buffer_shape=self.buffer_shape,
             include_points=self.exp_points, include_pixel=self.exp_pixel,
             include_buffers=self.exp_buffers,
+            include_full_area=self.exp_full_area if manual else False,
         )
 
     @rx.var
@@ -228,15 +237,17 @@ class ExportMixin(rx.State, mixin=True):
 
     @rx.var
     def export_nothing_selected(self) -> bool:
-        return not (self.exp_points or self.exp_pixel or self.exp_buffers)
+        return not (self.exp_points or self.exp_pixel or self.exp_buffers
+                    or self.exp_full_area)
 
     @rx.var
     def export_needs_confirmation(self) -> bool:
         """Whether the friction step applies: only the expensive fan-out
-        (buffers → land-cover + vegetation age + change mask) costs real Earth
-        Engine compute per click, so points-only/pixel-only exports stay a
-        single click."""
-        return self.exp_buffers and self.export_selection_count > 0
+        (buffers → land-cover + vegetation age + change mask) and the
+        full-area computation cost real Earth Engine compute per click, so
+        points-only/pixel-only exports stay a single click."""
+        return ((self.exp_buffers or self.exp_full_area)
+                and self.export_selection_count > 0)
 
     @rx.var
     def export_confirm_message(self) -> str:
@@ -446,11 +457,18 @@ class ExportMixin(rx.State, mixin=True):
                 change = await fan_out(exports.selection_change_frame,
                                        self.tr["export_stage_computing_change"])
 
+            full_area = None
+            if spec.include_full_area and spec.is_manual:
+                async with self:
+                    self.export_stage = self.tr["export_stage_computing_full_area"]
+                full_area = await loop.run_in_executor(
+                    None, exports.selection_full_area_frame, spec, points)
+
             async with self:
                 self.export_stage = self.tr["export_stage_building_sheet"]
             data, name = await loop.run_in_executor(
                 None, exports.selection_workbook, spec, points, pixel, buffers,
-                age, change)
+                age, change, full_area)
         except Exception as exc:  # noqa: BLE001
             logger.exception("Selection export failed")
             async with self:

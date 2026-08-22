@@ -159,6 +159,15 @@ def _selection_section() -> rx.Component:
             rx.fragment(),
         ),
         rx.cond(
+            AppState.export_source == "manual",
+            _check(
+                AppState.tr["check_full_area_label"],
+                AppState.tr["check_full_area_detail"],
+                AppState.exp_full_area, AppState.toggle_exp_full_area,
+            ),
+            rx.fragment(),
+        ),
+        rx.cond(
             AppState.exp_buffers,
             rx.callout(
                 AppState.export_buffer_note,

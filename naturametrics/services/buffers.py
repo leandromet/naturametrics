@@ -165,6 +165,107 @@ def disc_area_ha(radius_km: float) -> float:
     return math.pi * (radius_km * 1000.0) ** 2 / 10_000.0
 
 
+def _local_disc_bounds(
+    p: Point, radius_km: float, shape: BufferShape,
+) -> tuple[float, float, float, float]:
+    """WGS84 ``(west, south, east, north)`` of one point's own buffer.
+
+    Same aeqd-centred-on-the-point projection as :func:`buffer_geojson` (true
+    distances from the centre), reprojected back to plain lon/lat and reduced
+    to its bounds — the building block :func:`full_area_bbox` unions across
+    every selected point.
+    """
+    from pyproj import Transformer
+    from shapely.geometry import Point as ShpPoint, box
+    from shapely.ops import transform as shp_transform
+
+    aeqd = f"+proj=aeqd +lat_0={p.lat} +lon_0={p.lon} +units=m +datum=WGS84 +no_defs"
+    to_aeqd = Transformer.from_crs("EPSG:4326", aeqd, always_xy=True).transform
+    to_wgs = Transformer.from_crs(aeqd, "EPSG:4326", always_xy=True).transform
+
+    origin = shp_transform(to_aeqd, ShpPoint(p.lon, p.lat))
+    if shape == "circle":
+        geom = origin.buffer(radius_km * 1000.0, quad_segs=32)
+    else:
+        half = radius_km * 1000.0
+        geom = box(origin.x - half, origin.y - half, origin.x + half, origin.y + half)
+    return shp_transform(to_wgs, geom).bounds
+
+
+def full_area_bbox(
+    points: list[Point],
+    radii_km: tuple[float, ...] = BUFFER_RADII_KM,
+    shape: BufferShape = "circle",
+) -> tuple[float, float, float, float]:
+    """WGS84 bounding box enclosing every point's own *outer* buffer.
+
+    One box, at the largest of ``radii_km`` — a box per smaller radius would
+    nest entirely inside it and add nothing: "the whole selected area" is one
+    region, not five different-sized guesses at it. Deliberately not a
+    dissolve of the individual buffer polygons either: a bounding box needs no
+    server-side union and no shared projection across points that may be
+    hundreds of kilometres apart — it is min/max over each point's own
+    true-distance buffer, already reprojected back to plain lon/lat. The
+    honest cost is that the box also covers whatever land sits between
+    clusters, not just the overlap between nearby ones.
+    """
+    outer = max(radii_km)
+    bounds = [_local_disc_bounds(p, outer, shape) for p in points]
+    wests, souths, easts, norths = zip(*bounds)
+    return (min(wests), min(souths), max(easts), max(norths))
+
+
+def full_area_collection(
+    points: list[Point],
+    radii_km: tuple[float, ...] = BUFFER_RADII_KM,
+    shape: BufferShape = "circle",
+    *,
+    bbox: tuple[float, float, float, float] | None = None,
+) -> Any:
+    """The bounding-box equivalent of :func:`buffer_collection`.
+
+    A single feature, geometry the rectangle enclosing every selected point's
+    outer buffer — drops straight into the same batched ``reduceRegions`` the
+    per-point analysis already uses. The ``radius_km`` property carries
+    ``max(radii_km)`` so it still parses through the same reduce/parsing code
+    as the per-point path, even though there is now only one row's worth of
+    geometry.
+    """
+    import ee
+
+    w, s, e, n = bbox if bbox is not None else full_area_bbox(points, radii_km, shape)
+    return ee.FeatureCollection([
+        ee.Feature(ee.Geometry.Rectangle([w, s, e, n]), {
+            "radius_km": max(radii_km), "shape": shape, "full_area": True,
+        }),
+    ])
+
+
+def full_area_geojson(
+    points: list[Point],
+    radii_km: tuple[float, ...] = BUFFER_RADII_KM,
+    shape: BufferShape = "circle",
+    *,
+    bbox: tuple[float, float, float, float] | None = None,
+) -> dict[str, Any]:
+    """The same rectangle as :func:`full_area_collection`, as plain GeoJSON —
+    for drawing on the map when full-area mode is active."""
+    w, s, e, n = bbox if bbox is not None else full_area_bbox(points, radii_km, shape)
+    outer = max(radii_km)
+    return {
+        "type": "FeatureCollection",
+        "features": [{
+            "type": "Feature",
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [[[w, s], [e, s], [e, n], [w, n], [w, s]]],
+            },
+            "properties": {"role": "full_area", "radius_km": outer, "shape": shape,
+                           "label": f"{outer:g} km"},
+        }],
+    }
+
+
 def buffer_circles_geojson(
     points: list[tuple[float, float]],
     radii_km: tuple[float, ...] = BUFFER_RADII_KM,

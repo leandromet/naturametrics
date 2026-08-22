@@ -44,9 +44,11 @@ from . import ifn, ods
 from .buffers import BufferShape
 from .change_mask import FOREST_CODE_BASELINE_YEAR, change_stats
 from .geo import Point, point
-from .mapbiomas_history import land_cover_history, point_pixel_series
+from .mapbiomas_history import (
+    full_area_land_cover_history, land_cover_history, point_pixel_series,
+)
 from .provenance import Provenance
-from .vegetation_age import buffer_forest_age_histogram
+from .vegetation_age import buffer_forest_age_histogram, full_area_forest_age_histogram
 
 logger = logging.getLogger(__name__)
 
@@ -341,6 +343,12 @@ class SelectionSpec:
     include_points: bool = True
     include_pixel: bool = True
     include_buffers: bool = False
+    #: Bounding box enclosing every selected point's buffer, analysed as one
+    #: region instead of summed per point. Only meaningful for a manual
+    #: selection (see ``is_manual``) — a filter selection can span thousands
+    #: of points across a whole state, where a bounding box is neither cheap
+    #: nor a meaningful region.
+    include_full_area: bool = False
 
     @property
     def is_user_points(self) -> bool:
@@ -724,6 +732,32 @@ def selection_change_frame(
     return out, prov, failed
 
 
+def selection_full_area_frame(
+    spec: SelectionSpec,
+    points: Sequence[dict[str, Any]],
+) -> tuple[pd.DataFrame, pd.DataFrame, Provenance, Provenance]:
+    """Land-cover and forest-age tables over the bounding box enclosing every
+    selected point's buffer — the export counterpart of
+    ``state._conglomerado.compute_full_area``.
+
+    Not a fan-out: this is one Earth Engine call per table, over every point
+    at once, rather than one per point — the whole reason "full area" exists
+    is to replace N per-point queries (and the overlap they double-count)
+    with a single region.
+    """
+    pts = [point(lat=row["lat"], lon=row["lon"]) for row in points]
+    radii = tuple(sorted(spec.radii)) or tuple(sorted(BUFFER_RADII_KM))
+
+    started = time.time()
+    hist_df, hist_prov = full_area_land_cover_history(pts, radii, spec.buffer_shape)
+    age_df, age_prov = full_area_forest_age_histogram(pts, radii, spec.buffer_shape)
+    hist_prov.extra["elapsed_s"] = round(time.time() - started, 1)
+    logger.info("Selection full-area frame: %s history rows, %s age rows from "
+                "%s points in %.1f s", len(hist_df), len(age_df), len(points),
+                time.time() - started)
+    return hist_df, age_df, hist_prov, age_prov
+
+
 #: Columns of a per-radius buffer tab. ``radius_km`` is absent on purpose — the
 #: tab name carries it, and dropping it saves a column across a million rows.
 _BUFFER_COLUMNS = ["conglomerado", "uf", "municipio", "bioma", "year",
@@ -795,6 +829,14 @@ def _age_sheets(df: pd.DataFrame, radii: Sequence[float]) -> list[ods.Sheet]:
 _CHANGE_COLUMNS = ["conglomerado", "uf", "municipio", "bioma", "radius_km",
                    "perda_ha", "regeneracao_ha", "estavel_ha"]
 
+#: Columns of the full-area tabs. No conglomerado/uf/municipio/bioma — these
+#: describe one region (the bounding box), not a per-point row, and at
+#: ≤5 radii × ~40 years × ~15 classes they never approach the sheet limit, so
+#: unlike _buffer_sheets/_age_sheets there is no per-radius split.
+_FULL_AREA_HISTORY_COLUMNS = ["radius_km", "year", "class_id", "class_pt",
+                              "class_en", "pixels", "area_ha", "area_pct"]
+_FULL_AREA_AGE_COLUMNS = ["radius_km", "age", "bin", "censored", "pixels", "area_ha"]
+
 
 def selection_workbook(
     spec: SelectionSpec,
@@ -803,6 +845,7 @@ def selection_workbook(
     buffers: tuple[pd.DataFrame, Provenance, list[str]] | None,
     age: tuple[pd.DataFrame, Provenance, list[str]] | None = None,
     change: tuple[pd.DataFrame, Provenance, list[str]] | None = None,
+    full_area: tuple[pd.DataFrame, pd.DataFrame, Provenance, Provenance] | None = None,
 ) -> tuple[bytes, str]:
     """One spreadsheet covering every conglomerado the filters select."""
     provenances: list[Provenance] = []
@@ -877,6 +920,32 @@ def selection_workbook(
         context.append(["conglomerados com mudança", change_prov.extra.get("n_ok", 0)])
         if change_failed:
             context.append(["conglomerados que falharam (mudança)", ", ".join(change_failed)])
+
+    if full_area is not None:
+        fa_hist_df, fa_age_df, fa_hist_prov, fa_age_prov = full_area
+        provenances.append(fa_hist_prov)
+        provenances.append(fa_age_prov)
+        sheets.append(ods.sheet_from_dataframe(
+            "area_total_uso_solo", _with_shares(fa_hist_df),
+            _FULL_AREA_HISTORY_COLUMNS))
+        sheets.append(ods.sheet_from_dataframe(
+            "area_total_idade_veg", fa_age_df, _FULL_AREA_AGE_COLUMNS))
+        outer_radius = fa_hist_prov.extra.get("outer_radius_km")
+        bbox = fa_hist_prov.extra.get("bbox_wgs84")
+        context.append([
+            "AVISO — abas area_total_*",
+            "Uma única caixa delimitadora (oeste/sul/leste/norte), no raio "
+            "mais externo exportado, envolvendo o buffer de cada ponto "
+            "selecionado — sem sobreposição contada duas vezes, mas "
+            "incluindo também a área entre os conglomerados, que não "
+            "pertence a nenhum buffer individual. Ver as abas "
+            "«conglomerados»/buffer_*km para o valor ponto a ponto.",
+        ])
+        if outer_radius is not None:
+            context.append(["raio da caixa delimitadora (km)", outer_radius])
+        if bbox:
+            context.append(["caixa delimitadora (O,S,L,N)",
+                            ", ".join(f"{v:.5f}" for v in bbox)])
 
     sheets.append(_classes_sheet())
     sheets.insert(0, _metadata_sheet("seleção de conglomerados", context,

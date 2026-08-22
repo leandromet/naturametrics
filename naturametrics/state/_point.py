@@ -112,6 +112,9 @@ class PointMixin(rx.State, mixin=True):
             self._radius_label(BUFFER_RADII_KM[0])
             if (self.multi_mode and self._multi_age_history) else "Ponto"
         )
+        # A cached full-area bounding box was built from the old shape's
+        # buffers — no longer describes the current selection.
+        self.multi_bbox_stale = True
         if self.multi_mode:
             self.multi_error = self.tr["multi_shape_change_note"]
             return

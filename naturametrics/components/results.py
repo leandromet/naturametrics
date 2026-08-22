@@ -304,6 +304,42 @@ def _landscape_metrics_panel() -> rx.Component:
     )
 
 
+def _biomass_panel() -> rx.Component:
+    return rx.vstack(
+        rx.cond(
+            AppState.biomass_busy,
+            rx.center(
+                rx.vstack(
+                    rx.spinner(size="2"),
+                    rx.text(AppState.tr["biomass_running"], size="1", color_scheme="gray"),
+                    spacing="2", align="center",
+                ),
+                height="280px", width="100%",
+            ),
+            rx.cond(
+                # biomass_error is only ever set by the single-point path
+                # (run_analysis) — same reasoning as landscape_metrics_error.
+                (AppState.biomass_error != "") & ~AppState.multi_mode,
+                rx.callout(AppState.biomass_error, icon="triangle-alert",
+                           color_scheme="amber", size="1", width="100%"),
+                rx.cond(
+                    AppState.biomass_has_result,
+                    rx.plotly(
+                        data=AppState.biomass_figure,
+                        config={"displayModeBar": False, "displaylogo": False,
+                                "responsive": True},
+                        width="100%",
+                        height=["260px", "280px", "280px", "280px"],
+                    ),
+                    rx.text(AppState.tr["biomass_empty"], size="1", color_scheme="gray"),
+                ),
+            ),
+        ),
+        rx.text(AppState.biomass_provenance_line, size="1", color_scheme="gray"),
+        spacing="2", width="100%",
+    )
+
+
 def _age_body() -> rx.Component:
     return rx.cond(
         AppState.age_running | AppState.multi_bbox_loading,
@@ -372,6 +408,8 @@ def _forest_age_panel() -> rx.Component:
                                        value="age"),
                         rx.tabs.trigger(AppState.tr["landscape_metrics_tab"],
                                         value="metrics"),
+                        rx.tabs.trigger(AppState.tr["biomass_tab"],
+                                        value="biomass"),
                     ),
                     spacing="2", align="center",
                     flex=["1 1 100%", "1 1 100%", "1 1 auto", "1 1 auto"],
@@ -379,11 +417,13 @@ def _forest_age_panel() -> rx.Component:
                 ),
                 rx.hstack(
                     rx.cond(AppState.multi_active, _multi_view_toggle(), rx.fragment()),
-                    # The radius selector and its caption only mean something
-                    # for the age tab — the metrics tab already lists every
+                    # The radius selector and its caption mean something for
+                    # the age and biomass tabs (both read one buffer at a
+                    # time) but not for metrics, which already lists every
                     # radius as its own row (landscape_metrics_rows).
                     rx.cond(
-                        AppState.selected_age_view == "age",
+                        (AppState.selected_age_view == "age")
+                        | (AppState.selected_age_view == "biomass"),
                         rx.fragment(
                             rx.cond(
                                 AppState.full_area_active,
@@ -414,6 +454,7 @@ def _forest_age_panel() -> rx.Component:
             # --- body ------------------------------------------------ #
             rx.tabs.content(_age_body(), value="age", width="100%"),
             rx.tabs.content(_landscape_metrics_panel(), value="metrics", width="100%"),
+            rx.tabs.content(_biomass_panel(), value="biomass", width="100%"),
             rx.cond(
                 AppState.selected_age_view == "age",
                 rx.text(AppState.age_provenance_line, size="1", color_scheme="gray"),

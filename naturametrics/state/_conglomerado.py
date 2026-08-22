@@ -40,6 +40,9 @@ from ..services.mapbiomas_history import (
 from ..services.landscape_metrics import (
     aggregate_landscape_metrics, landscape_metrics, full_area_landscape_metrics,
 )
+from ..services.biomass import (
+    aggregate_biomass, biomass_history, full_area_biomass_history,
+)
 from ._proxy import plain
 
 logger = logging.getLogger(__name__)
@@ -105,6 +108,14 @@ class ConglomeradoMixin(rx.State, mixin=True):
     _multi_landscape_metrics: list[dict[str, Any]] = []
     _multi_landscape_provenance: dict[str, Any] = {}
 
+    #: Same shape as _multi_frames, for services.biomass (ESA CCI Biomass_cci).
+    #: One dict, not two: aggregate_biomass sums straight from each point's own
+    #: frame, unlike landscape metrics' diversity indices, which need the raw
+    #: class histogram pooled first.
+    _multi_biomass_frames: dict[str, list[dict[str, Any]]] = {}
+    _multi_biomass: list[dict[str, Any]] = []
+    _multi_biomass_provenance: dict[str, Any] = {}
+
     #: "sum" (existing, per-point overlap-counted-twice) vs "full_area" (one
     #: bounding box enclosing every selected point's buffer — no overlap, but
     #: it also covers land between clusters). Independent EE computation, so
@@ -115,6 +126,8 @@ class ConglomeradoMixin(rx.State, mixin=True):
     #: above (compute_full_area) so its own hiccups or extra wall-clock never
     #: hold up a full-area result that already landed — its own busy flag.
     multi_bbox_landscape_busy: bool = False
+    #: Same reasoning again, for services.biomass.
+    multi_bbox_biomass_busy: bool = False
     #: True whenever the selection has changed since the cached full-area
     #: result was computed — the sum recomputes for free (pure pandas), the
     #: bounding box does not, so it is only paid for again when asked for.
@@ -125,6 +138,8 @@ class ConglomeradoMixin(rx.State, mixin=True):
     _multi_bbox_age_provenance: dict[str, Any] = {}
     _multi_bbox_landscape_metrics: list[dict[str, Any]] = []
     _multi_bbox_landscape_provenance: dict[str, Any] = {}
+    _multi_bbox_biomass: list[dict[str, Any]] = []
+    _multi_bbox_biomass_provenance: dict[str, Any] = {}
     #: full_area_geojson() output, drawn on the map instead of the per-point
     #: rings while multi_view_mode == "full_area".
     _multi_bbox_overlay: dict[str, Any] = {}
@@ -439,6 +454,8 @@ class ConglomeradoMixin(rx.State, mixin=True):
         self._multi_landscape_summaries = {}
         self._multi_landscape_histograms = {}
         self._multi_landscape_metrics = []
+        self._multi_biomass_frames = {}
+        self._multi_biomass = []
         self._multi_coords = {}
         self._multi_meta = {}
         self._multi_history = []
@@ -446,6 +463,7 @@ class ConglomeradoMixin(rx.State, mixin=True):
         self._multi_bbox_history = []
         self._multi_bbox_age_history = []
         self._multi_bbox_landscape_metrics = []
+        self._multi_bbox_biomass = []
         self._multi_bbox_overlay = {}
         self.multi_view_mode = "sum"
         self.multi_bbox_stale = True
@@ -473,6 +491,7 @@ class ConglomeradoMixin(rx.State, mixin=True):
                 self._multi_age_frames.pop(key, None)
                 self._multi_landscape_summaries.pop(key, None)
                 self._multi_landscape_histograms.pop(key, None)
+                self._multi_biomass_frames.pop(key, None)
                 self.multi_error = ""
                 self._recompute_multi()
                 return
@@ -523,6 +542,9 @@ class ConglomeradoMixin(rx.State, mixin=True):
         metrics_task = loop.run_in_executor(
             None, landscape_metrics, p, BUFFER_RADII_KM,
             BUFFER_MODE_DEFAULT, self.buffer_shape)
+        biomass_task = loop.run_in_executor(
+            None, biomass_history, p, BUFFER_RADII_KM,
+            BUFFER_MODE_DEFAULT, self.buffer_shape)
 
         try:
             (df, prov), (age_df, age_prov) = await asyncio.gather(history_task, age_task)
@@ -562,6 +584,18 @@ class ConglomeradoMixin(rx.State, mixin=True):
                 self._multi_landscape_provenance = metrics_prov.to_dict()
                 self._recompute_multi()
 
+        try:
+            biomass_df, biomass_prov = await biomass_task
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Multi-select biomass failed for %s: %s", key, exc)
+            return  # the point stays selected; it just has no biomass to sum
+
+        async with self:
+            if key in self._multi_coords:
+                self._multi_biomass_frames[key] = biomass_df.to_dict("records")
+                self._multi_biomass_provenance = biomass_prov.to_dict()
+                self._recompute_multi()
+
     @rx.event(background=True)
     async def select_multi_area(self, bounds: dict):
         """Add every conglomerado inside a dragged box.
@@ -592,6 +626,8 @@ class ConglomeradoMixin(rx.State, mixin=True):
             self._multi_landscape_summaries = {}
             self._multi_landscape_histograms = {}
             self._multi_landscape_metrics = []
+            self._multi_biomass_frames = {}
+            self._multi_biomass = []
             self._multi_coords = {}
             self._multi_meta = {}
             self._multi_history = []
@@ -599,6 +635,7 @@ class ConglomeradoMixin(rx.State, mixin=True):
             self._multi_bbox_history = []
             self._multi_bbox_age_history = []
             self._multi_bbox_landscape_metrics = []
+            self._multi_bbox_biomass = []
             self._multi_bbox_overlay = {}
             self.multi_view_mode = "sum"
             self.multi_bbox_stale = True
@@ -766,6 +803,35 @@ class ConglomeradoMixin(rx.State, mixin=True):
                 if metrics_results:
                     self._recompute_multi()
 
+            # A third, equally separate fan-out for biomass (services.biomass)
+            # — same reasoning: it must not get a vote on selection membership.
+            def collect_biomass():
+                futures = {
+                    executor.submit(
+                        biomass_history, point(lat=row["lat"], lon=row["lon"]),
+                        BUFFER_RADII_KM, BUFFER_MODE_DEFAULT, self.buffer_shape):
+                    str(row["ponto_id"]) for row in surviving
+                }
+                done: dict[str, Any] = {}
+                for future in futures:
+                    key = futures[future]
+                    try:
+                        df, prov = future.result(timeout=180)
+                        done[key] = (df.to_dict("records"), prov.to_dict())
+                    except Exception as exc:  # noqa: BLE001
+                        logger.warning("Area select biomass failed for %s: %s",
+                                       key, exc)
+                return done
+
+            biomass_results = await loop.run_in_executor(None, collect_biomass)
+            async with self:
+                for key, (records, prov) in biomass_results.items():
+                    if key in self._multi_coords:
+                        self._multi_biomass_frames[key] = records
+                        self._multi_biomass_provenance = prov
+                if biomass_results:
+                    self._recompute_multi()
+
     # --- internals ---------------------------------------------------------
 
     def _recompute_multi(self) -> None:
@@ -784,6 +850,9 @@ class ConglomeradoMixin(rx.State, mixin=True):
                                 for records in self._multi_landscape_histograms.values()]
         self._multi_landscape_metrics = aggregate_landscape_metrics(
             landscape_summaries, landscape_histograms).to_dict("records")
+        biomass_frames = [pd.DataFrame(plain(records))
+                          for records in self._multi_biomass_frames.values()]
+        self._multi_biomass = aggregate_biomass(biomass_frames).to_dict("records")
         # The cached full-area result was computed for the selection as it
         # stood before this add/remove — it no longer describes what is on
         # screen, so it is marked stale rather than silently left to look current.
@@ -850,6 +919,7 @@ class ConglomeradoMixin(rx.State, mixin=True):
                 return
             self.multi_bbox_busy = True
             self.multi_bbox_landscape_busy = True
+            self.multi_bbox_biomass_busy = True
             self.multi_error = ""
             shape = self.buffer_shape
 
@@ -865,6 +935,9 @@ class ConglomeradoMixin(rx.State, mixin=True):
         # alongside (same reasoning as run_analysis and toggle_multi_point).
         metrics_task = loop.run_in_executor(
             None, full_area_landscape_metrics, pts, BUFFER_RADII_KM, shape)
+        # Same isolation, third time — services.biomass.
+        biomass_task = loop.run_in_executor(
+            None, full_area_biomass_history, pts, BUFFER_RADII_KM, shape)
 
         try:
             (df, prov), (age_df, age_prov) = await asyncio.gather(history_task, age_task)
@@ -873,6 +946,7 @@ class ConglomeradoMixin(rx.State, mixin=True):
             async with self:
                 self.multi_bbox_busy = False
                 self.multi_bbox_landscape_busy = False
+                self.multi_bbox_biomass_busy = False
                 self.multi_error = self.tr["multi_full_area_failed"].format(exc=exc)
             return
 
@@ -899,6 +973,19 @@ class ConglomeradoMixin(rx.State, mixin=True):
             self._multi_bbox_landscape_metrics = metrics_summary.to_dict("records")
             self._multi_bbox_landscape_provenance = metrics_prov.to_dict()
             self.multi_bbox_landscape_busy = False
+
+        try:
+            biomass_df, biomass_prov = await biomass_task
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Full-area biomass failed: %s", exc)
+            async with self:
+                self.multi_bbox_biomass_busy = False
+            return
+
+        async with self:
+            self._multi_bbox_biomass = biomass_df.to_dict("records")
+            self._multi_bbox_biomass_provenance = biomass_prov.to_dict()
+            self.multi_bbox_biomass_busy = False
 
     def _restore_single_view(self) -> None:
         """Hand the map back to the study point when the mode is switched off."""
@@ -948,12 +1035,14 @@ class ConglomeradoMixin(rx.State, mixin=True):
 
     @rx.var
     def multi_bbox_any_loading(self) -> bool:
-        """Whether *any* of the three full-area tables — land-use, age,
-        landscape metrics — is still being computed. Drives the shared
-        Soma/Área total toggle's spinner (results.py _multi_view_toggle),
-        which is not scoped to one panel the way multi_bbox_loading is."""
+        """Whether *any* of the four full-area tables — land-use, age,
+        landscape metrics, biomass — is still being computed. Drives the
+        shared Soma/Área total toggle's spinner (results.py
+        _multi_view_toggle), which is not scoped to one panel the way
+        multi_bbox_loading is."""
         return self.multi_view_mode == "full_area" and (
-            self.multi_bbox_busy or self.multi_bbox_landscape_busy)
+            self.multi_bbox_busy or self.multi_bbox_landscape_busy
+            or self.multi_bbox_biomass_busy)
 
     @rx.var
     def full_area_active(self) -> bool:

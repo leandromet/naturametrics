@@ -11,13 +11,14 @@ import plotly.graph_objects as go
 import reflex as rx
 
 from ..components.charts import (
-    change_bar_figure, forest_age_histogram_figure, forest_age_line_figure,
-    land_cover_history_figure,
+    biomass_history_figure, change_bar_figure, forest_age_histogram_figure,
+    forest_age_line_figure, land_cover_history_figure,
 )
 from ..config.settings import BUFFER_MODE_DEFAULT, BUFFER_RADII_KM
 from ..services.buffers import buffer_geojson
 from ..services.change_mask import change_stats
 from ..services.landscape_metrics import landscape_metrics
+from ..services.biomass import biomass_history
 from ..services.vegetation_age import age_summary, buffer_forest_age_histogram, point_forest_age_series
 from ..services.geo import CoordinateError, point
 from ..services.mapbiomas_history import land_cover_history, point_pixel_series
@@ -81,6 +82,14 @@ class AnalysisMixin(rx.State, mixin=True):
     landscape_metrics_error: str = ""
     _landscape_metrics: list[dict[str, Any]] = []
     _landscape_metrics_provenance: dict[str, Any] = {}
+
+    #: services.biomass (ESA CCI Biomass_cci v6.0) — a third, independent
+    #: product read alongside age/landscape-metrics, same isolation reasoning.
+    biomass_running: bool = False
+    biomass_error: str = ""
+    _biomass: list[dict[str, Any]] = []
+    _biomass_provenance: dict[str, Any] = {}
+
     selected_age_view: str = "age"
 
     @rx.event(background=True)
@@ -96,6 +105,10 @@ class AnalysisMixin(rx.State, mixin=True):
             self.landscape_metrics_error = ""
             self._landscape_metrics = []
             self._landscape_metrics_provenance = {}
+            self.biomass_running = True
+            self.biomass_error = ""
+            self._biomass = []
+            self._biomass_provenance = {}
 
         loop = asyncio.get_running_loop()
         try:
@@ -160,6 +173,13 @@ class AnalysisMixin(rx.State, mixin=True):
         metrics_task = loop.run_in_executor(
             None, landscape_metrics, p, BUFFER_RADII_KM,
             BUFFER_MODE_DEFAULT, self.buffer_shape)
+        # Same isolation again: ESA CCI Biomass is a third, unrelated product
+        # (services.biomass) that must not blank the age/change or landscape-
+        # metrics results just because one of its ten Earth Engine assets
+        # hiccups.
+        biomass_task = loop.run_in_executor(
+            None, biomass_history, p, BUFFER_RADII_KM,
+            BUFFER_MODE_DEFAULT, self.buffer_shape)
 
         try:
             (age_df, age_prov), (age_buf_df, age_buf_prov), (change, change_prov) = \
@@ -201,6 +221,23 @@ class AnalysisMixin(rx.State, mixin=True):
                     self._landscape_metrics = metrics_df.to_dict("records")
                     self._landscape_metrics_provenance = metrics_prov.to_dict()
                     self.landscape_metrics_running = False
+
+        try:
+            biomass_df, biomass_prov = await biomass_task
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("Biomass failed")
+            async with self:
+                if token == self._run_token:
+                    self.biomass_running = False
+                    self.biomass_error = self.tr["err_biomass_failed"].format(exc=exc)
+                    self._biomass = []
+                    self._biomass_provenance = {}
+        else:
+            async with self:
+                if token == self._run_token:
+                    self._biomass = biomass_df.to_dict("records")
+                    self._biomass_provenance = biomass_prov.to_dict()
+                    self.biomass_running = False
 
     def set_selected_radius(self, value: str | list[str]):
         """Set the buffer whose history is charted.
@@ -436,6 +473,75 @@ class AnalysisMixin(rx.State, mixin=True):
                             else "provenance_summed_many"].format(n=n)
         return (
             f"MapBiomas {p.get('extra', {}).get('year', '')} · {p.get('scale_m')} m · "
+            f"{p.get('reducer')}{degraded}{note}"
+        )
+
+    # --- biomass (services.biomass, ESA CCI Biomass_cci v6.0) ----------- #
+
+    def _biomass_records(self) -> list[dict[str, Any]]:
+        """Same switch as _chart_records/_age_buffer_records/
+        _landscape_metrics_records, for the biomass table."""
+        if (self.multi_mode and self.multi_view_mode == "full_area"
+                and self._multi_bbox_biomass):
+            return self._multi_bbox_biomass
+        if self.multi_mode and self._multi_biomass:
+            return self._multi_biomass
+        return self._biomass
+
+    @rx.var(cache=True)
+    def biomass_has_result(self) -> bool:
+        return bool(self._biomass_records())
+
+    @rx.var(cache=True)
+    def biomass_busy(self) -> bool:
+        if self.multi_mode and self.multi_view_mode == "full_area":
+            return self.multi_bbox_biomass_busy
+        if self.multi_mode:
+            return self.multi_busy
+        return self.biomass_running
+
+    @rx.var(cache=True)
+    def biomass_figure(self) -> go.Figure:
+        import pandas as pd
+
+        df = pd.DataFrame(self._biomass_records())
+        # No point-level biomass series exists (services.biomass is buffer-
+        # only), so "Ponto" on the age tab's radius selector falls back the
+        # same way age_histogram_figure already does off it.
+        return biomass_history_figure(df, self.age_effective_radius,
+                                       lang=self.language)
+
+    @rx.var(cache=True)
+    def biomass_provenance_line(self) -> str:
+        """Its own line — services.biomass reads a different dataset (ESA CCI,
+        not MapBiomas) on a different schedule (ten snapshot years, not an
+        annual series), so provenance_line above would describe the wrong
+        computation entirely."""
+        full_area = (self.multi_mode and self.multi_view_mode == "full_area"
+                     and self._multi_bbox_biomass)
+        multi = self.multi_mode and self._multi_biomass
+        if full_area:
+            p = self._multi_bbox_biomass_provenance
+        elif multi:
+            p = self._multi_biomass_provenance
+        else:
+            p = self._biomass_provenance
+        if not p:
+            return ""
+        degraded = self.tr["provenance_degraded"] if p.get("degraded") else ""
+        note = ""
+        if full_area:
+            n = len(self.multi_points)
+            note = self.tr["provenance_full_area_one" if n == 1
+                            else "provenance_full_area_many"].format(n=n)
+        elif multi:
+            n = len(self.multi_points)
+            note = self.tr["provenance_summed_one" if n == 1
+                            else "provenance_summed_many"].format(n=n)
+        years = p.get("extra", {}).get("years") or []
+        year_span = f"{years[0]}–{years[-1]}" if years else ""
+        return (
+            f"ESA CCI Biomass v6.0 · {year_span} · {p.get('scale_m')} m · "
             f"{p.get('reducer')}{degraded}{note}"
         )
 

@@ -139,6 +139,10 @@ TRANSLATIONS_PT: dict[str, str] = {
     "metrics_shannon": "Shannon",
     "metrics_simpson": "Simpson",
     "metrics_evenness": "Equidade",
+    "biomass_tab": "Biomassa",
+    "biomass_running": "Lendo a biomassa acima do solo (ESA CCI)…",
+    "biomass_empty": "Biomassa ainda não disponível.",
+    "err_biomass_failed": "Falha ao calcular a biomassa: {exc}",
     "age_running": "Lendo a série de desmatamento e vegetação secundária…",
     "empty_state_title": "Clique no mapa para escolher um ponto",
     "empty_state_body": (

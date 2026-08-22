@@ -290,3 +290,67 @@ def _style_age_hist(fig: go.Figure, lang: str) -> go.Figure:
         showlegend=False,
     )
     return fig
+
+
+# --------------------------------------------------------------------------- #
+# Above-ground biomass (services.biomass, ESA CCI Biomass_cci v6.0) — its own
+# palette again, and its own shape: ten snapshots (2007, 2010, 2015-2022), not
+# a continuous run, joined with lines for readability but with real gaps.
+# --------------------------------------------------------------------------- #
+
+def biomass_history_figure(df: pd.DataFrame, radius_km: float, lang: str = "pt") -> go.Figure:
+    """Mean above-ground biomass per hectare, year by year, for one buffer.
+
+    Error bars are the per-pixel standard deviation reduced to a mean over the
+    buffer (services.biomass) — a rough uncertainty band, not a rigorous
+    confidence interval on the buffer's own mean.
+    """
+    fig = go.Figure()
+    sub = pd.DataFrame()
+    if df is not None and not df.empty and "radius_km" in df.columns:
+        sub = df[df["radius_km"] == radius_km].sort_values("year")
+
+    if sub.empty:
+        fig.add_annotation(
+            text="Sem dados" if lang == "pt" else "No data",
+            showarrow=False, font=dict(size=13, color="#888"),
+        )
+        return _style_biomass(fig, lang, [])
+
+    sd = sub["agb_sd_mgha"].fillna(0.0)
+    unit_label = "Mg/ha"
+    fig.add_trace(go.Scatter(
+        x=sub["year"], y=sub["agb_mean_mgha"], mode="lines+markers",
+        line=dict(color="#3c6e47", width=2),
+        marker=dict(color="#3c6e47", size=7, line=dict(width=1, color="white")),
+        error_y=dict(type="data", array=sd, visible=True,
+                     color="rgba(60,110,71,0.35)", thickness=1.5),
+        customdata=sd,
+        hovertemplate=(
+            f"<b>%{{x}}</b><br>%{{y:.1f}} ± %{{customdata:.1f}} {unit_label}"
+            "<extra></extra>"
+        ),
+        showlegend=False,
+    ))
+
+    return _style_biomass(fig, lang, sorted(sub["year"].unique().tolist()))
+
+
+def _style_biomass(fig: go.Figure, lang: str, years: list[int]) -> go.Figure:
+    fig.update_layout(
+        template="plotly_white",
+        margin=dict(l=48, r=8, t=8, b=36),
+        height=280,
+        hovermode="closest",
+        xaxis=dict(title=None, showgrid=False,
+                   tickmode="array", tickvals=years),
+        yaxis=dict(
+            title="Biomassa acima do solo (Mg/ha)" if lang == "pt"
+            else "Above-ground biomass (Mg/ha)",
+            showgrid=True, gridcolor="rgba(0,0,0,0.06)", zeroline=True,
+            rangemode="tozero",
+        ),
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+    )
+    return fig

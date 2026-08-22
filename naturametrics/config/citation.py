@@ -63,6 +63,13 @@ DATA_SOURCES = [
     ("MapBiomas — Desmatamento e Vegetação Secundária",
      "Base do cálculo de regeneração e do ano de referência do Código Florestal.",
      "https://mapbiomas.org"),
+    ("ESA CCI Biomass (Biomass_cci) v6.0",
+     "Santoro, M.; Cartus, O. (2025). ESA Biomass Climate Change Initiative "
+     "(Biomass_cci): Global datasets of forest above-ground biomass for the "
+     "years 2007, 2010, 2015–2022, v6.0. NERC EDS Centre for Environmental "
+     "Data Analysis. doi:10.5285/95913ffb6467447ca72c4e9d8cf30501. "
+     "Base da aba «Biomassa».",
+     "https://doi.org/10.5285/95913ffb6467447ca72c4e9d8cf30501"),
     ("Hansen Global Forest Change",
      "Hansen, M. C. et al. (2013). High-Resolution Global Maps of 21st-Century "
      "Forest Cover Change. Science 342, 850–853. Licença CC-BY 4.0. Usado nas "
@@ -108,6 +115,13 @@ DATA_SOURCES_EN = [
     ("MapBiomas — Deforestation and Secondary Vegetation",
      "Basis for the regrowth calculation and the Forest Code baseline year.",
      "https://mapbiomas.org"),
+    ("ESA CCI Biomass (Biomass_cci) v6.0",
+     "Santoro, M.; Cartus, O. (2025). ESA Biomass Climate Change Initiative "
+     "(Biomass_cci): Global datasets of forest above-ground biomass for the "
+     "years 2007, 2010, 2015–2022, v6.0. NERC EDS Centre for Environmental "
+     "Data Analysis. doi:10.5285/95913ffb6467447ca72c4e9d8cf30501. "
+     "Basis of the «Biomass» tab.",
+     "https://doi.org/10.5285/95913ffb6467447ca72c4e9d8cf30501"),
     ("Hansen Global Forest Change",
      "Hansen, M. C. et al. (2013). High-Resolution Global Maps of 21st-Century "
      "Forest Cover Change. Science 342, 850–853. CC-BY 4.0 license. Used on "

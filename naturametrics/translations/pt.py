@@ -21,6 +21,13 @@ TRANSLATIONS_PT: dict[str, str] = {
     "section_user_points": "Coordenadas enviadas",
     "section_multi_select": "Seleção múltipla",
     "section_biomes": "Biomas (IBGE)",
+    "section_biomass": "Biomassa (ESA CCI)",
+    "section_forest_change": "Mudança florestal (Hansen)",
+    "hansen_treecover_toggle": "Cobertura arbórea 2000",
+    "hansen_change_toggle": "Perda e ganho",
+    "hansen_loss_label": "Perda",
+    "hansen_gain_label": "Ganho",
+    "hansen_threshold_label": "Limiar de floresta (% de dossel em 2000)",
     "section_point": "Ponto de estudo",
     "buffer_square_toggle_label": "Usar buffers quadrados (lado = diâmetro)",
     "buffer_caption_square": "(lado quadrado)",
@@ -379,6 +386,17 @@ TRANSLATIONS_PT: dict[str, str] = {
         "raio, e a opção de exportar um raio só, que faz caber muito mais "
         "conglomerados. Toda planilha abre com uma aba «metadados» "
         "dizendo como cada número foi calculado."
+    ),
+    "help_step10_title": "Idade, métricas de paisagem e biomassa",
+    "help_step10_body": (
+        "Ao lado da história de uso da terra, três abas trazem outras "
+        "leituras da mesma área: «Idade da vegetação» mostra a série de "
+        "desmatamento e regeneração; «Métricas de paisagem» calcula número "
+        "e tamanho das manchas, densidade de borda e diversidade de classes "
+        "(NP, PD, LPI, ED, Shannon, Simpson); e «Biomassa» lê a biomassa "
+        "acima do solo do ESA CCI Biomass_cci — 2007, 2010 e anualmente de "
+        "2015 a 2022. As três funcionam tanto para um ponto quanto para a "
+        "soma ou a área total de uma seleção múltipla."
     ),
     "help_triage_callout": (
         "Esta camada é uma triagem, não um laudo. Não considera CAR, "

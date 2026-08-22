@@ -21,6 +21,13 @@ TRANSLATIONS_EN: dict[str, str] = {
     "section_user_points": "Submitted coordinates",
     "section_multi_select": "Multiple selection",
     "section_biomes": "Biomes (IBGE)",
+    "section_biomass": "Biomass (ESA CCI)",
+    "section_forest_change": "Forest change (Hansen)",
+    "hansen_treecover_toggle": "Tree cover 2000",
+    "hansen_change_toggle": "Loss and gain",
+    "hansen_loss_label": "Loss",
+    "hansen_gain_label": "Gain",
+    "hansen_threshold_label": "Forest threshold (% canopy in 2000)",
     "section_point": "Study point",
     "buffer_square_toggle_label": "Use square buffers (side = diameter)",
     "buffer_caption_square": "(square side)",
@@ -375,6 +382,16 @@ TRANSLATIONS_EN: dict[str, str] = {
         "radius, and the option to export a single radius, which fits "
         "many more clusters. Every spreadsheet opens with a «metadata» "
         "tab explaining how each number was computed."
+    ),
+    "help_step10_title": "Age, landscape metrics and biomass",
+    "help_step10_body": (
+        "Next to the land-use history, three tabs offer other readings of "
+        "the same area: «Vegetation age» carries the deforestation/regrowth "
+        "series; «Landscape metrics» computes patch count and size, edge "
+        "density and class diversity (NP, PD, LPI, ED, Shannon, Simpson); "
+        "and «Biomass» reads ESA CCI Biomass_cci's above-ground biomass — "
+        "2007, 2010 and annually from 2015 to 2022. All three work for a "
+        "single point as well as for a multi-selection's sum or full area."
     ),
     "help_triage_callout": (
         "This layer is a screening tool, not a formal report. It does "

@@ -62,6 +62,7 @@ def como_usar_dialog() -> rx.Component:
                     _step("7", tr["help_step7_title"], tr["help_step7_body"]),
                     _step("8", tr["help_step8_title"], tr["help_step8_body"]),
                     _step("9", tr["help_step9_title"], tr["help_step9_body"]),
+                    _step("10", tr["help_step10_title"], tr["help_step10_body"]),
                     rx.callout(
                         tr["help_triage_callout"],
                         icon="triangle-alert", color_scheme="amber", size="1",

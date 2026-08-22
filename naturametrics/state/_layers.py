@@ -21,6 +21,7 @@ from ..services import biomes as biome_service
 from ..services import change_mask as cm
 from ..services import ifn as ifn_service
 from ..services import layers as layer_service
+from ..services.biomass import AGB_YEARS
 
 logger = logging.getLogger(__name__)
 
@@ -98,6 +99,21 @@ class LayersMixin(rx.State, mixin=True):
     change_include_stable: bool = False
     change_mask_url: str = ""
 
+    # --- ESA CCI Biomass (services.biomass) --------------------------------
+    show_biomass: bool = False
+    biomass_year: int = AGB_YEARS[-1]
+    biomass_opacity: float = 0.75
+
+    # --- Hansen Global Forest Change, ported from the Canada page ---------
+    #: One threshold governs both sub-layers (tree cover 2000, loss/gain), so
+    #: it lives outside either toggle rather than under one of them.
+    show_hansen_treecover: bool = False
+    hansen_treecover_opacity: float = 0.6
+    show_hansen_change: bool = False
+    hansen_change_opacity: float = 0.85
+    hansen_change_from_year: int = ds.HANSEN_GFC["loss_year_start"]
+    hansen_treecover_threshold: int = st.HANSEN_TREECOVER_THRESHOLD
+
     # --- what the map component receives ----------------------------------
     #: Seeded with the default basemap at class-definition time, so the map has
     #: something to draw on the very first render. Waiting for the `initialise`
@@ -128,6 +144,15 @@ class LayersMixin(rx.State, mixin=True):
 
     #: Same, for Earth-Engine-backed basemaps.
     _basemap_urls: dict[str, str] = {}
+
+    #: Same, for biomass — keyed by year rather than the layer service's own
+    #: cache key string, since year is the only thing that varies here.
+    _biomass_urls: dict[int, str] = {}
+
+    #: Same, for both Hansen sub-layers — keyed by the layer service's own
+    #: cache key string (e.g. "hansen_tc:30", "hansen_change:2015:30") since
+    #: two different things vary (threshold; threshold + loss year).
+    _hansen_urls: dict[str, str] = {}
 
     # ---------------------------------------------------------------------- #
     # Layer assembly
@@ -225,6 +250,43 @@ class LayersMixin(rx.State, mixin=True):
                 "z_index": 20,
                 "max_native_zoom": 15,
             })
+
+        if self.show_biomass:
+            url = self._biomass_urls.get(self.biomass_year)
+            if url:
+                specs.append({
+                    "id": f"biomass:{self.biomass_year}",
+                    "url": url,
+                    "opacity": self.biomass_opacity,
+                    "attribution": "ESA CCI Biomass_cci v6.0",
+                    "z_index": 14,
+                    "max_native_zoom": 13,
+                })
+
+        if self.show_hansen_treecover:
+            url = self._hansen_urls.get(f"hansen_tc:{self.hansen_treecover_threshold}")
+            if url:
+                specs.append({
+                    "id": f"hansen_tc:{self.hansen_treecover_threshold}",
+                    "url": url,
+                    "opacity": self.hansen_treecover_opacity,
+                    "attribution": ds.HANSEN_GFC["attribution"],
+                    "z_index": 15,
+                    "max_native_zoom": 13,
+                })
+
+        if self.show_hansen_change:
+            key = f"hansen_change:{self.hansen_change_from_year}:{self.hansen_treecover_threshold}"
+            url = self._hansen_urls.get(key)
+            if url:
+                specs.append({
+                    "id": key,
+                    "url": url,
+                    "opacity": self.hansen_change_opacity,
+                    "attribution": ds.HANSEN_GFC["attribution"],
+                    "z_index": 16,
+                    "max_native_zoom": 13,
+                })
         return specs
 
     def _refresh_layers(self) -> None:
@@ -523,6 +585,182 @@ class LayersMixin(rx.State, mixin=True):
             self._refresh_layers()
 
     # ---------------------------------------------------------------------- #
+    # ESA CCI Biomass
+    # ---------------------------------------------------------------------- #
+
+    @rx.event(background=True)
+    async def toggle_biomass(self, checked: bool):
+        async with self:
+            self.show_biomass = checked
+            if not checked:
+                self._refresh_layers()
+                return
+            if self.biomass_year in self._biomass_urls:
+                self._refresh_layers()
+                return
+            self.layer_busy = True
+        await self._ensure_biomass_year(self.biomass_year)
+
+    @rx.event(background=True)
+    async def set_biomass_year_index(self, value: list[int | float] | int):
+        """The slider moves over an index into AGB_YEARS (services.biomass),
+        not the year itself — the ten available years are not evenly spaced
+        (2007, 2010, then annual from 2015), so a plain min/max/step=1 slider
+        over year numbers would let the user land on years that don't exist.
+        """
+        raw = value[0] if isinstance(value, (list, tuple)) else value
+        try:
+            index = int(raw)
+        except (TypeError, ValueError):
+            return
+        if not (0 <= index < len(AGB_YEARS)):
+            return
+        year = AGB_YEARS[index]
+
+        async with self:
+            self.biomass_year = year
+            if not self.show_biomass or year in self._biomass_urls:
+                self._refresh_layers()
+                return
+            self.layer_busy = True
+        await self._ensure_biomass_year(year)
+
+    def set_biomass_opacity(self, value: list[int | float]):
+        raw = value[0] if isinstance(value, (list, tuple)) else value
+        self.biomass_opacity = round(float(raw) / 100.0, 2)
+        self._refresh_layers()
+
+    async def _ensure_biomass_year(self, year: int) -> None:
+        loop = asyncio.get_running_loop()
+        try:
+            spec = await loop.run_in_executor(None, layer_service.biomass_spec, year)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Could not build biomass %s: %s", year, exc)
+            spec = None
+
+        async with self:
+            if spec:
+                self._biomass_urls[year] = spec["url"]
+            self.layer_busy = False
+            self._refresh_layers()
+
+    # ---------------------------------------------------------------------- #
+    # Hansen Global Forest Change (ported from the Canada page)
+    # ---------------------------------------------------------------------- #
+
+    @rx.event(background=True)
+    async def toggle_hansen_treecover(self, checked: bool):
+        async with self:
+            self.show_hansen_treecover = checked
+            key = f"hansen_tc:{self.hansen_treecover_threshold}"
+            if not checked or key in self._hansen_urls:
+                self._refresh_layers()
+                return
+            self.layer_busy = True
+            threshold = self.hansen_treecover_threshold
+        await self._ensure_hansen_treecover(threshold)
+
+    @rx.event(background=True)
+    async def toggle_hansen_change(self, checked: bool):
+        async with self:
+            self.show_hansen_change = checked
+            key = (f"hansen_change:{self.hansen_change_from_year}:"
+                   f"{self.hansen_treecover_threshold}")
+            if not checked or key in self._hansen_urls:
+                self._refresh_layers()
+                return
+            self.layer_busy = True
+            from_year, threshold = self.hansen_change_from_year, self.hansen_treecover_threshold
+        await self._ensure_hansen_change(from_year, threshold)
+
+    @rx.event(background=True)
+    async def set_hansen_change_from_year(self, value: list[int | float] | int | str):
+        raw = value[0] if isinstance(value, (list, tuple)) else value
+        try:
+            year = int(raw)
+        except (TypeError, ValueError):
+            return
+
+        async with self:
+            self.hansen_change_from_year = year
+            key = f"hansen_change:{year}:{self.hansen_treecover_threshold}"
+            if not self.show_hansen_change or key in self._hansen_urls:
+                self._refresh_layers()
+                return
+            self.layer_busy = True
+            threshold = self.hansen_treecover_threshold
+        await self._ensure_hansen_change(year, threshold)
+
+    @rx.event(background=True)
+    async def set_hansen_treecover_threshold(self, value: list[int | float]):
+        """Governs both Hansen sub-layers at once — loss is masked by this
+        same canopy threshold (services/layers.py::hansen_change_spec), gain
+        is not (Hansen publishes it as one undated flag with no canopy % to
+        threshold against)."""
+        raw = value[0] if isinstance(value, (list, tuple)) else value
+        try:
+            threshold = int(raw)
+        except (TypeError, ValueError):
+            return
+
+        async with self:
+            self.hansen_treecover_threshold = threshold
+            tc_on, ch_on = self.show_hansen_treecover, self.show_hansen_change
+            from_year = self.hansen_change_from_year
+            # Dropped rather than left pointing at the old threshold's tiles —
+            # showing nothing while the new threshold mints is honest; showing
+            # the previous threshold's layer would silently answer the wrong
+            # question (same reasoning as apply_ifn_filters' stale-URL drop).
+            self._refresh_layers()
+            if tc_on or ch_on:
+                self.layer_busy = True
+        if tc_on:
+            await self._ensure_hansen_treecover(threshold)
+        if ch_on:
+            await self._ensure_hansen_change(from_year, threshold)
+
+    def set_hansen_treecover_opacity(self, value: list[int | float]):
+        raw = value[0] if isinstance(value, (list, tuple)) else value
+        self.hansen_treecover_opacity = round(float(raw) / 100.0, 2)
+        self._refresh_layers()
+
+    def set_hansen_change_opacity(self, value: list[int | float]):
+        raw = value[0] if isinstance(value, (list, tuple)) else value
+        self.hansen_change_opacity = round(float(raw) / 100.0, 2)
+        self._refresh_layers()
+
+    async def _ensure_hansen_treecover(self, threshold: int) -> None:
+        loop = asyncio.get_running_loop()
+        try:
+            spec = await loop.run_in_executor(
+                None, layer_service.hansen_treecover_spec, threshold)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Could not build Hansen tree cover %s: %s", threshold, exc)
+            spec = None
+
+        async with self:
+            if spec:
+                self._hansen_urls[spec["id"]] = spec["url"]
+            self.layer_busy = False
+            self._refresh_layers()
+
+    async def _ensure_hansen_change(self, from_year: int, threshold: int) -> None:
+        loop = asyncio.get_running_loop()
+        try:
+            spec = await loop.run_in_executor(
+                None, layer_service.hansen_change_spec, from_year, threshold)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Could not build Hansen change %s/%s: %s",
+                           from_year, threshold, exc)
+            spec = None
+
+        async with self:
+            if spec:
+                self._hansen_urls[spec["id"]] = spec["url"]
+            self.layer_busy = False
+            self._refresh_layers()
+
+    # ---------------------------------------------------------------------- #
     # IFN points and biomes
     # ---------------------------------------------------------------------- #
 
@@ -708,6 +946,18 @@ class LayersMixin(rx.State, mixin=True):
     @rx.var
     def biome_opacity_pct(self) -> int:
         return int(round(self.biome_opacity * 100))
+
+    @rx.var
+    def biomass_opacity_pct(self) -> int:
+        return int(round(self.biomass_opacity * 100))
+
+    @rx.var
+    def hansen_treecover_opacity_pct(self) -> int:
+        return int(round(self.hansen_treecover_opacity * 100))
+
+    @rx.var
+    def hansen_change_opacity_pct(self) -> int:
+        return int(round(self.hansen_change_opacity * 100))
 
     # --- IFN filter options ------------------------------------------------
     # Computed rather than stored: the full município table is 4 100 names and

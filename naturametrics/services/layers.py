@@ -22,6 +22,7 @@ from typing import Any
 
 from ..config import datasets as ds
 from ..config import mapbiomas as mb
+from ..config import settings as st
 from .tiles import get_tile_url
 
 logger = logging.getLogger(__name__)
@@ -174,3 +175,132 @@ def prefetch_window(
     lo = max(mb.MAPBIOMAS_YEAR_START, around - radius)
     hi = min(mb.MAPBIOMAS_YEAR_END, around + radius)
     return prefetch_mapbiomas_years(list(range(lo, hi + 1)), collection)
+
+
+def biomass_spec(year: int, opacity: float = 0.75, z_index: int = 14) -> LayerSpec | None:
+    """ESA CCI Biomass_cci above-ground biomass for one year.
+
+    Ten non-contiguous years (services.biomass.AGB_YEARS) rather than a
+    continuous range, so unlike MapBiomas this is never worth a startup
+    prefetch sweep — it is opt-in and minted on demand the first time the
+    layer (or a new year on it) is switched on.
+    """
+    from .biomass import AGB_ASSET_TEMPLATE, AGB_VIS, AGB_YEARS
+
+    if year not in AGB_YEARS:
+        logger.warning("Biomass year %s not in %s", year, AGB_YEARS)
+        return None
+
+    cache_key = f"biomass:{year}"
+
+    def build():
+        import ee
+        return ee.Image(AGB_ASSET_TEMPLATE.format(year=year)).select("agb")
+
+    url = get_tile_url(cache_key, build, AGB_VIS)
+    if url is None:
+        return None
+
+    return {
+        "id": cache_key,
+        "url": url,
+        "opacity": opacity,
+        "attribution": "ESA CCI Biomass_cci v6.0 (Santoro & Cartus, 2025)",
+        "z_index": z_index,
+        # 100 m native resolution — coarser than MapBiomas' 30 m, so tiles
+        # stop being real detail a couple of zoom levels sooner.
+        "max_native_zoom": 13,
+    }
+
+
+# --------------------------------------------------------------------------- #
+# Hansen Global Forest Change — ported from the Canada page's
+# canada/services/layers.py (same asset, same visualization) so both pages
+# agree on what a "forest" pixel is (config.datasets.HANSEN_GFC).
+# --------------------------------------------------------------------------- #
+
+def hansen_treecover_spec(
+    threshold: int = st.HANSEN_TREECOVER_THRESHOLD,
+    opacity: float = 0.6,
+    z_index: int = 15,
+) -> LayerSpec | None:
+    """Tree cover in 2000, masked at the chosen canopy-cover threshold.
+
+    The threshold changes which pixels are painted at all, not just their
+    colour: below it, a pixel is not "forest" for this layer's purposes.
+    """
+    cache_key = f"hansen_tc:{threshold}"
+
+    def build():
+        import ee
+        gfc = ee.Image(ds.HANSEN_GFC["asset"])
+        treecover = gfc.select("treecover2000")
+        return treecover.updateMask(treecover.gte(threshold))
+
+    url = get_tile_url(cache_key, build, ds.HANSEN_GFC["treecover_vis"])
+    if url is None:
+        return None
+
+    return {
+        "id": cache_key,
+        "url": url,
+        "opacity": opacity,
+        "attribution": (f"{ds.HANSEN_GFC['attribution']} — cobertura arbórea "
+                        f"2000 (≥{threshold}%)"),
+        "z_index": z_index,
+        "max_native_zoom": 13,
+    }
+
+
+def hansen_change_spec(
+    from_year: int,
+    threshold: int = st.HANSEN_TREECOVER_THRESHOLD,
+    opacity: float = 0.85,
+    z_index: int = 16,
+) -> LayerSpec | None:
+    """Loss since ``from_year`` (red) and gain (green, undated), as one
+    categorical band — 1 = loss, 2 = gain, loss painted last so a pixel
+    flagged both ways reads as loss.
+
+    Loss is gated by the same canopy threshold as the tree-cover layer (a
+    pixel that was never "forest" cannot lose it); gain is **not** — Hansen
+    publishes gain as one undated flag for the whole record, with no year
+    and no canopy percentage to threshold against, so gating it on the 2000
+    tree-cover mask would silently hide regrowth on land that was below the
+    threshold in 2000 precisely because it was cleared before then.
+    """
+    year_start = ds.HANSEN_GFC["loss_year_start"]
+    year_end = ds.HANSEN_GFC["loss_year_end"]
+    if not (year_start <= from_year <= year_end):
+        logger.warning("Hansen loss year %s outside %s–%s",
+                       from_year, year_start, year_end)
+        return None
+
+    cache_key = f"hansen_change:{from_year}:{threshold}"
+
+    def build():
+        import ee
+        gfc = ee.Image(ds.HANSEN_GFC["asset"])
+        forest2000 = gfc.select("treecover2000").gte(threshold)
+        code = from_year - year_start + 1
+        loss = (gfc.select("loss").eq(1).And(forest2000)
+                .And(gfc.select("lossyear").gte(code)))
+        gain = gfc.select("gain").eq(1)
+        return ee.Image(0).where(gain, 2).where(loss, 1).selfMask().rename("change")
+
+    vis = {"min": 1, "max": 2,
+           "palette": [ds.HANSEN_GFC["loss_color"].lstrip("#"),
+                       ds.HANSEN_GFC["gain_color"].lstrip("#")]}
+    url = get_tile_url(cache_key, build, vis)
+    if url is None:
+        return None
+
+    return {
+        "id": cache_key,
+        "url": url,
+        "opacity": opacity,
+        "attribution": (f"{ds.HANSEN_GFC['attribution']} — perda "
+                        f"{from_year}–{year_end}, ganho (não datado)"),
+        "z_index": z_index,
+        "max_native_zoom": 13,
+    }

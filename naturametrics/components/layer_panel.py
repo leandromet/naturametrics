@@ -14,6 +14,7 @@ from ..config import datasets as ds
 from ..config import mapbiomas as mb
 from ..config import settings as st
 from ..services import change_mask as cm
+from ..services.biomass import AGB_YEARS
 from ..state import AppState
 from .user_points import enviar_dados_dialog
 
@@ -534,6 +535,163 @@ def biome_control() -> rx.Component:
     )
 
 
+def biomass_control() -> rx.Component:
+    """ESA CCI Biomass_cci above-ground biomass — a discrete set of ten
+    years (2007, 2010, 2015-2022), not the continuous range MapBiomas'
+    slider assumes, so the slider here moves over an *index* into that list
+    (state.set_biomass_year_index) rather than the year number itself."""
+    return _section(
+        AppState.tr["section_biomass"],
+        rx.hstack(
+            rx.switch(checked=AppState.show_biomass,
+                      on_change=AppState.toggle_biomass),
+            rx.text("ESA CCI Biomass v6.0", size="2"),
+            rx.spacer(),
+            rx.cond(AppState.layer_busy, rx.spinner(size="1"), rx.fragment()),
+            width="100%", align="center", spacing="2",
+        ),
+        rx.cond(
+            AppState.show_biomass,
+            rx.vstack(
+                rx.hstack(
+                    rx.text(AppState.tr["year_label"], size="1", color_scheme="gray"),
+                    rx.spacer(),
+                    rx.badge(AppState.biomass_year.to_string(),
+                             color_scheme="green", variant="solid"),
+                    width="100%",
+                ),
+                rx.slider(
+                    min=0, max=len(AGB_YEARS) - 1, step=1,
+                    default_value=[len(AGB_YEARS) - 1],
+                    on_change=AppState.set_biomass_year_index,
+                    width="100%",
+                ),
+                rx.hstack(
+                    rx.text(str(AGB_YEARS[0]), size="1", color_scheme="gray"),
+                    rx.spacer(),
+                    rx.text(str(AGB_YEARS[-1]), size="1", color_scheme="gray"),
+                    width="100%",
+                ),
+                rx.hstack(
+                    rx.text(AppState.tr["opacity_label"], size="1", color_scheme="gray"),
+                    rx.spacer(),
+                    rx.text(AppState.biomass_opacity_pct.to_string() + "%", size="1"),
+                    width="100%",
+                ),
+                rx.slider(
+                    min=0, max=100, step=5, default_value=[75],
+                    on_change=AppState.set_biomass_opacity,
+                    width="100%",
+                ),
+                spacing="2", width="100%", padding_top="0.25rem",
+            ),
+            rx.fragment(),
+        ),
+    )
+
+
+def hansen_control() -> rx.Component:
+    """Hansen Global Forest Change, ported from the Canada page — same
+    asset, same visualization (config.datasets.HANSEN_GFC), so the two
+    pages agree on what a "forest" pixel is. Two independent sub-layers
+    (tree cover 2000, loss/gain) share one canopy-cover threshold slider,
+    which sits outside both toggles because it governs both."""
+    return _section(
+        AppState.tr["section_forest_change"],
+        rx.hstack(
+            rx.switch(checked=AppState.show_hansen_treecover,
+                      on_change=AppState.toggle_hansen_treecover),
+            rx.text(AppState.tr["hansen_treecover_toggle"], size="2"),
+            rx.spacer(),
+            rx.cond(AppState.layer_busy, rx.spinner(size="1"), rx.fragment()),
+            width="100%", align="center", spacing="2",
+        ),
+        rx.cond(
+            AppState.show_hansen_treecover,
+            rx.vstack(
+                rx.hstack(
+                    rx.text(AppState.tr["opacity_label"], size="1", color_scheme="gray"),
+                    rx.spacer(),
+                    rx.text(AppState.hansen_treecover_opacity_pct.to_string() + "%",
+                            size="1"),
+                    width="100%",
+                ),
+                rx.slider(
+                    min=0, max=100, step=5, default_value=[60],
+                    on_change=AppState.set_hansen_treecover_opacity,
+                    width="100%",
+                ),
+                spacing="1", width="100%",
+            ),
+            rx.fragment(),
+        ),
+        rx.hstack(
+            rx.switch(checked=AppState.show_hansen_change,
+                      on_change=AppState.toggle_hansen_change),
+            rx.text(AppState.tr["hansen_change_toggle"], size="2"),
+            width="100%", align="center", spacing="2",
+        ),
+        rx.cond(
+            AppState.show_hansen_change,
+            rx.vstack(
+                rx.hstack(
+                    rx.text(AppState.tr["change_base_year"], size="1",
+                            color_scheme="gray"),
+                    rx.spacer(),
+                    rx.badge(AppState.hansen_change_from_year.to_string(),
+                             color_scheme="red", variant="solid"),
+                    width="100%",
+                ),
+                rx.slider(
+                    min=ds.HANSEN_GFC["loss_year_start"],
+                    max=ds.HANSEN_GFC["loss_year_end"], step=1,
+                    default_value=[ds.HANSEN_GFC["loss_year_start"]],
+                    on_change=AppState.set_hansen_change_from_year,
+                    width="100%",
+                ),
+                rx.hstack(
+                    rx.box(width="10px", height="10px", border_radius="2px",
+                           background=ds.HANSEN_GFC["loss_color"]),
+                    rx.text(AppState.tr["hansen_loss_label"], size="1"),
+                    spacing="2", align="center", width="100%",
+                ),
+                rx.hstack(
+                    rx.box(width="10px", height="10px", border_radius="2px",
+                           background=ds.HANSEN_GFC["gain_color"]),
+                    rx.text(AppState.tr["hansen_gain_label"], size="1"),
+                    spacing="2", align="center", width="100%",
+                ),
+                rx.hstack(
+                    rx.text(AppState.tr["opacity_label"], size="1", color_scheme="gray"),
+                    rx.spacer(),
+                    rx.text(AppState.hansen_change_opacity_pct.to_string() + "%",
+                            size="1"),
+                    width="100%",
+                ),
+                rx.slider(
+                    min=0, max=100, step=5, default_value=[85],
+                    on_change=AppState.set_hansen_change_opacity,
+                    width="100%",
+                ),
+                spacing="2", width="100%", padding_top="0.25rem",
+            ),
+            rx.fragment(),
+        ),
+        # Governs both sub-layers above, so it sits outside either toggle.
+        rx.hstack(
+            rx.text(AppState.tr["hansen_threshold_label"], size="1", color_scheme="gray"),
+            rx.spacer(),
+            rx.text(AppState.hansen_treecover_threshold.to_string() + "%", size="1"),
+            width="100%",
+        ),
+        rx.slider(
+            min=0, max=90, step=5, default_value=[st.HANSEN_TREECOVER_THRESHOLD],
+            on_change=AppState.set_hansen_treecover_threshold,
+            width="100%",
+        ),
+    )
+
+
 def status_line() -> rx.Component:
     return rx.hstack(
         rx.cond(
@@ -612,6 +770,10 @@ def layer_panel() -> rx.Component:
         user_points_control(),
         rx.divider(),
         biome_control(),
+        rx.divider(),
+        biomass_control(),
+        rx.divider(),
+        hansen_control(),
         rx.spacer(),
         rx.divider(),
         status_line(),

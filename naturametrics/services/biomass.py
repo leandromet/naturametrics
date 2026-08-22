@@ -42,6 +42,10 @@ AGB_DATASET_ID = "ESA/CCI/Above_Ground_Biomass/V6_0"
 #: not add real detail, only cost (EE resamples a 100 m raster to fill it).
 AGB_SCALE_M = 100
 
+#: Map-layer visualization for one year's ``agb`` band (services/layers.py) —
+#: the exact min/max/palette from the dataset's own Earth Engine catalog entry.
+AGB_VIS = {"min": 0, "max": 500, "palette": ["white", "green"]}
+
 BIOMASS_COLUMNS = [
     "radius_km", "year", "agb_mean_mgha", "agb_sd_mgha", "area_ha",
     "total_biomass_mg",

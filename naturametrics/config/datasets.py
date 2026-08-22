@@ -192,17 +192,19 @@ MAPBIOMAS_FIRE = {
 # --------------------------------------------------------------------------- #
 # Hansen
 # --------------------------------------------------------------------------- #
-#: Global Forest Change. Used ONLY as an independent stand-replacement
-#: disturbance dater — never as a definition of forest (doc/10 §5.2).
+#: Global Forest Change — also the map layer under "Mudança florestal
+#: (Hansen)" (services/layers.py::hansen_treecover_spec/hansen_change_spec),
+#: ported from the Canada page's canada/services/layers.py so both pages
+#: agree on what "forest" means for this dataset.
 HANSEN_GFC = {
     "asset": "UMD/hansen/global_forest_change_2025_v1_13",
-    "loss_year_offset": 2000,  # lossyear 1..24 → 2001..2024
-    "vis_treecover": {"bands": ["treecover2000"], "min": 0, "max": 100,
-                      "palette": ["black", "green"]},
-    "vis_lossyear": {"bands": ["lossyear"], "min": 0, "max": 24,
-                     "palette": ["yellow", "red"]},
-    "vis_gain": {"bands": ["gain"], "min": 0, "max": 1, "palette": ["#00FF00"]},
-    "attribution": "Hansen/UMD/Google/USGS/NASA — Hansen et al. (2013) Science 342:850-853",
+    "loss_year_start": 2001,
+    "loss_year_end": 2024,  # lossyear band: 1..24 → 2001..2024
+    "treecover_vis": {"min": 0, "max": 100,
+                      "palette": ["ffffff", "d9f0a3", "78c679", "238443", "004529"]},
+    "loss_color": "#d4271e",
+    "gain_color": "#02d659",
+    "attribution": "Hansen/UMD/Google/USGS/NASA — Global Forest Change",
 }
 
 #: GLAD GLCLU2020 — 5-yearly strata. Map layer and coarse cross-check only;

@@ -35,6 +35,8 @@ def map_pane() -> rx.Component:
             on_point_select=AppState.select_conglomerado,
             area_select=AppState.multi_mode,
             on_area_select=AppState.select_multi_area,
+            draw_enabled=AppState.draw_mode,
+            on_geometry_drawn=AppState.on_geometry_drawn,
             width="100%",
             height="100%",
         ),

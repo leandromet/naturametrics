@@ -201,6 +201,29 @@ def full_area_forest_age_histogram(
     return df, prov
 
 
+def region_forest_age_histogram(geom: Any, label: str) -> tuple[pd.DataFrame, Provenance]:
+    """Forest-age histogram over a user-drawn/uploaded region — the polygon
+    counterpart of :func:`full_area_forest_age_histogram`."""
+    import ee
+
+    from .region_geometry import region_collection, region_geojson
+
+    get_ee()
+
+    dsv = ee.Image(fa.DSV_ASSET)
+    age_img = _forest_age_bands(dsv)
+    last = age_img.select(f"age_{fa.DSV_YEAR_END}")
+    age_final = last.updateMask(last.gt(0)).rename("age")
+
+    fc = region_collection(geom, label)
+    df, prov = _forest_age_from_collection(
+        fc, age_final, geometry=region_geojson(geom, label), point_label=label,
+        mode="region", shape="polygon", radii_km=(0.0,),
+    )
+    prov.extra["region_label"] = label
+    return df, prov
+
+
 def _forest_age_from_collection(
     fc: Any,
     age_final: Any,

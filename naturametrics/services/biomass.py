@@ -241,6 +241,25 @@ def full_area_biomass_history(
     return df, prov
 
 
+def region_biomass_history(
+    geom: Any, label: str, years: list[int] | None = None,
+) -> tuple[pd.DataFrame, Provenance]:
+    """Biomass over a user-drawn/uploaded region — the polygon counterpart of
+    :func:`full_area_biomass_history`."""
+    from .region_geometry import region_collection, region_geojson
+
+    get_ee()
+
+    years = years or AGB_YEARS
+    fc = region_collection(geom, label)
+    df, prov = _biomass_from_collection(
+        fc, years=years, geometry=region_geojson(geom, label), point_label=label,
+        mode="region", shape="polygon", radii_km=(0.0,),
+    )
+    prov.extra["region_label"] = label
+    return df, prov
+
+
 def aggregate_biomass(frames: list[pd.DataFrame]) -> pd.DataFrame:
     """Sum several conglomerados' biomass into one, per (radius, year).
 

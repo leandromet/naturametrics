@@ -76,6 +76,30 @@ HANSEN_TREECOVER_THRESHOLD = _int("NM_HANSEN_TREECOVER_THRESHOLD", 30)
 BRAZIL_BBOX = (-74.5, -34.5, -33.5, 6.5)  # min_lon, min_lat, max_lon, max_lat
 
 # --------------------------------------------------------------------------- #
+# Drawn / uploaded study region (services.region_geometry)
+# --------------------------------------------------------------------------- #
+#: Ceiling on a region's own area — protects the reduceRegions calls from a
+#: pathologically large polygon (a whole biome pasted by mistake) rather than
+#: from a realistic study area. 20 000 km² is comparable to a large município,
+#: well above the ~314 km² of the largest point buffer (10 km disc) but far
+#: short of "an entire state".
+GEOMETRY_MAX_AREA_KM2 = _float("NM_GEOMETRY_MAX_AREA_KM2", 20_000.0)
+
+#: Ceiling on vertex count — protects the size of the geometry payload sent to
+#: Earth Engine, same spirit as USER_POINTS_MAX_LINES below.
+GEOMETRY_MAX_VERTICES = _int("NM_GEOMETRY_MAX_VERTICES", 2000)
+
+#: Hard cap on an uploaded KML file, in bytes. Checked before the file is
+#: parsed at all.
+GEOMETRY_KML_MAX_BYTES = _int("NM_GEOMETRY_KML_MAX_BYTES", 2 * 1024 * 1024)
+
+#: Not a real distance — a single-feature join key for the reduceRegions
+#: parsing code shared with every buffer/full-area path, which keys its output
+#: on a `radius_km` feature property. Mirrors full_area_collection's own use
+#: of `max(radii_km)` as a stand-in for the same reason (services/buffers.py).
+GEOMETRY_REGION_RADIUS_KM = 0.0
+
+# --------------------------------------------------------------------------- #
 # Feature flags
 # --------------------------------------------------------------------------- #
 #: SPOT 2008 requires accepting a licence agreement, granted per service

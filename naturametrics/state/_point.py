@@ -59,6 +59,19 @@ class PointMixin(rx.State, mixin=True):
             self.point_error = self.tr["multi_blocked_point_error"]
             return
 
+        # A region (drawn/pasted/uploaded, state/_geometry.py) is the same
+        # kind of "current subject" a point is — a plain click replaces it,
+        # same as it replaces a previously clicked point.
+        if self.has_geometry:
+            self.has_geometry = False
+            self.geometry_error = ""
+        # Belt and suspenders: the map's own click handler already refuses to
+        # fire at all while draw_mode is armed (leaflet_map.js), but a click
+        # reaching here regardless (e.g. a conglomerado clicked mid-draw)
+        # should still leave the toolbar in a state that matches what just
+        # happened, rather than staying armed and confusing.
+        self.draw_mode = False
+
         # A bare map click carries no identity. Cleared here rather than in the
         # caller so that clicking away from a conglomerado cannot leave the
         # previous one's name attached to a different coordinate.

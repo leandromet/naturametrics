@@ -110,7 +110,26 @@ TRANSLATIONS_EN: dict[str, str] = {
     ),
 
     "point_click_other": "Click the map to choose another point.",
-    "point_click_choose": "Click the map to choose a point.",
+    "point_click_choose": (
+        "Click the map to choose a point, or turn on \"Draw on map\" to "
+        "draw an area."
+    ),
+
+    # --- drawn/uploaded region (services/region_geometry.py) --------------- #
+    "section_geometry": "Drawn area",
+    "geometry_draw_toggle_label": "Draw on map",
+    "geometry_draw_hint": (
+        "While on, clicking the map no longer picks a point — use the "
+        "polygon/rectangle tools that appear in the corner of the map to "
+        "draw an area. Or paste a WKT / upload a KML in \"Submit data\" "
+        "without turning this on."
+    ),
+    "geometry_label_drawn": "Drawn area",
+    "geometry_source_drawn": "drawn on map",
+    "geometry_label_wkt": "Area (WKT)",
+    "geometry_source_wkt": "pasted WKT",
+    "geometry_label_kml": "Area (KML)",
+    "geometry_source_kml": "KML file",
 
     "basemap_unavailable": (
         "«{label}» unavailable — the account may not have accepted this "
@@ -173,10 +192,11 @@ TRANSLATIONS_EN: dict[str, str] = {
         "MapBiomas currently reads those polygons as instead."
     ),
     "age_running": "Reading the deforestation and secondary-vegetation series…",
-    "empty_state_title": "Click the map to choose a point",
+    "empty_state_title": "Click the map or draw an area",
     "empty_state_body": (
         "The land-use history and vegetation age, from 1985/1987 to 2024, "
-        "will be computed for radii of 1, 2, 5 and 10 km around it."
+        "will be computed for radii of 1, 2, 5 and 10 km around a point — or "
+        "for the whole area if you draw one, paste a WKT, or upload a KML."
     ),
 
     # --- export dialog ------------------------------------------------------ #
@@ -264,14 +284,14 @@ TRANSLATIONS_EN: dict[str, str] = {
     # --- submit-coordinates dialog ------------------------------------------ #
     "send_button": "Submit data",
     "send_list_aria": "Submit coordinate list",
-    "send_dialog_title": "Submit coordinate list",
+    "send_dialog_title": "Submit data",
     "send_dialog_desc": (
-        "Paste a list of points — one per line — to use it on the map "
-        "instead of the IFN clusters: hovering or clicking a point now "
-        "refers to this list, and the full analysis for every point can "
-        "be downloaded afterwards. Only pasted text is accepted, no file "
-        "upload."
+        "Paste a list of points, paste a WKT polygon, or upload a KML file "
+        "— to use on the map instead of clicking."
     ),
+    "send_mode_points": "Point list",
+    "send_mode_wkt": "WKT",
+    "send_mode_kml": "KML",
     "send_format_label": "Format: name (optional), latitude, longitude",
     "send_max_points": "Up to {max} points per list.",
     "send_active_points": "{n} active points",
@@ -279,6 +299,20 @@ TRANSLATIONS_EN: dict[str, str] = {
         "The list has more than {max} valid points; only the first "
         "{max} were kept."
     ),
+    "send_wkt_desc": (
+        "Paste a polygon or multipolygon as WKT (e.g. exported from a GIS "
+        "tool). Replaces the current drawn/submitted area, if any."
+    ),
+    "send_wkt_placeholder": (
+        "POLYGON((-56.0 -12.0, -55.5 -12.0, -55.5 -11.5, -56.0 -11.5, "
+        "-56.0 -12.0))"
+    ),
+    "send_kml_desc": (
+        "Upload a KML file with one or more polygons (e.g. exported from "
+        "Google Earth). Only Polygon is read — points, lines, styles and "
+        "other data in the file are ignored."
+    ),
+    "send_kml_dropzone": "Click or drag a .kml file here",
     "submit_button": "Submit",
 
     # --- coordinate validation ------------------------------------------ #
@@ -290,6 +324,26 @@ TRANSLATIONS_EN: dict[str, str] = {
         "{point} is outside Brazil. MapBiomas covers only Brazil, so there "
         "is no land-cover history for this location."
     ),
+
+    # --- region validation (services/region_geometry.py) ------------------- #
+    "err_geometry_invalid": "The supplied geometry is not valid.",
+    "err_geometry_empty": "The supplied geometry is empty.",
+    "err_geometry_outside_brazil": (
+        "The supplied area is outside Brazil. MapBiomas covers only Brazil, "
+        "so there is no land-cover history for this region."
+    ),
+    "err_geometry_too_large": (
+        "The supplied area ({area_km2:.0f} km²) exceeds the {max_km2:.0f} "
+        "km² limit."
+    ),
+    "err_geometry_too_complex": (
+        "The outline has {n} vertices, above the {max_n} limit."
+    ),
+    "err_wkt_parse": "Could not parse the WKT: {exc}",
+    "err_wkt_not_polygon": "The WKT must describe a Polygon or MultiPolygon.",
+    "err_kml_too_large": "The KML file exceeds the {max_mb:.1f} MB limit.",
+    "err_kml_parse": "Could not parse the KML file: {exc}",
+    "err_kml_no_polygon": "No polygon was found in the KML file.",
 
     # --- provenance line ----------------------------------------------------- #
     "years_unit": "years",

@@ -95,8 +95,8 @@ def _land_use_panel() -> rx.Component:
             rx.hstack(
                 rx.cond(AppState.multi_active, _multi_view_toggle(), rx.fragment()),
                 rx.cond(
-                    AppState.full_area_active,
-                    rx.badge(AppState.full_area_radius_label, size="1",
+                    AppState.region_mode_active,
+                    rx.badge(AppState.region_mode_label, size="1",
                              variant="soft", color_scheme="gray"),
                     rx.segmented_control.root(
                         rx.foreach(
@@ -108,8 +108,14 @@ def _land_use_panel() -> rx.Component:
                         size="1",
                     ),
                 ),
-                rx.text(AppState.buffer_extent_caption, size="1", color_scheme="gray",
-                        white_space="nowrap"),
+                rx.cond(
+                    # The "circle radius"/"square side" caption has nothing to
+                    # refer to for a drawn/uploaded region's own boundary.
+                    ~AppState.geometry_active,
+                    rx.text(AppState.buffer_extent_caption, size="1",
+                            color_scheme="gray", white_space="nowrap"),
+                    rx.fragment(),
+                ),
                 rx.hstack(
                     rx.switch(checked=AppState.normalise_chart,
                               on_change=AppState.toggle_normalise, size="1"),
@@ -478,8 +484,8 @@ def _forest_age_panel() -> rx.Component:
                         | (AppState.selected_age_view == "ibge_compare"),
                         rx.fragment(
                             rx.cond(
-                                AppState.full_area_active,
-                                rx.badge(AppState.full_area_radius_label, size="1",
+                                AppState.region_mode_active,
+                                rx.badge(AppState.region_mode_label, size="1",
                                          variant="soft", color_scheme="gray"),
                                 rx.segmented_control.root(
                                     rx.foreach(
@@ -492,8 +498,12 @@ def _forest_age_panel() -> rx.Component:
                                     size="1",
                                 ),
                             ),
-                            rx.text(AppState.buffer_extent_caption, size="1",
-                                    color_scheme="gray", white_space="nowrap"),
+                            rx.cond(
+                                ~AppState.geometry_active,
+                                rx.text(AppState.buffer_extent_caption, size="1",
+                                        color_scheme="gray", white_space="nowrap"),
+                                rx.fragment(),
+                            ),
                         ),
                         rx.fragment(),
                     ),
@@ -524,7 +534,7 @@ def _forest_age_panel() -> rx.Component:
 def results_drawer() -> rx.Component:
     return rx.box(
         rx.cond(
-            AppState.has_point | AppState.analysis_running | AppState.multi_active,
+            AppState.has_subject | AppState.analysis_running | AppState.multi_active,
             rx.flex(
                 rx.box(_land_use_panel(), flex="1 1 50%", min_width="0"),
                 rx.box(_forest_age_panel(), flex="1 1 50%", min_width="0",

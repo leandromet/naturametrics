@@ -142,6 +142,36 @@ def full_area_land_cover_history(
     return df, prov
 
 
+def region_land_cover_history(
+    geom: Any,
+    label: str,
+    collection: str = mb.MAPBIOMAS_DEFAULT_COLLECTION,
+    years: list[int] | None = None,
+) -> tuple[pd.DataFrame, Provenance]:
+    """Land-cover history over a user-drawn/uploaded region — the polygon
+    counterpart of :func:`full_area_land_cover_history`, one exact geometry
+    instead of a bounding box around several buffers. ``geom`` is a shapely
+    Polygon/MultiPolygon already validated by
+    ``services.region_geometry.validate_region``.
+    """
+    from .region_geometry import region_collection, region_geojson
+
+    get_ee()
+
+    years = years or mb.MAPBIOMAS_YEARS
+    bands = [mb.band_for_year(y) for y in years]
+    asset = mb.MAPBIOMAS_COLLECTIONS[collection]
+    fc = region_collection(geom, label)
+
+    df, prov = _history_from_collection(
+        fc, asset=asset, bands=bands, years=years,
+        geometry=region_geojson(geom, label), point_label=label,
+        collection=collection, mode="region", shape="polygon", radii_km=(0.0,),
+    )
+    prov.extra["region_label"] = label
+    return df, prov
+
+
 def _history_from_collection(
     fc: Any,
     *,

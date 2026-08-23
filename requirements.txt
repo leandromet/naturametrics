@@ -29,6 +29,10 @@ plotly>=6.1.1
 # Geospatial (runtime)
 shapely>=2.0.2
 pyproj>=3.6.0
+# KML parsing for the drawn/uploaded study region (services/region_geometry.py)
+# — defusedxml blocks XML-entity/billion-laughs attacks a plain ElementTree
+# parse would be vulnerable to on an untrusted uploaded file.
+defusedxml>=0.7.1
 
 # Utilities
 requests>=2.31.0

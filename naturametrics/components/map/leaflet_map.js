@@ -15,7 +15,7 @@
 // "React is not defined" at render. Use the bare hook names.
 
 function useNaturametricsMap(containerRef, config, layers, overlays, vectors, onMapClick,
-                             onPointHover, onPointSelect, onAreaSelect) {
+                             onPointHover, onPointSelect, onAreaSelect, onGeometryDrawn) {
   const mapRef = useRef(null);
   const layerRegistry = useRef(new Map());
   const vectorRegistry = useRef(new Map());
@@ -46,6 +46,12 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
   const overlayRef = useRef(null);
   const clickRef = useRef(onMapClick);
   const readyRef = useRef(false);
+  const drawRef = useRef(onGeometryDrawn);
+  //: True while the draw toolbar is armed (state/_geometry.py's draw_mode,
+  //: via the sidebar switch) — every "a click/tap means pick a point" path
+  //: checks this and backs off, so a drawing gesture is never also read as
+  //: one. See the plain map click handler below for the bug this fixes.
+  const drawEnabledRef = useRef(false);
 
   // Keep the click callback current without re-registering the Leaflet handler.
   clickRef.current = onMapClick;
@@ -54,6 +60,8 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
   selectRef.current = onPointSelect;
   areaRef.current = onAreaSelect;
   areaEnabledRef.current = !!(config && config.areaSelect);
+  drawRef.current = onGeometryDrawn;
+  drawEnabledRef.current = !!(config && config.drawEnabled);
 
   // --- 1. Create the map exactly once -------------------------------------
   useEffect(() => {
@@ -95,6 +103,11 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
         // that conglomerado's own coordinates. Without this the map would then
         // overwrite the study point with the cursor position.
         if (Date.now() - pointClickAt.current < 150) return;
+        // While the draw toolbar is armed, a click is either placing a
+        // polygon vertex or finishing a shape (rectangle's second corner) —
+        // never "pick a point here". Without this, releasing the mouse to
+        // finish a drawn shape also ran the point analysis for that spot.
+        if (drawEnabledRef.current) return;
         if (clickRef.current) {
           clickRef.current(
             Math.round(e.latlng.lat * 1e6) / 1e6,
@@ -153,6 +166,94 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // --- 1b. Draw toolbar: a polygon/rectangle study region -------------------
+  // Draw-only — no edit/remove sub-toolbar, and the completed shape is never
+  // kept in its own layer group. Python's on_geometry_drawn echoes it straight
+  // back through `overlays` (the "drawn_region" role, styled in section 3
+  // below) exactly like a pasted WKT or an uploaded KML — one rendering path
+  // for "a region is on screen", so nothing here has to stay in sync with it.
+  // Clearing goes through the sidebar's "Limpar" button instead, which already
+  // flows through that same overlays channel.
+  //
+  // The library is imported once, eagerly, the first time this runs —
+  // regardless of whether the toolbar is shown yet — because
+  // L.Draw.Event.CREATED (bound at the same time) has to exist before ANY
+  // draw can complete. Only the toolbar CONTROL itself (the visible corner
+  // buttons) is added or removed as drawEnabled changes.
+  const drawEnabled = !!(config && config.drawEnabled);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const attach = async () => {
+      const map = mapRef.current;
+      const L = leafletRef.current;
+      if (!map || !L) return false;
+
+      if (!map._nmDrawImported) {
+        // Side-effecting import: leaflet-draw has no exports of its own, it
+        // attaches L.Control.Draw/L.Draw onto the SAME Leaflet module already
+        // imported above (module dedup makes this the identical instance).
+        await import("leaflet-draw");
+        if (cancelled || !mapRef.current) return false;
+        map._nmDrawImported = true;
+
+        map.on(L.Draw.Event.CREATED, (e) => {
+          // The mouseup that finishes a shape (a rectangle's second corner,
+          // a polygon's closing click) also reaches the map's own "click"
+          // handler a moment later — this is the same suppression mechanism
+          // that handler already uses for conglomerado clicks.
+          pointClickAt.current = Date.now();
+          if (drawRef.current) drawRef.current(e.layer.toGeoJSON());
+        });
+      }
+
+      if (drawEnabled) {
+        if (map._nmDrawControl) return true;
+        const drawControl = new L.Control.Draw({
+          position: "topright",
+          draw: {
+            polygon: {
+              allowIntersection: false,
+              showArea: true,
+              shapeOptions: {color: "#8e4ec6", weight: 2.5},
+            },
+            rectangle: {shapeOptions: {color: "#8e4ec6", weight: 2.5}},
+            marker: false,
+            circle: false,
+            circlemarker: false,
+            polyline: false,
+          },
+          edit: false,
+        });
+        map.addControl(drawControl);
+        map._nmDrawControl = drawControl;
+      } else if (map._nmDrawControl) {
+        map.removeControl(map._nmDrawControl);
+        map._nmDrawControl = null;
+      }
+      return true;
+    };
+
+    if (readyRef.current) {
+      attach();
+    } else {
+      const t = setInterval(() => {
+        if (readyRef.current) {
+          clearInterval(t);
+          attach();
+        }
+      }, 50);
+      return () => {
+        cancelled = true;
+        clearInterval(t);
+      };
+    }
+
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drawEnabled]);
 
   // --- 2. Diff the tile-layer list against what is on the map --------------
   const layerKey = JSON.stringify(layers);
@@ -552,6 +653,16 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
         interactive: false,
         style: (feature) => {
           const props = feature.properties || {};
+          // A drawn/pasted/uploaded region (services/region_geometry.py) —
+          // filled and in its own colour, unlike the buffer/full-area
+          // outlines below: this is an exact user-supplied boundary, not a
+          // preview the underlying land-cover layer needs to show through.
+          if (props.role === "drawn_region") {
+            return {
+              color: "#8e4ec6", weight: 2.5, opacity: 0.95,
+              fill: true, fillColor: "#8e4ec6", fillOpacity: 0.18,
+            };
+          }
           // The full-area rectangle (multi-select "área total") — outline
           // only, same reasoning as the per-point buffers below: a filled
           // box would hide whatever land-cover layer is on underneath it,
@@ -668,6 +779,10 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
       // map's own click handler from also dropping a study point a few metres
       // away. The timestamp below is what actually guarantees it.
       if (e && e.originalEvent) L.DomEvent.stop(e.originalEvent);
+      // While the draw toolbar is armed, this is a polygon vertex landing on
+      // a point/conglomerado, not a request to select it — same reasoning
+      // as the plain map click handler's own drawEnabledRef check.
+      if (drawEnabledRef.current) return;
       pointClickAt.current = Date.now();
       if (spec.emit_select && selectRef.current) {
         // The feature's OWN coordinates, not the click position: the user is
@@ -715,6 +830,9 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
           // reach the map, so the study-point selection has to be forwarded
           // explicitly or clicking anywhere on a biome does nothing.
           featureLayer.on("click", (e) => {
+            // Same drawEnabledRef guard as the plain map click handler — a
+            // polygon vertex landing on a biome must not also pick a point.
+            if (drawEnabledRef.current) return;
             if (clickRef.current && e.latlng) {
               clickRef.current(Math.round(e.latlng.lat * 1e6) / 1e6,
                                Math.round(e.latlng.lng * 1e6) / 1e6);

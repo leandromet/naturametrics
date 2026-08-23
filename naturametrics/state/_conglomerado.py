@@ -453,6 +453,17 @@ class ConglomeradoMixin(rx.State, mixin=True):
             # discarded, only its claim on the interactive layer.
             self.user_points_active = False
             self._refresh_layers()
+        if checked and self.has_geometry:
+            # Same exclusivity rule, one more time — a region is a subject,
+            # not a layer, but multi-select's own subject (the running sum)
+            # cannot coexist with it either.
+            self.clear_geometry()
+        if checked and self.draw_mode:
+            # The draw toolbar arms its own click-suppression (state/_geometry
+            # .py's draw_mode) — leaving it armed while multi-select's own
+            # Ctrl-drag area-select takes over the drag gesture would mean two
+            # different things claiming the same mouse action.
+            self.draw_mode = False
         if checked:
             self._apply_multi_view()
         else:

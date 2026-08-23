@@ -251,6 +251,28 @@ def full_area_landscape_metrics(
     return summary_df, hist_df, prov
 
 
+def region_landscape_metrics(
+    geom: Any,
+    label: str,
+    year: int = mb.MAPBIOMAS_YEAR_END,
+) -> tuple[pd.DataFrame, pd.DataFrame, Provenance]:
+    """Landscape metrics over a user-drawn/uploaded region — the polygon
+    counterpart of :func:`full_area_landscape_metrics`. Patch identity is
+    unambiguous here for the same reason it is in full-area mode: exactly one
+    region, so NP/LPI/ED mean exactly what they mean for a single point.
+    """
+    from .region_geometry import region_collection, region_geojson
+
+    get_ee()
+    fc = region_collection(geom, label)
+    summary_df, hist_df, prov = _landscape_metrics_from_collection(
+        fc, geometry=region_geojson(geom, label), point_label=label,
+        mode="region", shape="polygon", radii_km=(0.0,), year=year,
+    )
+    prov.extra["region_label"] = label
+    return summary_df, hist_df, prov
+
+
 def aggregate_landscape_metrics(
     summaries: list[pd.DataFrame], histograms: list[pd.DataFrame],
 ) -> pd.DataFrame:

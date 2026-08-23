@@ -112,7 +112,26 @@ TRANSLATIONS_PT: dict[str, str] = {
     ),
 
     "point_click_other": "Clique no mapa para escolher outro ponto.",
-    "point_click_choose": "Clique no mapa para escolher um ponto.",
+    "point_click_choose": (
+        "Clique no mapa para escolher um ponto, ou ative \"Desenhar no "
+        "mapa\" para desenhar uma área."
+    ),
+
+    # --- drawn/uploaded region (services/region_geometry.py) --------------- #
+    "section_geometry": "Área desenhada",
+    "geometry_draw_toggle_label": "Desenhar no mapa",
+    "geometry_draw_hint": (
+        "Enquanto ativo, um clique no mapa não escolhe mais um ponto — use "
+        "as ferramentas de polígono/retângulo que aparecem no canto do mapa "
+        "para desenhar uma área. Ou cole um WKT / envie um KML em \"Enviar "
+        "dados\", sem precisar ativar isto."
+    ),
+    "geometry_label_drawn": "Área desenhada",
+    "geometry_source_drawn": "desenho no mapa",
+    "geometry_label_wkt": "Área (WKT)",
+    "geometry_source_wkt": "WKT colado",
+    "geometry_label_kml": "Área (KML)",
+    "geometry_source_kml": "arquivo KML",
 
     "basemap_unavailable": (
         "«{label}» indisponível — a conta pode não ter aceitado a licença "
@@ -176,10 +195,12 @@ TRANSLATIONS_PT: dict[str, str] = {
         "atualmente lê esses polígonos."
     ),
     "age_running": "Lendo a série de desmatamento e vegetação secundária…",
-    "empty_state_title": "Clique no mapa para escolher um ponto",
+    "empty_state_title": "Clique no mapa ou desenhe uma área",
     "empty_state_body": (
         "A história de uso da terra e a idade da vegetação, de 1985/1987 a "
-        "2024, serão calculadas para raios de 1, 2, 5 e 10 km em volta dele."
+        "2024, serão calculadas para raios de 1, 2, 5 e 10 km em volta de um "
+        "ponto — ou para toda a área, se você desenhar, colar um WKT ou "
+        "enviar um KML."
     ),
 
     # --- export dialog ------------------------------------------------------ #
@@ -267,14 +288,14 @@ TRANSLATIONS_PT: dict[str, str] = {
     # --- submit-coordinates dialog ------------------------------------------ #
     "send_button": "Enviar dados",
     "send_list_aria": "Enviar lista de coordenadas",
-    "send_dialog_title": "Enviar lista de coordenadas",
+    "send_dialog_title": "Enviar dados",
     "send_dialog_desc": (
-        "Cole uma lista de pontos — um por linha — para usá-la no mapa no "
-        "lugar dos conglomerados do IFN: passar o mouse ou clicar em um "
-        "ponto passa a se referir a esta lista, e a análise completa de "
-        "todos os pontos pode ser baixada depois. Apenas colar texto é "
-        "aceito, não upload de arquivo."
+        "Cole uma lista de pontos, cole um polígono em WKT, ou envie um "
+        "arquivo KML — para usar no mapa no lugar de clicar."
     ),
+    "send_mode_points": "Lista de pontos",
+    "send_mode_wkt": "WKT",
+    "send_mode_kml": "KML",
     "send_format_label": "Formato: nome (opcional), latitude, longitude",
     "send_max_points": "Até {max} pontos por lista.",
     "send_active_points": "{n} pontos ativos",
@@ -282,6 +303,20 @@ TRANSLATIONS_PT: dict[str, str] = {
         "A lista tem mais de {max} pontos válidos; apenas os primeiros "
         "{max} foram mantidos."
     ),
+    "send_wkt_desc": (
+        "Cole um polígono ou multipolígono em WKT (ex.: exportado de um "
+        "SIG). Substitui a área desenhada/enviada atual, se houver."
+    ),
+    "send_wkt_placeholder": (
+        "POLYGON((-56.0 -12.0, -55.5 -12.0, -55.5 -11.5, -56.0 -11.5, "
+        "-56.0 -12.0))"
+    ),
+    "send_kml_desc": (
+        "Envie um arquivo KML com um ou mais polígonos (ex.: exportado do "
+        "Google Earth). Apenas Polygon é lido — pontos, linhas, estilos e "
+        "outros dados do arquivo são ignorados."
+    ),
+    "send_kml_dropzone": "Clique ou arraste um arquivo .kml aqui",
     "submit_button": "Enviar",
 
     # --- coordinate validation ------------------------------------------ #
@@ -293,6 +328,27 @@ TRANSLATIONS_PT: dict[str, str] = {
         "{point} está fora do Brasil. O MapBiomas cobre apenas o Brasil, "
         "portanto não há histórico de cobertura do solo para este local."
     ),
+
+    # --- region validation (services/region_geometry.py) ------------------- #
+    "err_geometry_invalid": "A geometria informada não é válida.",
+    "err_geometry_empty": "A geometria informada está vazia.",
+    "err_geometry_outside_brazil": (
+        "A área informada está fora do Brasil. O MapBiomas cobre apenas o "
+        "Brasil, portanto não há histórico de cobertura do solo para esta "
+        "região."
+    ),
+    "err_geometry_too_large": (
+        "A área informada ({area_km2:.0f} km²) excede o limite de "
+        "{max_km2:.0f} km²."
+    ),
+    "err_geometry_too_complex": (
+        "O contorno tem {n} vértices, acima do limite de {max_n}."
+    ),
+    "err_wkt_parse": "Não foi possível interpretar o WKT: {exc}",
+    "err_wkt_not_polygon": "O WKT precisa descrever um Polygon ou MultiPolygon.",
+    "err_kml_too_large": "O arquivo KML excede o limite de {max_mb:.1f} MB.",
+    "err_kml_parse": "Não foi possível interpretar o arquivo KML: {exc}",
+    "err_kml_no_polygon": "Nenhum polígono foi encontrado no arquivo KML.",
 
     # --- provenance line ----------------------------------------------------- #
     "years_unit": "anos",

@@ -82,7 +82,7 @@ class LeafletMap(rx.el.Div):
 
     # Leaflet itself — not imported at module scope in JS, but the package must
     # be installed for the dynamic import inside the hook to resolve.
-    lib_dependencies: list[str] = ["leaflet@1.9.4"]
+    lib_dependencies: list[str] = ["leaflet@1.9.4", "leaflet-draw@1.0.4"]
 
     center: Var[Sequence[float]] = Var.create([-15.0, -52.0])
     zoom: Var[int] = Var.create(4)
@@ -103,6 +103,11 @@ class LeafletMap(rx.el.Div):
     #: Arms Ctrl/Cmd-drag area selection. Off by default so the modifier does
     #: nothing surprising outside multiple-selection mode.
     area_select: Var[bool] = Var.create(False)
+    #: Arms the polygon/rectangle draw toolbar. Off by default: a plain map
+    #: click means "pick a point" everywhere else in this app, and the click
+    #: that FINISHES a drawn shape must not also be read as one — see the
+    #: click handler in leaflet_map.js for the bug this guards against.
+    draw_enabled: Var[bool] = Var.create(False)
     #: ``[[south, west], [north, east]]``. Unlike ``bounds`` this is re-applied
     #: every time it CHANGES, so Python can frame a new selection. Set it to []
     #: to leave the view alone.
@@ -112,32 +117,44 @@ class LeafletMap(rx.el.Div):
     on_point_hover: EventHandler[passthrough_event_spec(dict)]
     on_point_select: EventHandler[passthrough_event_spec(dict)]
     on_area_select: EventHandler[passthrough_event_spec(dict)]
+    #: Called with a GeoJSON Feature when the draw toolbar finishes a
+    #: polygon/rectangle. ``None`` is accepted but never sent by the hook
+    #: today — see GeometryMixin.on_geometry_drawn for why.
+    on_geometry_drawn: EventHandler[passthrough_event_spec(dict)]
 
     def _exclude_props(self) -> list[str]:
         # These drive the hook, not DOM attributes. React would warn about all
         # of them and Leaflet would never see them.
         return [*super()._exclude_props(), "center", "zoom", "bounds", "swipe",
                 "layers", "overlays", "vectors", "fit_bounds", "area_select",
-                "on_map_click", "on_point_hover", "on_point_select",
-                "on_area_select"]
+                "draw_enabled", "on_map_click", "on_point_hover",
+                "on_point_select", "on_area_select", "on_geometry_drawn"]
 
-    def add_imports(self) -> dict[str, Any]:
-        """Leaflet's stylesheet, and the React hooks the injected code calls.
+    def add_imports(self) -> list[dict[str, Any]]:
+        """Leaflet's and leaflet-draw's stylesheets, and the React hooks the
+        injected code calls.
 
         The hooks are declared explicitly rather than relying on Reflex having
         imported them for something else on the same page — that would make this
         component's correctness depend on what happens to sit beside it.
+
+        Returned as a **list** of import dicts rather than one merged dict: two
+        bare-string CSS imports would collide on the same ``""`` key otherwise.
         """
-        return {
-            "": "leaflet/dist/leaflet.css",
-            "react": [ImportVar(tag="useEffect"), ImportVar(tag="useRef")],
-            # Vector layers are fetched from the BACKEND, which in development
-            # is a different origin from the frontend (8011 vs 3010) and in
-            # production is the same one. `getBackendURL` is the only thing that
-            # knows which, so the hook must not build the URL itself.
-            "$/utils/state": [ImportVar(tag="getBackendURL")],
-            "$/env.json": [ImportVar(tag="env", is_default=True)],
-        }
+        return [
+            {
+                "": "leaflet/dist/leaflet.css",
+                "react": [ImportVar(tag="useEffect"), ImportVar(tag="useRef")],
+                # Vector layers are fetched from the BACKEND, which in
+                # development is a different origin from the frontend (8011 vs
+                # 3010) and in production is the same one. `getBackendURL` is
+                # the only thing that knows which, so the hook must not build
+                # the URL itself.
+                "$/utils/state": [ImportVar(tag="getBackendURL")],
+                "$/env.json": [ImportVar(tag="env", is_default=True)],
+            },
+            {"": "leaflet-draw/dist/leaflet.draw.css"},
+        ]
 
     def add_custom_code(self) -> list[str]:
         return [_HOOK_JS, _TOOLTIP_CSS_JS]
@@ -162,18 +179,20 @@ class LeafletMap(rx.el.Div):
         hover = _handler("on_point_hover")
         select = _handler("on_point_select")
         area = _handler("on_area_select")
+        draw = _handler("on_geometry_drawn")
 
         config = (
             f"{{center: {self.center!s}, zoom: {self.zoom!s}, "
             f"bounds: ({self.bounds!s}).length ? {self.bounds!s} : null, "
             f"fitBounds: ({self.fit_bounds!s}).length ? {self.fit_bounds!s} : null, "
             f"areaSelect: {self.area_select!s}, "
+            f"drawEnabled: {self.draw_enabled!s}, "
             f"swipe: {self.swipe!s}}}"
         )
         expr = (
             f"useNaturametricsMap({ref}, {config}, {self.layers!s}, "
             f"{self.overlays!s}, {self.vectors!s}, {handler}, {hover}, {select}, "
-            f"{area})"
+            f"{area}, {draw})"
         )
         return [
             Var(

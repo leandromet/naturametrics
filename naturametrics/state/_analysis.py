@@ -14,7 +14,9 @@ from ..components.charts import (
     biomass_history_figure, change_bar_figure, forest_age_histogram_figure,
     forest_age_line_figure, ibge_comparison_figure, land_cover_history_figure,
 )
-from ..config.settings import BUFFER_MODE_DEFAULT, BUFFER_RADII_KM
+from ..config.settings import (
+    BUFFER_MODE_DEFAULT, BUFFER_RADII_KM, GEOMETRY_REGION_RADIUS_KM,
+)
 from ..services.buffers import buffer_geojson
 from ..services.change_mask import change_stats
 from ..services.landscape_metrics import landscape_metrics
@@ -324,10 +326,26 @@ class AnalysisMixin(rx.State, mixin=True):
     def _chart_radius(self) -> float:
         """The radius the chart actually reads — the outer/largest radius in
         full-area mode (there is only the one box, see services.buffers.
-        full_area_bbox), otherwise whatever the radius selector is set to."""
+        full_area_bbox), the region join-key in geometry mode (there is only
+        the one drawn/uploaded shape, see services.region_geometry), otherwise
+        whatever the radius selector is set to."""
+        if self.geometry_active:
+            return GEOMETRY_REGION_RADIUS_KM
         if self.multi_mode and self.multi_view_mode == "full_area":
             return max(BUFFER_RADII_KM)
         return self.selected_radius
+
+    @rx.var(cache=True)
+    def region_mode_active(self) -> bool:
+        """True whenever there is exactly one region and no radius to pick —
+        multi-select's "área total" box, or a drawn/uploaded region. Both
+        replace the radius selector with a single badge in results.py."""
+        return self.full_area_active or self.geometry_active
+
+    @rx.var(cache=True)
+    def region_mode_label(self) -> str:
+        return (self.geometry_extent_label if self.geometry_active
+                else self.full_area_radius_label)
 
     @rx.var(cache=True)
     def history_figure(self) -> go.Figure:
@@ -672,7 +690,11 @@ class AnalysisMixin(rx.State, mixin=True):
         """The radius the histogram actually reads — falls back off "Ponto" in
         multi mode rather than showing nothing just because the tab never got
         switched. In full-area mode there is only the one outer box (see
-        services.buffers.full_area_bbox), so the radius tab is not read at all."""
+        services.buffers.full_area_bbox), and in geometry mode there is only
+        the one drawn/uploaded region (see services.region_geometry), so the
+        radius tab is not read at all in either case."""
+        if self.geometry_active:
+            return GEOMETRY_REGION_RADIUS_KM
         if self.multi_mode and self.multi_view_mode == "full_area":
             return max(BUFFER_RADII_KM)
         if self.selected_age_radius != "Ponto":
@@ -685,8 +707,10 @@ class AnalysisMixin(rx.State, mixin=True):
 
     @rx.var(cache=True)
     def age_showing_point(self) -> bool:
+        """No 30 m single-pixel point series exists for a multi-selection sum
+        or a region — same exclusion as age_effective_radius."""
         return self.selected_age_radius == "Ponto" and not (
-            self.multi_mode and self._multi_age_history
+            self.geometry_active or (self.multi_mode and self._multi_age_history)
         )
 
     @rx.var(cache=True)
@@ -740,9 +764,11 @@ class AnalysisMixin(rx.State, mixin=True):
     def change_has_data(self) -> bool:
         """Gates the small loss/gain bar in the leftover space of the age
         summary column (results.py). Single-point only, like _change_stats
-        itself: no multi-selection sum yet, and "Ponto" has no buffer to read."""
+        itself: no multi-selection sum yet, and "Ponto" has no buffer to read.
+        Also empty for a region — services.change_mask has no region
+        equivalent, same reasoning as the multi-mode exclusion."""
         return (not self.age_showing_point and not self.multi_mode
-                and bool(self._change_stats))
+                and not self.geometry_active and bool(self._change_stats))
 
     @rx.var(cache=True)
     def change_figure(self) -> go.Figure:

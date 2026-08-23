@@ -16,14 +16,15 @@ import reflex as rx
 from ._analysis import AnalysisMixin
 from ._conglomerado import ConglomeradoMixin
 from ._export import ExportMixin
+from ._geometry import GeometryMixin
 from ._layers import LayersMixin
 from ._point import PointMixin
 from ._ui import UIMixin
 from ._user_points import UserPointsMixin
 
 
-class AppState(AnalysisMixin, ConglomeradoMixin, ExportMixin, LayersMixin,
-               PointMixin, UIMixin, UserPointsMixin, rx.State):
+class AppState(AnalysisMixin, ConglomeradoMixin, ExportMixin, GeometryMixin,
+               LayersMixin, PointMixin, UIMixin, UserPointsMixin, rx.State):
     """Root application state."""
 
 

@@ -808,9 +808,54 @@ def point_control() -> rx.Component:
     )
 
 
+def geometry_control() -> rx.Component:
+    """The draw toolbar's arm/disarm switch, plus a status readout for
+    whatever it (or the WKT/KML tabs of "Enviar dados") last produced.
+
+    The switch matters, not just for discoverability: while it is off, a
+    plain map click keeps picking a point exactly as it always has, and the
+    on-map toolbar's buttons are not even shown. Arming it is what tells the
+    map "the next click/drag is a shape, not a point" — see leaflet_map.js's
+    drawEnabledRef for the click-suppression this drives.
+    """
+    return _section(
+        AppState.tr["section_geometry"],
+        rx.hstack(
+            rx.switch(checked=AppState.draw_mode,
+                      on_change=AppState.toggle_draw_mode),
+            rx.text(AppState.tr["geometry_draw_toggle_label"], size="2"),
+            width="100%", align="center", spacing="2",
+        ),
+        rx.text(AppState.tr["geometry_draw_hint"], size="1", color_scheme="gray",
+                style={"lineHeight": "1.4"}),
+        rx.cond(
+            AppState.has_geometry,
+            rx.hstack(
+                rx.icon("shapes", size=14, color="var(--jade-11)"),
+                rx.text(AppState.point_label, size="2", weight="medium", flex="1"),
+                rx.button(
+                    rx.icon("rotate-ccw", size=12), AppState.tr["clear_button"],
+                    size="1", variant="ghost",
+                    on_click=AppState.clear_geometry,
+                ),
+                spacing="2", align="center", width="100%",
+            ),
+            rx.fragment(),
+        ),
+        rx.cond(
+            AppState.geometry_error != "",
+            rx.callout(AppState.geometry_error, icon="triangle-alert",
+                       color_scheme="amber", size="1", width="100%"),
+            rx.fragment(),
+        ),
+    )
+
+
 def layer_panel() -> rx.Component:
     return rx.vstack(
         point_control(),
+        rx.divider(),
+        geometry_control(),
         rx.divider(),
         basemap_control(),
         rx.divider(),

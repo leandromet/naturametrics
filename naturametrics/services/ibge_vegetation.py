@@ -361,6 +361,23 @@ def full_area_mapbiomas_comparison(
     return df, prov
 
 
+def region_mapbiomas_comparison(
+    geom: Any, label: str, mb_year: int = iv.IBGE_COMPARE_YEAR,
+) -> tuple[pd.DataFrame, Provenance]:
+    """Joint IBGE-vegetation × MapBiomas histogram over a user-drawn/uploaded
+    region — the polygon counterpart of :func:`full_area_mapbiomas_comparison`."""
+    from .region_geometry import region_collection, region_geojson
+
+    get_ee()
+    fc = region_collection(geom, label)
+    df, prov = _comparison_from_collection(
+        fc, mb_year=mb_year, geometry=region_geojson(geom, label), point_label=label,
+        mode="region", shape="polygon", radii_km=(0.0,),
+    )
+    prov.extra["region_label"] = label
+    return df, prov
+
+
 def aggregate_veg_comparison(frames: list[pd.DataFrame]) -> pd.DataFrame:
     """Sum several conglomerados' joint histograms — same reasoning as
     ``aggregate_veg_history``/``mapbiomas_history.aggregate_histories``."""

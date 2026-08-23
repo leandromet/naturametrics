@@ -7,7 +7,11 @@ to explain "which submission is this row from", which is a question nobody asked
 submitting an empty paste (which the parser would report as zero points and leave
 the previous list untouched, since there is nothing to replace it *with*).
 
-See services/user_points.py for the parser and why paste-only (no file upload).
+See services/user_points.py for the parser and why this tab specifically stays
+paste-only (no file upload) — the "Enviar dados" dialog's other two tabs (WKT
+paste, KML upload) live on ``GeometryMixin`` (state/_geometry.py) instead, since
+they produce a region rather than a point list; KML upload's own reasoning for
+accepting a file anyway is in services/region_geometry.py.
 """
 
 from __future__ import annotations
@@ -24,6 +28,10 @@ class UserPointsMixin(rx.State, mixin=True):
     """The "Enviar dados" panel and the layer it drives."""
 
     user_points_dialog_open: bool = False
+    #: "points" | "wkt" | "kml" — which tab of the dialog is showing. The tab
+    #: switch lives here (not on GeometryMixin) because the dialog itself is
+    #: this mixin's — the two geometry tabs are just guests in it.
+    send_data_mode: str = "points"
     user_points_text: str = ""
     #: [{"id", "lat", "lon"}, ...] — the parsed, kept points (up to the cap).
     user_points: list[dict[str, Any]] = []
@@ -51,6 +59,12 @@ class UserPointsMixin(rx.State, mixin=True):
         self.user_points_dialog_open = value
         if value:
             self.user_points_errors = []
+            self.geometry_error = ""
+
+    def set_send_data_mode(self, value: str | list[str]):
+        raw = value[0] if isinstance(value, (list, tuple)) and value else value
+        self.send_data_mode = str(raw)
+        self.geometry_error = ""
 
     def submit_user_points(self):
         """Parse the pasted text and make it the active layer.
@@ -79,6 +93,9 @@ class UserPointsMixin(rx.State, mixin=True):
         # same reasoning as toggle_multi_mode's own off-switch — only the mode.
         if self.multi_mode:
             self.toggle_multi_mode(False)
+        if self.has_geometry:
+            self.clear_geometry()
+        self.draw_mode = False
         self.user_points_active = True
         self.user_points_dialog_open = False
         self.clear_study_point()

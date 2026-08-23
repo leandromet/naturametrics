@@ -124,7 +124,7 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
       // zooming invalidates it. Bound here rather than inside the swipe effect
       // (which binds the same handler for its own divider) because the preview
       // has to track the map whether or not the swipe is on.
-      const onClipUpdate = () => applyClips();
+      const onClipUpdate = () => { applyClips(); applyLabelVisibility(); };
       map.on("move zoom zoomend moveend resize viewreset", onClipUpdate);
       map._nmClipUpdate = onClipUpdate;
 
@@ -214,12 +214,22 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
         const drawControl = new L.Control.Draw({
           position: "topright",
           draw: {
+            // showArea: false on both — leaflet-draw 1.0.4's readableArea()
+            // does an unguarded `type = 'sqm'` assignment (no var/let/const)
+            // that throws a ReferenceError under strict mode (which ES module
+            // builds run under). That throw happens INSIDE _onMouseMove,
+            // before it reaches _drawShape(latlng) — so the shape's bounds
+            // never update during the drag and freeze at whatever tiny size
+            // existed on the first mousemove. Turning the area tooltip off
+            // skips the call to readableArea() entirely, which is the only
+            // way to avoid the crash short of vendoring a patched copy of the
+            // library.
             polygon: {
               allowIntersection: false,
-              showArea: true,
+              showArea: false,
               shapeOptions: {color: "#8e4ec6", weight: 2.5},
             },
-            rectangle: {shapeOptions: {color: "#8e4ec6", weight: 2.5}},
+            rectangle: {showArea: false, shapeOptions: {color: "#8e4ec6", weight: 2.5}},
             marker: false,
             circle: false,
             circlemarker: false,
@@ -801,8 +811,8 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
     });
   };
 
-  const buildLayer = (L, spec, data) =>
-    L.geoJSON(data, {
+  const buildLayer = (L, spec, data) => {
+    const geoLayer = L.geoJSON(data, {
       pane: "nmVectors",
       style: (feature) => (spec.point_style
         ? {...spec.point_style}
@@ -841,6 +851,66 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
         }
       },
     });
+
+    if (!spec.label_property) return geoLayer;
+
+    // A permanent on-map text label per polygon, sourced from spec.label_property
+    // (e.g. the biome layer's natural_region field) — a SEPARATE marker layer
+    // rather than a second bindTooltip, because Leaflet allows only one
+    // tooltip per layer and the hover tooltip above already uses that slot
+    // for the full property table. Centred on each polygon's own bounds:
+    // several polygon fragments sharing the same region name each get their
+    // own label, since the source geometry is genuinely split into that many
+    // features (border simplification), not one label per unique name.
+    const labels = [];
+    geoLayer.eachLayer((featureLayer) => {
+      if (!featureLayer.getBounds) return;
+      const props = (featureLayer.feature && featureLayer.feature.properties) || {};
+      const text = props[spec.label_property];
+      if (!text) return;
+      labels.push(L.marker(featureLayer.getBounds().getCenter(), {
+        pane: "nmLabels",
+        interactive: false,
+        keyboard: false,
+        icon: L.divIcon({
+          className: "nm-vector-label",
+          html: escapeHtml(String(text)),
+          iconSize: null,
+        }),
+      }));
+    });
+    if (!labels.length) return geoLayer;
+
+    const group = L.featureGroup([geoLayer, ...labels]);
+    // Read by applyLabelVisibility below — kept on the layer itself rather
+    // than in vectorRegistry, since the marker list is only known once the
+    // layer is actually built.
+    group._nmLabelMarkers = labels;
+    group._nmLabelMinZoom = spec.label_min_zoom != null ? spec.label_min_zoom : 0;
+    return group;
+  };
+
+  // Labels are built once (above) and never re-fetched; visibility is a pure
+  // function of current zoom and the per-layer enabled flag, recomputed on
+  // every map move/zoom (see the map-creation effect's onClipUpdate) and
+  // once right after a layer is (re)built — cheap CSS display flips, not a
+  // layer rebuild, so toggling "show labels" or panning/zooming never
+  // touches the network or Earth Engine.
+  const applyLabelVisibility = () => {
+    const map = mapRef.current;
+    if (!map) return;
+    const zoom = map.getZoom();
+    vectorRegistry.current.forEach((entry) => {
+      const markers = entry.layer && entry.layer._nmLabelMarkers;
+      if (!markers) return;
+      const minZoom = entry.layer._nmLabelMinZoom || 0;
+      const show = zoom >= minZoom;
+      markers.forEach((m) => {
+        const el = m.getElement && m.getElement();
+        if (el) el.style.display = show ? "" : "none";
+      });
+    });
+  };
 
   const specUrl = (spec, map) => {
     const url = new URL(spec.path, getBackendURL(env.PING));
@@ -921,6 +991,17 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
         const pane = map.createPane("nmVectors");
         pane.style.zIndex = 350;
       }
+      if (!map.getPane("nmLabels")) {
+        // A SEPARATE pane, not just a higher z-index within nmVectors: with
+        // preferCanvas, polygon fills paint onto one shared <canvas> per
+        // pane rather than as ordinary stacked DOM children, so a label
+        // <div> living in the same pane has no reliable way to stay above
+        // that canvas — this is the same class of stacking surprise the
+        // nmOverlays pane below already exists to avoid for hover events.
+        const pane = map.createPane("nmLabels");
+        pane.style.zIndex = 360;
+        pane.style.pointerEvents = "none";
+      }
 
       const registry = vectorRegistry.current;
       const incoming = Array.isArray(vectors) ? vectors : [];
@@ -981,6 +1062,7 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
             map.attributionControl.addAttribution(spec.attribution);
           }
           registry.set(spec.id, {layer: layer, opacity: spec.opacity});
+          applyLabelVisibility();
 
           // Catch up with anything the user changed while the fetch was in
           // flight - see vectorsRef above.
@@ -1231,15 +1313,47 @@ function styleFor(spec, feature) {
 // Build the hover tooltip from the spec's label/property pairs.
 // Properties that are missing or empty are skipped rather than rendered as an
 // empty row - several IBGE polygons have no natural-region name.
+// Word-wraps at ~width characters per line rather than leaving it to CSS:
+// a long domain/region name left to `overflow-wrap` stretches the tooltip
+// out to its max-width before wrapping at all, which is what made the box
+// feel inconsistently sized from one feature to the next. Breaking at word
+// boundaries near `width` keeps every tooltip roughly the same, compact
+// shape regardless of content length.
+function wrapWords(text, width) {
+  const words = String(text).split(/\s+/).filter(Boolean);
+  const lines = [];
+  let line = "";
+  for (const word of words) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (line && candidate.length > width) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = candidate;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+// Property titles are short (1-3 words) but still crowd the label column at
+// its fixed width — breaking after the first word gives a predictable two
+// lines ("Domínio" / "fitogeográfico") without needing a width heuristic
+// tuned for prose, which wrapWords is built for.
+function splitLabel(text) {
+  const words = String(text).split(/\s+/).filter(Boolean);
+  return words.length <= 1 ? [String(text)] : [words[0], words.slice(1).join(" ")];
+}
+
 function tooltipHtml(spec, feature) {
   const props = (feature && feature.properties) || {};
   const rows = (spec.tooltip || [])
     .map((entry) => {
       const value = props[entry.property];
       if (value === undefined || value === null || value === "") return null;
-      return `<div class="nm-tip-row"><span class="nm-tip-label">${escapeHtml(
-        entry.label
-      )}</span><span class="nm-tip-value">${escapeHtml(String(value))}</span></div>`;
+      const labelHtml = splitLabel(entry.label).map(escapeHtml).join("<br>");
+      const valueHtml = wrapWords(value, 25).map(escapeHtml).join("<br>");
+      return `<div class="nm-tip-row"><span class="nm-tip-label">${labelHtml}</span><span class="nm-tip-value">${valueHtml}</span></div>`;
     })
     .filter(Boolean);
   return rows.length ? rows.join("") : null;

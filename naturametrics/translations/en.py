@@ -12,8 +12,7 @@ TRANSLATIONS_EN: dict[str, str] = {
     # --- layer panel: sections -------------------------------------------- #
     "section_basemap": "Base map",
     "section_landcover": "Land cover",
-    "section_buffer_preview": "Buffer land use",
-    "section_compare": "Compare two years",
+    "section_compare": "Compare layers",
     "section_change_mask": "Natural vegetation change",
     "section_ifn": "National Forest Inventory",
     "filters_label": "Filters",
@@ -23,7 +22,6 @@ TRANSLATIONS_EN: dict[str, str] = {
     "section_biomes": "Biomes (IBGE)",
     "section_biomass": "Biomass (ESA CCI)",
     "section_ibge_veg": "Vegetation (IBGE 2022)",
-    "section_ibge_compare": "Compare — IBGE × MapBiomas",
     "section_forest_change": "Forest change (Hansen)",
     "hansen_treecover_toggle": "Tree cover 2000",
     "hansen_change_toggle": "Loss and gain",
@@ -36,6 +34,98 @@ TRANSLATIONS_EN: dict[str, str] = {
     "buffer_caption_circle": "(circle radius)",
     "multi_shape_change_note": "Change the shape before selecting multiple points.",
 
+    # --- layer panel: info-icon popovers ---------------------------------- #
+    "point_info": (
+        "Click anywhere in Brazil to choose a study point. The app "
+        "automatically computes land-use history, vegetation age, "
+        "landscape metrics, biomass and an IBGE comparison across five "
+        "radii around it (0.5–10 km) — the fastest way to start "
+        "understanding one specific place. \"Show buffer land use\" "
+        "previews MapBiomas for the year selected in «Land cover» inside "
+        "those same radii on hover — a quick, free preview, no Earth "
+        "Engine call, before running the full analysis."
+    ),
+    "geometry_info": (
+        "Draw a polygon/rectangle on the map, paste a WKT, or upload a KML "
+        "to analyse an exact area instead of a radius around a point — "
+        "useful when you already have the boundary of a property, "
+        "protected area, or other polygon of interest. While \"Draw on "
+        "map\" is on, clicking the map no longer picks a point — use the "
+        "polygon/rectangle tools in the corner of the map. Pasting a WKT "
+        "or uploading a KML in \"Submit data\" doesn't require turning "
+        "this on."
+    ),
+    "basemap_info": (
+        "Choose the map's background imagery. The SPOT 2008 options show "
+        "real satellite photos from ~2008 — the Forest Code's baseline "
+        "year — letting you check by eye whether an area really had "
+        "vegetation that year, something MapBiomas (a classification, not "
+        "a photo) doesn't show directly."
+    ),
+    "mapbiomas_info": (
+        "Land cover classified by MapBiomas, year by year since 1985. This "
+        "is the backbone of the app's land-use analysis — turn it on to "
+        "see what is (or isn't) changing in the study area over time."
+    ),
+    "compare_info": (
+        "Compare two versions of the same area side by side with a "
+        "draggable divider: two MapBiomas years (before/after), IBGE × "
+        "MapBiomas (a classification cross-check), the two SPOT 2008 "
+        "mosaics against each other (true colour × infrared), or MapBiomas "
+        "2008/IBGE against SPOT 2008 — validating a classification straight "
+        "against the actual imagery of the Forest Code's baseline year."
+    ),
+    "change_mask_info": (
+        "Highlights where natural vegetation present in the baseline year "
+        "(default 2008, the Forest Code's — Lei 12.651/2012 — cut-off) has "
+        "been lost or is regrowing since. A screening tool for restoration "
+        "candidates, not a legal determination — always check individual "
+        "cases."
+    ),
+    "ifn_info": (
+        "Shows the National Forest Inventory's sampling points, filterable "
+        "by region/state/municipality/biome. Each point can be clicked "
+        "just like a map click, with the advantage of already having a "
+        "published identity and location — useful for comparing against "
+        "field data."
+    ),
+    "user_points_info": (
+        "Replaces the IFN grid with a list of points you define yourself "
+        "— pasted as coordinates, WKT, or uploaded as KML (see \"Submit "
+        "data\" at the top of the page). Useful for batch-analysing your "
+        "own locations of interest."
+    ),
+    "multi_select_info": (
+        "Sums several points/clusters into one combined analysis, as if "
+        "they were a single place. Turn it on, click several points on the "
+        "map (or drag an area), and see the combined total — useful for "
+        "characterising a whole region rather than a single point."
+    ),
+    "biomes_info": (
+        "Outlines Brazil's biomes (IBGE) — hover over a polygon to see its "
+        "biome, phytogeographic domain and natural region. Boundaries are "
+        "simplified (~1 km) for browser rendering. Helps place the study "
+        "area within the country's broader biogeographic context."
+    ),
+    "biomass_info": (
+        "Above-ground biomass (tonnes per hectare) from the ESA CCI "
+        "Biomass product, across ten years between 2007 and 2022. "
+        "Estimates how much carbon is stored in the area's vegetation — a "
+        "complement to MapBiomas' land-cover classification."
+    ),
+    "ibge_veg_info": (
+        "IBGE's vegetation classification (2022), at a more detailed "
+        "1:250,000 scale. Serves as an independent second opinion on what "
+        "is mapped as natural vegetation — compare it against MapBiomas in "
+        "the \"Compare layers\" section above."
+    ),
+    "hansen_info": (
+        "Year-2000 tree cover and forest loss/gain (Hansen Global Forest "
+        "Change), an international product independent of MapBiomas — "
+        "useful for confirming deforestation trends against a different "
+        "data source."
+    ),
+
     "year_label": "Year",
     "opacity_label": "Opacity",
     "opacity_label_compare": "Opacity — right-hand year",
@@ -43,22 +133,53 @@ TRANSLATIONS_EN: dict[str, str] = {
     "reset_button": "Reset",
 
     "buffer_preview_toggle_label": "Show buffer land use",
-    "buffer_preview_text": (
-        "Hovering over a cluster — or choosing a point — shows MapBiomas "
-        "only inside the analysis radius, for the year selected above. No "
-        "Earth Engine call: it reuses the tiles already pre-loaded."
-    ),
     "buffer_preview_hidden_note": (
         "Hidden while «MapBiomas 10.1» is on — the coverage already shows "
         "across the whole map."
     ),
 
-    "compare_toggle_label": "Sliding curtain",
+    "compare_mode_off": "None",
+    "compare_mode_years": "MapBiomas — two years",
+    "compare_mode_ibge": "IBGE × MapBiomas",
+    "compare_mode_spot": "SPOT 2008 — Visual × NIR",
+    "compare_mode_mb_spot_visual": "MapBiomas 2008 × SPOT 2008 Visual",
+    "compare_mode_mb_spot_analytic": "MapBiomas 2008 × SPOT 2008 NIR",
+    "compare_mode_ibge_spot_visual": "IBGE × SPOT 2008 Visual",
+    "compare_mode_ibge_spot_analytic": "IBGE × SPOT 2008 NIR",
     "compare_year_left": "Left-hand year",
     "compare_opacity_left": "Opacity — left-hand year",
     "compare_note": (
         "Drag the white line on the map. The right side is the year "
         "selected above in «Land cover»."
+    ),
+    "spot_compare_note": (
+        "Drag the white line on the map. Visual (true colour) on the "
+        "right, false-colour infrared on the left — the same 2008 mosaic, "
+        "two band combinations."
+    ),
+    "mb_spot_visual_note": (
+        "Drag the white line on the map. The right side is MapBiomas 2008 "
+        "— the Forest Code's reference year —, the left side is SPOT 2008 "
+        "Visual: a direct visual check of the classification for that "
+        "specific year."
+    ),
+    "mb_spot_analytic_note": (
+        "Drag the white line on the map. The right side is MapBiomas 2008, "
+        "the left side is SPOT 2008 in false-colour infrared — infrared "
+        "highlights live vegetation, which helps tell remaining forest "
+        "apart from land already cleared by 2008."
+    ),
+    "ibge_spot_visual_note": (
+        "Drag the white line on the map. The right side is IBGE Vegetação "
+        "2022, the left side is SPOT 2008 Visual — compares today's "
+        "remaining vegetation against the landscape in the Forest Code's "
+        "baseline year."
+    ),
+    "ibge_spot_analytic_note": (
+        "Drag the white line on the map. The right side is IBGE Vegetação "
+        "2022, the left side is SPOT 2008 in false-colour infrared — the "
+        "2008 infrared helps show where the vegetation IBGE classifies "
+        "today already existed (or didn't) in the baseline year."
     ),
 
     "change_mask_toggle_label": "Restoration candidates",
@@ -102,12 +223,8 @@ TRANSLATIONS_EN: dict[str, str] = {
     "multi_view_full_area": "Full area",
     "multi_full_area_failed": "Failed to compute the full area: {exc}",
 
+    "biomes_labels_toggle_label": "Show labels",
     "biomes_toggle_label": "Biomes and domains",
-    "biomes_hover_note": (
-        "Hover over a polygon to see its biome, phytogeographic domain and "
-        "natural region. Boundaries are simplified (~1 km) for browser "
-        "rendering."
-    ),
 
     "point_click_other": "Click the map to choose another point.",
     "point_click_choose": (
@@ -118,12 +235,6 @@ TRANSLATIONS_EN: dict[str, str] = {
     # --- drawn/uploaded region (services/region_geometry.py) --------------- #
     "section_geometry": "Drawn area",
     "geometry_draw_toggle_label": "Draw on map",
-    "geometry_draw_hint": (
-        "While on, clicking the map no longer picks a point — use the "
-        "polygon/rectangle tools that appear in the corner of the map to "
-        "draw an area. Or paste a WKT / upload a KML in \"Submit data\" "
-        "without turning this on."
-    ),
     "geometry_label_drawn": "Drawn area",
     "geometry_source_drawn": "drawn on map",
     "geometry_label_wkt": "Area (WKT)",

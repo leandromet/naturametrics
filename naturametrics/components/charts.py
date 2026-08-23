@@ -318,19 +318,29 @@ def biomass_history_figure(df: pd.DataFrame, radius_km: float, lang: str = "pt")
         )
         return _style_biomass(fig, lang, [])
 
-    sd = sub["agb_sd_mgha"].fillna(0.0)
+    # aggregate_biomass (services.biomass) drops agb_sd_mgha when several
+    # conglomerados are summed — uncertainty does not combine by a plain
+    # average across independent buffers, so there is nothing valid to draw.
+    # A single point/region keeps the column. Falling back to a fabricated
+    # zero-width band would misreport "not computed" as "zero uncertainty",
+    # so the band and its hover text are dropped instead when it's absent.
+    has_sd = "agb_sd_mgha" in sub.columns
+    sd = sub["agb_sd_mgha"].fillna(0.0) if has_sd else None
     unit_label = "Mg/ha"
+    hovertemplate = (
+        f"<b>%{{x}}</b><br>%{{y:.1f}} ± %{{customdata:.1f}} {unit_label}<extra></extra>"
+        if has_sd else
+        f"<b>%{{x}}</b><br>%{{y:.1f}} {unit_label}<extra></extra>"
+    )
     fig.add_trace(go.Scatter(
         x=sub["year"], y=sub["agb_mean_mgha"], mode="lines+markers",
         line=dict(color="#3c6e47", width=2),
         marker=dict(color="#3c6e47", size=7, line=dict(width=1, color="white")),
-        error_y=dict(type="data", array=sd, visible=True,
-                     color="rgba(60,110,71,0.35)", thickness=1.5),
+        error_y=(dict(type="data", array=sd, visible=True,
+                      color="rgba(60,110,71,0.35)", thickness=1.5)
+                 if has_sd else None),
         customdata=sd,
-        hovertemplate=(
-            f"<b>%{{x}}</b><br>%{{y:.1f}} ± %{{customdata:.1f}} {unit_label}"
-            "<extra></extra>"
-        ),
+        hovertemplate=hovertemplate,
         showlegend=False,
     ))
 

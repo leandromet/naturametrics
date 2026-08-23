@@ -12,8 +12,7 @@ TRANSLATIONS_PT: dict[str, str] = {
     # --- layer panel: sections -------------------------------------------- #
     "section_basemap": "Mapa base",
     "section_landcover": "Cobertura do solo",
-    "section_buffer_preview": "Uso no buffer",
-    "section_compare": "Comparar dois anos",
+    "section_compare": "Comparar camadas",
     "section_change_mask": "Mudança na vegetação natural",
     "section_ifn": "Inventário Florestal Nacional",
     "filters_label": "Filtros",
@@ -23,7 +22,6 @@ TRANSLATIONS_PT: dict[str, str] = {
     "section_biomes": "Biomas (IBGE)",
     "section_biomass": "Biomassa (ESA CCI)",
     "section_ibge_veg": "Vegetação (IBGE 2022)",
-    "section_ibge_compare": "Comparar — IBGE × MapBiomas",
     "section_forest_change": "Mudança florestal (Hansen)",
     "hansen_treecover_toggle": "Cobertura arbórea 2000",
     "hansen_change_toggle": "Perda e ganho",
@@ -36,6 +34,103 @@ TRANSLATIONS_PT: dict[str, str] = {
     "buffer_caption_circle": "(raio círculo)",
     "multi_shape_change_note": "Altere o formato antes de selecionar pontos múltiplos.",
 
+    # --- layer panel: info-icon popovers ---------------------------------- #
+    # One per sidebar section — what it is and when it helps understand a
+    # study area, in a couple of sentences a popover can hold comfortably.
+    "point_info": (
+        "Clique em qualquer lugar do Brasil para escolher um ponto de "
+        "estudo. A aplicação calcula automaticamente uso do solo, idade da "
+        "vegetação, métricas de paisagem, biomassa e comparação com o IBGE "
+        "em cinco raios ao redor do ponto (0,5 a 10 km) — a forma mais "
+        "rápida de começar a entender um lugar específico. \"Mostrar Uso "
+        "no Buffer\" mostra o MapBiomas do ano selecionado em «Cobertura "
+        "do solo» só dentro desses raios ao passar o cursor — uma prévia "
+        "rápida e gratuita, sem consulta ao Earth Engine, antes de rodar a "
+        "análise completa."
+    ),
+    "geometry_info": (
+        "Desenhe um polígono/retângulo no mapa, cole um WKT ou envie um KML "
+        "para analisar uma área exata em vez de um raio ao redor de um "
+        "ponto — útil quando você já tem o contorno de uma propriedade, "
+        "unidade de conservação ou outro polígono de interesse. Enquanto "
+        "\"Desenhar no mapa\" está ativo, um clique no mapa não escolhe "
+        "mais um ponto — use as ferramentas de polígono/retângulo no canto "
+        "do mapa. Colar um WKT ou enviar um KML em \"Enviar dados\" não "
+        "exige ativar isto."
+    ),
+    "basemap_info": (
+        "Escolha a imagem de fundo do mapa. As opções SPOT 2008 mostram "
+        "fotos reais de satélite de ~2008 — o marco do Código Florestal — "
+        "permitindo conferir a olho se uma área realmente tinha vegetação "
+        "naquele ano, algo que o MapBiomas (classificado, não é foto) não "
+        "mostra diretamente."
+    ),
+    "mapbiomas_info": (
+        "Cobertura do solo classificada pelo MapBiomas, ano a ano desde "
+        "1985. É a base de toda a análise de uso da terra do aplicativo — "
+        "ligue para ver o que está mudando (ou não) na área de estudo ao "
+        "longo do tempo."
+    ),
+    "compare_info": (
+        "Compare duas versões da mesma área lado a lado, com uma linha "
+        "divisória arrastável: dois anos do MapBiomas (antes/depois), IBGE "
+        "× MapBiomas (checagem cruzada de classificação), os dois mosaicos "
+        "SPOT 2008 entre si (cor natural × infravermelho), ou o MapBiomas "
+        "2008/IBGE contra o SPOT 2008 — validando uma classificação direto "
+        "contra a imagem real do ano-base do Código Florestal."
+    ),
+    "change_mask_info": (
+        "Destaca onde a vegetação natural existente no ano-base (padrão "
+        "2008, o marco do Código Florestal — Lei 12.651/2012) foi perdida "
+        "ou está se regenerando até hoje. Uma ferramenta de triagem para "
+        "candidatos à restauração — não é uma constatação legal; sempre "
+        "confira caso a caso."
+    ),
+    "ifn_info": (
+        "Mostra os pontos de amostragem do Inventário Florestal Nacional, "
+        "filtráveis por região/UF/município/bioma. Cada ponto pode ser "
+        "clicado como um clique no mapa, com a vantagem de já ter "
+        "identidade e localização publicadas — útil para comparar com "
+        "dados de campo."
+    ),
+    "user_points_info": (
+        "Substitui a grade do IFN por uma lista de pontos definida por "
+        "você — colada como coordenadas, WKT, ou enviada como KML (veja "
+        "\"Enviar dados\" no topo da página). Útil para analisar seus "
+        "próprios locais de interesse em lote."
+    ),
+    "multi_select_info": (
+        "Soma vários pontos/conglomerados em uma análise única, como se "
+        "fossem um só lugar. Ligue, clique em vários pontos no mapa (ou "
+        "arraste uma área) e veja o total combinado — útil para "
+        "caracterizar uma região inteira, não só um ponto isolado."
+    ),
+    "biomes_info": (
+        "Contorno dos biomas brasileiros (IBGE) — passe o cursor sobre um "
+        "polígono para ver bioma, domínio fitogeográfico e região natural. "
+        "Os limites estão simplificados (~1 km) para desenho no navegador. "
+        "Ajuda a situar a área de estudo no contexto biogeográfico mais "
+        "amplo do país."
+    ),
+    "biomass_info": (
+        "Biomassa acima do solo (toneladas por hectare) do produto ESA CCI "
+        "Biomass, em dez anos entre 2007 e 2022. Estima quanto carbono está "
+        "armazenado na vegetação da área — um complemento à classificação "
+        "de cobertura do solo do MapBiomas."
+    ),
+    "ibge_veg_info": (
+        "Classificação de vegetação do IBGE (2022), numa escala mais "
+        "detalhada de 1:250.000. Serve como segunda opinião independente "
+        "sobre o que está mapeado como vegetação natural — compare com o "
+        "MapBiomas na seção \"Comparar camadas\" acima."
+    ),
+    "hansen_info": (
+        "Cobertura arbórea do ano 2000 e perda/ganho florestal (Hansen "
+        "Global Forest Change), um produto internacional independente do "
+        "MapBiomas — útil para confirmar tendências de desmatamento com "
+        "outra fonte de dados."
+    ),
+
     "year_label": "Ano",
     "opacity_label": "Opacidade",
     "opacity_label_compare": "Opacidade — ano à direita",
@@ -43,23 +138,52 @@ TRANSLATIONS_PT: dict[str, str] = {
     "reset_button": "Reset",
 
     "buffer_preview_toggle_label": "Mostrar Uso no Buffer",
-    "buffer_preview_text": (
-        "Ao passar o cursor sobre um conglomerado — ou ao escolher um ponto "
-        "— o MapBiomas aparece só dentro do raio de análise, no ano "
-        "selecionado acima. Não consulta o Earth Engine: usa os mesmos "
-        "blocos já pré-carregados."
-    ),
     "buffer_preview_hidden_note": (
         "Oculta enquanto «MapBiomas 10.1» está ligado — a cobertura já "
         "aparece no mapa inteiro."
     ),
 
-    "compare_toggle_label": "Cortina deslizante",
+    "compare_mode_off": "Nenhuma",
+    "compare_mode_years": "MapBiomas — dois anos",
+    "compare_mode_ibge": "IBGE × MapBiomas",
+    "compare_mode_spot": "SPOT 2008 — Visual × NIR",
+    "compare_mode_mb_spot_visual": "MapBiomas 2008 × SPOT 2008 Visual",
+    "compare_mode_mb_spot_analytic": "MapBiomas 2008 × SPOT 2008 NIR",
+    "compare_mode_ibge_spot_visual": "IBGE × SPOT 2008 Visual",
+    "compare_mode_ibge_spot_analytic": "IBGE × SPOT 2008 NIR",
     "compare_year_left": "Ano à esquerda",
     "compare_opacity_left": "Opacidade — ano à esquerda",
     "compare_note": (
         "Arraste a linha branca no mapa. À direita fica o ano selecionado "
         "acima em «Cobertura do solo»."
+    ),
+    "spot_compare_note": (
+        "Arraste a linha branca no mapa. Visual (cores naturais) à direita, "
+        "falsa-cor infravermelho à esquerda — o mesmo mosaico de 2008, duas "
+        "combinações de bandas."
+    ),
+    "mb_spot_visual_note": (
+        "Arraste a linha branca no mapa. À direita fica o MapBiomas 2008 — "
+        "o ano de referência do Código Florestal —, à esquerda o SPOT 2008 "
+        "Visual: uma checagem visual direta da classificação para esse ano "
+        "específico."
+    ),
+    "mb_spot_analytic_note": (
+        "Arraste a linha branca no mapa. À direita fica o MapBiomas 2008, à "
+        "esquerda o SPOT 2008 em falsa-cor infravermelho — o infravermelho "
+        "realça vegetação viva, o que ajuda a distinguir floresta "
+        "remanescente de área já convertida em 2008."
+    ),
+    "ibge_spot_visual_note": (
+        "Arraste a linha branca no mapa. À direita fica a Vegetação IBGE "
+        "2022, à esquerda o SPOT 2008 Visual — compara o remanescente atual "
+        "com a paisagem no ano-base do Código Florestal."
+    ),
+    "ibge_spot_analytic_note": (
+        "Arraste a linha branca no mapa. À direita fica a Vegetação IBGE "
+        "2022, à esquerda o SPOT 2008 em falsa-cor infravermelho — o "
+        "infravermelho de 2008 ajuda a ver onde a vegetação hoje "
+        "classificada pelo IBGE já existia (ou não) no ano-base."
     ),
 
     "change_mask_toggle_label": "Candidatos a recuperação",
@@ -104,12 +228,8 @@ TRANSLATIONS_PT: dict[str, str] = {
     "multi_view_full_area": "Área total",
     "multi_full_area_failed": "Falha ao calcular a área total: {exc}",
 
+    "biomes_labels_toggle_label": "Mostrar rótulos",
     "biomes_toggle_label": "Biomas e domínios",
-    "biomes_hover_note": (
-        "Passe o cursor sobre um polígono para ver bioma, domínio "
-        "fitogeográfico e região natural. Os limites estão simplificados "
-        "(~1 km) para desenho no navegador."
-    ),
 
     "point_click_other": "Clique no mapa para escolher outro ponto.",
     "point_click_choose": (
@@ -120,12 +240,6 @@ TRANSLATIONS_PT: dict[str, str] = {
     # --- drawn/uploaded region (services/region_geometry.py) --------------- #
     "section_geometry": "Área desenhada",
     "geometry_draw_toggle_label": "Desenhar no mapa",
-    "geometry_draw_hint": (
-        "Enquanto ativo, um clique no mapa não escolhe mais um ponto — use "
-        "as ferramentas de polígono/retângulo que aparecem no canto do mapa "
-        "para desenhar uma área. Ou cole um WKT / envie um KML em \"Enviar "
-        "dados\", sem precisar ativar isto."
-    ),
     "geometry_label_drawn": "Área desenhada",
     "geometry_source_drawn": "desenho no mapa",
     "geometry_label_wkt": "Área (WKT)",

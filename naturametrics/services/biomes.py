@@ -200,8 +200,13 @@ def geojson_gzipped() -> bytes:
 #: split dev ports and single-port production.
 GEOJSON_PATH = "/_biomes.geojson"
 
+#: 271 polygons' worth of labels is unreadable zoomed out to the whole of
+#: Brazil — this is the zoom level (leaflet_map.js's applyLabelVisibility)
+#: below which they are hidden regardless of the "show labels" toggle.
+LABEL_MIN_ZOOM = 7
 
-def vector_spec(opacity: float = 0.45, z_index: int = 5) -> dict:
+
+def vector_spec(opacity: float = 0.45, z_index: int = 5, show_labels: bool = True) -> dict:
     """Spec for the browser-side biome layer.
 
     Purely declarative and involves no Earth Engine call, so unlike every tile
@@ -209,7 +214,15 @@ def vector_spec(opacity: float = 0.45, z_index: int = 5) -> dict:
     """
     conf = ds.IBGE_BIOME_DOMAIN
     return {
-        "id": "ibge_biomes",
+        # The labels suffix makes "show labels" part of the layer's identity:
+        # toggling it must force leaflet_map.js's diff to treat this as a
+        # DIFFERENT layer and rebuild from scratch, rather than patch the
+        # existing one in place. Label markers are only ever created once, at
+        # build time (see buildLayer) — a layer built before this flag
+        # existed, or before a code change added new marker-building logic,
+        # has no markers to patch, and a same-id "cheap property update"
+        # would silently do nothing.
+        "id": f"ibge_biomes:{'lbl' if show_labels else 'nolbl'}",
         "path": GEOJSON_PATH,
         "opacity": opacity,
         "z_index": z_index,
@@ -218,6 +231,14 @@ def vector_spec(opacity: float = 0.45, z_index: int = 5) -> dict:
         "palette": conf["palette"],
         "default_color": "9e9e9e",
         "weight": conf["outline_width"],
+        # A permanent on-map label per polygon (leaflet_map.js), separate
+        # from the hover tooltip below — natural region is the more legible
+        # unit to label at a glance than the biome/domain fill colour alone.
+        # Omitted entirely (not just hidden) when the toggle is off — paired
+        # with the id suffix above, that makes "show labels" a genuinely
+        # different layer rather than a same-id in-place patch.
+        "label_property": conf["fields"]["natural_region"] if show_labels else None,
+        "label_min_zoom": LABEL_MIN_ZOOM,
         "tooltip": [
             {"label": "Bioma", "property": "nm_bm"},
             {"label": "Domínio fitogeográfico", "property": "nm_dm_fito"},

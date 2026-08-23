@@ -30,6 +30,20 @@ logger = logging.getLogger(__name__)
 #: string as a value, so the sentinel is the current language's "All" — everything
 #: below :meth:`LayersMixin._unset` speaks the empty-string convention.
 
+#: compare_mode -> (classification side "mb" | "ibge", SPOT basemap key), for
+#: the four "classification x SPOT 2008" pairings. MapBiomas or IBGE is
+#: whichever classification is being checked; the SPOT year is always 2008
+#: (FOREST_CODE_BASELINE_YEAR) because these pairings exist to validate a
+#: classification against the Forest Code's own reference-year imagery, not
+#: to browse SPOT at an arbitrary year. A module-level constant, not state:
+#: it is a fixed lookup table, never mutated per session.
+SPOT_COMPARE_SIDES: dict[str, tuple[str, str]] = {
+    "mb_spot_visual": ("mb", "spot_2008_visual"),
+    "mb_spot_analytic": ("mb", "spot_2008_analytic"),
+    "ibge_spot_visual": ("ibge", "spot_2008_visual"),
+    "ibge_spot_analytic": ("ibge", "spot_2008_analytic"),
+}
+
 
 class LayersMixin(rx.State, mixin=True):
     """Which layers are on the map, and what the map is showing."""
@@ -52,11 +66,25 @@ class LayersMixin(rx.State, mixin=True):
     mapbiomas_year: int = mb.MAPBIOMAS_YEAR_END
     mapbiomas_opacity: float = 0.75
 
-    #: Swipe comparison: a second MapBiomas year, split by a draggable divider.
-    #: The two sides carry independent opacity — the point of the comparison is
-    #: often to fade one side against the basemap while keeping the other solid,
-    #: which a single shared control cannot express.
-    compare_enabled: bool = False
+    #: Swipe comparison, split by a single draggable divider. "years" is two
+    #: MapBiomas years; "ibge" is IBGE Vegetação 2022 vs. MapBiomas 2022;
+    #: "spot" is the two SPOT 2008 mosaics (Visual vs. false-colour NIR); the
+    #: four "*_spot_*" modes validate a classification against the Forest
+    #: Code's actual 2008 reference-year imagery (see _SPOT_COMPARE_SIDES and
+    #: set_compare_mode). A Literal rather than a pile of booleans that would
+    #: only exist to turn each other off: the map has one swipe handle, so
+    #: exactly one pairing (or none) can be active, the same way exactly one
+    #: basemap is selected at a time.
+    compare_mode: Literal[
+        "off", "years", "ibge", "spot",
+        "mb_spot_visual", "mb_spot_analytic",
+        "ibge_spot_visual", "ibge_spot_analytic",
+    ] = "off"
+    #: Meaningful only for compare_mode == "years" — the two sides carry
+    #: independent opacity there (often used to fade one side against the
+    #: basemap while keeping the other solid); "ibge" and "spot" reuse
+    #: existing opacity settings / have nothing to pick, so they need no
+    #: opacity state of their own.
     compare_year: int = cm.FOREST_CODE_BASELINE_YEAR
     compare_opacity: float = 0.75
 
@@ -88,7 +116,12 @@ class LayersMixin(rx.State, mixin=True):
     #: Drawn in the browser, not by Earth Engine, so that it can name itself on
     #: hover. Nothing is minted for it and nothing here can fail.
     show_biomes: bool = False
-    biome_opacity: float = 0.35
+    biome_opacity: float = 0.55
+    #: Permanent on-map natural_region labels (services.biomes). On by
+    #: default — they are only ever visible at zoom >= LABEL_MIN_ZOOM anyway
+    #: (leaflet_map.js's applyLabelVisibility), so the default costs nothing
+    #: until the user is already zoomed in enough for them to be legible.
+    show_biome_labels: bool = True
 
     #: Re-applied by the map whenever it changes — how a filter choice frames
     #: itself. Empty list leaves the viewport alone.
@@ -110,14 +143,6 @@ class LayersMixin(rx.State, mixin=True):
     #: year to pick — just a toggle and an opacity slider.
     show_ibge_veg: bool = False
     ibge_veg_opacity: float = 0.6
-
-    #: IBGE Vegetação 2022 vs. MapBiomas 2022, split by the same draggable
-    #: divider as ``compare_enabled`` — mutually exclusive with it (see
-    #: toggle_ibge_compare/toggle_compare), since the map has one swipe
-    #: handle. No year picker needed: both sides are fixed to 2022, so unlike
-    #: compare_control this reuses mapbiomas_opacity/ibge_veg_opacity rather
-    #: than its own opacity sliders.
-    ibge_compare_enabled: bool = False
 
     # --- Hansen Global Forest Change, ported from the Canada page ---------
     #: One threshold governs both sub-layers (tree cover 2000, loss/gain), so
@@ -208,12 +233,12 @@ class LayersMixin(rx.State, mixin=True):
                     "attribution": "MapBiomas Collection 10.1",
                     "z_index": 10,
                     "max_native_zoom": 15,
-                    # In compare mode the active year takes the RIGHT half; the
-                    # baseline year sits underneath on the left.
-                    "clip": "right" if self.compare_enabled else None,
+                    # In "years" compare mode the active year takes the RIGHT
+                    # half; the baseline year sits underneath on the left.
+                    "clip": "right" if self.compare_mode == "years" else None,
                 })
 
-            if self.compare_enabled:
+            if self.compare_mode == "years":
                 url_b = self._mb_urls.get(self.compare_year)
                 if url_b:
                     specs.append({
@@ -292,7 +317,7 @@ class LayersMixin(rx.State, mixin=True):
                 "max_native_zoom": 13,
             })
 
-        if self.ibge_compare_enabled:
+        if self.compare_mode == "ibge":
             # Independent of show_mapbiomas/show_ibge_veg on purpose — both
             # sides are fixed to 2022 (there is nothing to pick), so the
             # curtain does not depend on whichever year the plain MapBiomas
@@ -318,6 +343,83 @@ class LayersMixin(rx.State, mixin=True):
                     "attribution": ds_ibge_veg.IBGE_VEG_ATTRIBUTION,
                     "z_index": 15,
                     "max_native_zoom": 13,
+                    "clip": "left",
+                })
+
+        elif self.compare_mode == "spot":
+            # Same two mosaics offered as mutually-exclusive basemap choices
+            # (config.datasets.EE_BASEMAPS) — here shown side by side instead,
+            # since both are already circa-2008 SPOT imagery over the same
+            # footprint and the only difference is band combination (true
+            # colour vs. near-infrared). Independent of `basemap` on purpose,
+            # same reasoning as the "ibge" branch above. No opacity slider —
+            # both sides are always 1.0, nothing to pick.
+            visual_url = self._basemap_urls.get("spot_2008_visual")
+            if visual_url:
+                specs.append({
+                    "id": "basemap:spot_2008_visual:cmp",
+                    "url": visual_url,
+                    "opacity": 1.0,
+                    "attribution": ds.EE_BASEMAPS["spot_2008_visual"]["attribution"],
+                    "z_index": 16,
+                    "max_native_zoom": ds.EE_BASEMAPS["spot_2008_visual"]
+                                       .get("max_native_zoom", 16),
+                    "clip": "right",
+                })
+            analytic_url = self._basemap_urls.get("spot_2008_analytic")
+            if analytic_url:
+                specs.append({
+                    "id": "basemap:spot_2008_analytic:cmp",
+                    "url": analytic_url,
+                    "opacity": 1.0,
+                    "attribution": ds.EE_BASEMAPS["spot_2008_analytic"]["attribution"],
+                    "z_index": 17,
+                    "max_native_zoom": ds.EE_BASEMAPS["spot_2008_analytic"]
+                                       .get("max_native_zoom", 16),
+                    "clip": "left",
+                })
+
+        elif self.compare_mode in SPOT_COMPARE_SIDES:
+            # Validates a classification against the Forest Code's actual
+            # 2008 reference-year imagery: MapBiomas 2008 or IBGE Vegetação
+            # on the right (whichever is being checked), the chosen SPOT
+            # 2008 band on the left. No opacity slider on the SPOT side —
+            # same reasoning as "spot" above, nothing to pick.
+            side, spot_key = SPOT_COMPARE_SIDES[self.compare_mode]
+            if side == "mb":
+                mb_url = self._mb_urls.get(cm.FOREST_CODE_BASELINE_YEAR)
+                if mb_url:
+                    specs.append({
+                        "id": f"mapbiomas:{mb.MAPBIOMAS_DEFAULT_COLLECTION}"
+                              f":{cm.FOREST_CODE_BASELINE_YEAR}:cmpspot",
+                        "url": mb_url,
+                        "opacity": self.mapbiomas_opacity,
+                        "attribution": "MapBiomas Collection 10.1",
+                        "z_index": 16,
+                        "max_native_zoom": 15,
+                        "clip": "right",
+                    })
+            else:
+                if self._ibge_veg_url:
+                    specs.append({
+                        "id": "ibge_vegetation:leg2:cmpspot",
+                        "url": self._ibge_veg_url,
+                        "opacity": self.ibge_veg_opacity,
+                        "attribution": ds_ibge_veg.IBGE_VEG_ATTRIBUTION,
+                        "z_index": 16,
+                        "max_native_zoom": 13,
+                        "clip": "right",
+                    })
+            spot_url = self._basemap_urls.get(spot_key)
+            if spot_url:
+                spot_conf = ds.EE_BASEMAPS[spot_key]
+                specs.append({
+                    "id": f"basemap:{spot_key}:cmpref",
+                    "url": spot_url,
+                    "opacity": 1.0,
+                    "attribution": spot_conf["attribution"],
+                    "z_index": 17,
+                    "max_native_zoom": spot_conf.get("max_native_zoom", 16),
                     "clip": "left",
                 })
 
@@ -360,7 +462,8 @@ class LayersMixin(rx.State, mixin=True):
         """
         specs: list[dict[str, Any]] = []
         if self.show_biomes:
-            specs.append(biome_service.vector_spec(opacity=self.biome_opacity))
+            specs.append(biome_service.vector_spec(
+                opacity=self.biome_opacity, show_labels=self.show_biome_labels))
         if self.user_points_active:
             # Takes over the interactive layer entirely rather than sitting
             # alongside it — two hoverable point layers stacked in the same
@@ -445,23 +548,174 @@ class LayersMixin(rx.State, mixin=True):
         self._refresh_layers()
 
     @rx.event(background=True)
-    async def toggle_compare(self, checked: bool):
-        """Show two MapBiomas years side by side, split by a draggable divider."""
+    async def set_compare_mode(self, value: str | list[str]):
+        """Which pairing (if any) drives the single swipe divider —
+        "years" (two MapBiomas years), "ibge" (IBGE Vegetação 2022 vs.
+        MapBiomas 2022), "spot" (the two SPOT 2008 mosaics), or one of the
+        four SPOT_COMPARE_SIDES keys (a classification checked against the
+        Forest Code's 2008 reference-year imagery). Replaces the old
+        toggle_compare/toggle_ibge_compare pair of booleans that only existed
+        to turn each other off — this is the mode key itself, not a
+        translated label; the select in layer_panel.py goes through
+        set_compare_mode_by_label instead, mirroring
+        set_basemap/set_basemap_by_label.
+        """
+        raw = value[0] if isinstance(value, (list, tuple)) and value else value
+        mode = str(raw)
+        if mode not in ("off", "years", "ibge", "spot", *SPOT_COMPARE_SIDES):
+            return
+
+        needed_mb = needed_ibge = needed_visual = needed_analytic = False
+        spot_side = spot_key = None
         async with self:
-            self.compare_enabled = checked
-            if not checked:
+            self.compare_mode = mode
+            if mode == "off":
                 self._refresh_layers()
                 return
-            # Only one curtain at a time — the map has a single swipe handle.
-            self.ibge_compare_enabled = False
-            if not self.show_mapbiomas:
-                self.show_mapbiomas = True
-            needed = self.compare_year not in self._mb_urls
-            if not needed:
+            if mode == "years":
+                if not self.show_mapbiomas:
+                    self.show_mapbiomas = True
+                if self.compare_year in self._mb_urls:
+                    self._refresh_layers()
+                    return
+                self.layer_busy = True
+            elif mode == "ibge":
+                needed_mb = ds_ibge_veg.IBGE_COMPARE_YEAR not in self._mb_urls
+                needed_ibge = not self._ibge_veg_url
+                if not needed_mb and not needed_ibge:
+                    self._refresh_layers()
+                    return
+                self.layer_busy = True
+            elif mode == "spot":
+                needed_visual = "spot_2008_visual" not in self._basemap_urls
+                needed_analytic = "spot_2008_analytic" not in self._basemap_urls
+                if not needed_visual and not needed_analytic:
+                    self._refresh_layers()
+                    return
+                self.layer_busy = True
+            elif mode in SPOT_COMPARE_SIDES:
+                spot_side, spot_key = SPOT_COMPARE_SIDES[mode]
+                if spot_side == "mb":
+                    needed_mb = cm.FOREST_CODE_BASELINE_YEAR not in self._mb_urls
+                else:
+                    needed_ibge = not self._ibge_veg_url
+                needed_spot = spot_key not in self._basemap_urls
+                if not needed_mb and not needed_ibge and not needed_spot:
+                    self._refresh_layers()
+                    return
+                self.layer_busy = True
+
+        if mode == "years":
+            await self._ensure_year(self.compare_year)
+            return
+
+        loop = asyncio.get_running_loop()
+        if mode == "ibge":
+            mb_task = (loop.run_in_executor(
+                None, layer_service.mapbiomas_spec, ds_ibge_veg.IBGE_COMPARE_YEAR)
+                if needed_mb else None)
+            ibge_task = (loop.run_in_executor(None, layer_service.ibge_vegetation_spec)
+                         if needed_ibge else None)
+            try:
+                mb_spec = await mb_task if mb_task else None
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("Could not build MapBiomas %s for IBGE compare: %s",
+                               ds_ibge_veg.IBGE_COMPARE_YEAR, exc)
+                mb_spec = None
+            try:
+                ibge_spec = await ibge_task if ibge_task else None
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("Could not build IBGE vegetation layer for compare: %s", exc)
+                ibge_spec = None
+
+            async with self:
+                if mb_spec:
+                    self._mb_urls[ds_ibge_veg.IBGE_COMPARE_YEAR] = mb_spec["url"]
+                if ibge_spec:
+                    self._ibge_veg_url = ibge_spec["url"]
+                self.layer_busy = False
                 self._refresh_layers()
-                return
-            self.layer_busy = True
-        await self._ensure_year(self.compare_year)
+            return
+
+        if mode in SPOT_COMPARE_SIDES:
+            mb_task = (loop.run_in_executor(
+                None, layer_service.mapbiomas_spec, cm.FOREST_CODE_BASELINE_YEAR)
+                if needed_mb else None)
+            ibge_task = (loop.run_in_executor(None, layer_service.ibge_vegetation_spec)
+                         if needed_ibge else None)
+            spot_task = (loop.run_in_executor(
+                None, layer_service.ee_basemap_spec, spot_key)
+                if spot_key and spot_key not in self._basemap_urls else None)
+            try:
+                mb_spec = await mb_task if mb_task else None
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("Could not build MapBiomas %s for SPOT compare: %s",
+                               cm.FOREST_CODE_BASELINE_YEAR, exc)
+                mb_spec = None
+            try:
+                ibge_spec = await ibge_task if ibge_task else None
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("Could not build IBGE vegetation layer for SPOT compare: %s", exc)
+                ibge_spec = None
+            try:
+                spot_spec = await spot_task if spot_task else None
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("Could not build %s for compare: %s", spot_key, exc)
+                spot_spec = None
+
+            async with self:
+                if mb_spec:
+                    self._mb_urls[cm.FOREST_CODE_BASELINE_YEAR] = mb_spec["url"]
+                if ibge_spec:
+                    self._ibge_veg_url = ibge_spec["url"]
+                if spot_spec and spot_key:
+                    self._basemap_urls[spot_key] = spot_spec["url"]
+                self.layer_busy = False
+                self._refresh_layers()
+            return
+
+        # mode == "spot"
+        visual_task = (loop.run_in_executor(
+            None, layer_service.ee_basemap_spec, "spot_2008_visual")
+            if needed_visual else None)
+        analytic_task = (loop.run_in_executor(
+            None, layer_service.ee_basemap_spec, "spot_2008_analytic")
+            if needed_analytic else None)
+        try:
+            visual_spec = await visual_task if visual_task else None
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Could not build SPOT 2008 Visual for compare: %s", exc)
+            visual_spec = None
+        try:
+            analytic_spec = await analytic_task if analytic_task else None
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Could not build SPOT 2008 Analytic for compare: %s", exc)
+            analytic_spec = None
+
+        async with self:
+            if visual_spec:
+                self._basemap_urls["spot_2008_visual"] = visual_spec["url"]
+            if analytic_spec:
+                self._basemap_urls["spot_2008_analytic"] = analytic_spec["url"]
+            self.layer_busy = False
+            self._refresh_layers()
+
+    def set_compare_mode_by_label(self, label: str):
+        """Bridge for the select, which shows labels in the current
+        language — mirrors set_basemap_by_label."""
+        lookup = {
+            self.tr["compare_mode_off"]: "off",
+            self.tr["compare_mode_years"]: "years",
+            self.tr["compare_mode_ibge"]: "ibge",
+            self.tr["compare_mode_spot"]: "spot",
+            self.tr["compare_mode_mb_spot_visual"]: "mb_spot_visual",
+            self.tr["compare_mode_mb_spot_analytic"]: "mb_spot_analytic",
+            self.tr["compare_mode_ibge_spot_visual"]: "ibge_spot_visual",
+            self.tr["compare_mode_ibge_spot_analytic"]: "ibge_spot_analytic",
+        }
+        mode = lookup.get(label)
+        if mode:
+            return type(self).set_compare_mode(mode)
 
     @rx.event(background=True)
     async def set_compare_year(self, value: list[int | float] | int | str):
@@ -472,7 +726,7 @@ class LayersMixin(rx.State, mixin=True):
             return
         async with self:
             self.compare_year = year
-            if not self.compare_enabled or year in self._mb_urls:
+            if self.compare_mode != "years" or year in self._mb_urls:
                 self._refresh_layers()
                 return
             self.layer_busy = True
@@ -735,52 +989,6 @@ class LayersMixin(rx.State, mixin=True):
         self.ibge_veg_opacity = round(float(raw) / 100.0, 2)
         self._refresh_layers()
 
-    @rx.event(background=True)
-    async def toggle_ibge_compare(self, checked: bool):
-        """Show IBGE Vegetação 2022 and MapBiomas 2022 side by side, split by
-        the same draggable divider as toggle_compare. No year picker — both
-        sides are fixed to IBGE_COMPARE_YEAR — so this only needs to make
-        sure both tile URLs exist, not manage a slider."""
-        async with self:
-            self.ibge_compare_enabled = checked
-            if not checked:
-                self._refresh_layers()
-                return
-            # Only one curtain at a time — same reasoning as toggle_compare.
-            self.compare_enabled = False
-            needed_mb = ds_ibge_veg.IBGE_COMPARE_YEAR not in self._mb_urls
-            needed_ibge = not self._ibge_veg_url
-            if not needed_mb and not needed_ibge:
-                self._refresh_layers()
-                return
-            self.layer_busy = True
-
-        loop = asyncio.get_running_loop()
-        mb_task = (loop.run_in_executor(
-            None, layer_service.mapbiomas_spec, ds_ibge_veg.IBGE_COMPARE_YEAR)
-            if needed_mb else None)
-        ibge_task = (loop.run_in_executor(None, layer_service.ibge_vegetation_spec)
-                     if needed_ibge else None)
-        try:
-            mb_spec = await mb_task if mb_task else None
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("Could not build MapBiomas %s for IBGE compare: %s",
-                           ds_ibge_veg.IBGE_COMPARE_YEAR, exc)
-            mb_spec = None
-        try:
-            ibge_spec = await ibge_task if ibge_task else None
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("Could not build IBGE vegetation layer for compare: %s", exc)
-            ibge_spec = None
-
-        async with self:
-            if mb_spec:
-                self._mb_urls[ds_ibge_veg.IBGE_COMPARE_YEAR] = mb_spec["url"]
-            if ibge_spec:
-                self._ibge_veg_url = ibge_spec["url"]
-            self.layer_busy = False
-            self._refresh_layers()
-
     # ---------------------------------------------------------------------- #
     # Hansen Global Forest Change (ported from the Canada page)
     # ---------------------------------------------------------------------- #
@@ -1035,6 +1243,12 @@ class LayersMixin(rx.State, mixin=True):
         self.show_biomes = checked
         self._refresh_layers()
 
+    def toggle_biome_labels(self, checked: bool):
+        """No layer rebuild either — the browser flips a CSS display per
+        marker (leaflet_map.js's applyLabelVisibility)."""
+        self.show_biome_labels = checked
+        self._refresh_layers()
+
     def set_biome_opacity(self, value: list[int | float]):
         raw = value[0] if isinstance(value, (list, tuple)) else value
         self.biome_opacity = round(float(raw) / 100.0, 2)
@@ -1068,6 +1282,37 @@ class LayersMixin(rx.State, mixin=True):
     @rx.var
     def compare_opacity_pct(self) -> int:
         return int(round(self.compare_opacity * 100))
+
+    @rx.var
+    def compare_mode_label(self) -> str:
+        return {
+            "off": self.tr["compare_mode_off"],
+            "years": self.tr["compare_mode_years"],
+            "ibge": self.tr["compare_mode_ibge"],
+            "spot": self.tr["compare_mode_spot"],
+            "mb_spot_visual": self.tr["compare_mode_mb_spot_visual"],
+            "mb_spot_analytic": self.tr["compare_mode_mb_spot_analytic"],
+            "ibge_spot_visual": self.tr["compare_mode_ibge_spot_visual"],
+            "ibge_spot_analytic": self.tr["compare_mode_ibge_spot_analytic"],
+        }.get(self.compare_mode, self.tr["compare_mode_off"])
+
+    @rx.var
+    def compare_mode_options(self) -> list[str]:
+        # The SPOT-based pairings are dropped entirely when the licence flag
+        # is off, same reasoning as ALL_BASEMAPS already applies to the
+        # basemap picker: an option that never works is worse than one that
+        # is not there.
+        options = [self.tr["compare_mode_off"], self.tr["compare_mode_years"],
+                   self.tr["compare_mode_ibge"]]
+        if st.SPOT_ENABLED:
+            options.extend([
+                self.tr["compare_mode_spot"],
+                self.tr["compare_mode_mb_spot_visual"],
+                self.tr["compare_mode_mb_spot_analytic"],
+                self.tr["compare_mode_ibge_spot_visual"],
+                self.tr["compare_mode_ibge_spot_analytic"],
+            ])
+        return options
 
     @rx.var
     def ee_status_label(self) -> str:

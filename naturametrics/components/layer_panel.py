@@ -19,10 +19,32 @@ from ..state import AppState
 from .user_points import enviar_dados_dialog
 
 
-def _section(title: str, *children) -> rx.Component:
+def _info_icon(text: rx.Var | str) -> rx.Component:
+    """A tap/click affordance, not a hover tooltip — this app is mobile-first
+    throughout (the viewport meta tag in naturametrics.py, responsive
+    breakpoints on every section here), and hover has no equivalent on touch.
+    """
+    return rx.popover.root(
+        rx.popover.trigger(
+            rx.icon_button(
+                rx.icon("info", size=12),
+                size="1", variant="ghost", color_scheme="gray",
+                aria_label=text,
+            ),
+        ),
+        rx.popover.content(
+            rx.text(text, size="1", style={"lineHeight": "1.4"}),
+            max_width="260px",
+        ),
+    )
+
+
+def _section(title: str, *children, info: rx.Var | str | None = None) -> rx.Component:
+    header = rx.text(title, size="1", weight="bold", color_scheme="gray",
+                     style={"textTransform": "uppercase", "letterSpacing": "0.06em"})
     return rx.vstack(
-        rx.text(title, size="1", weight="bold", color_scheme="gray",
-                style={"textTransform": "uppercase", "letterSpacing": "0.06em"}),
+        rx.hstack(header, _info_icon(info), spacing="1", align="center")
+        if info is not None else header,
         *children,
         spacing="2",
         align_items="stretch",
@@ -50,6 +72,7 @@ def basemap_control() -> rx.Component:
                        color_scheme="amber", size="1", width="100%"),
             rx.fragment(),
         ),
+        info=AppState.tr["basemap_info"],
     )
 
 
@@ -99,7 +122,7 @@ def mapbiomas_control() -> rx.Component:
                 rx.hstack(
                     rx.text(
                         rx.cond(
-                            AppState.compare_enabled,
+                            AppState.compare_mode == "years",
                             AppState.tr["opacity_label_compare"],
                             AppState.tr["opacity_label"],
                         ),
@@ -121,49 +144,35 @@ def mapbiomas_control() -> rx.Component:
             ),
             rx.fragment(),
         ),
-    )
-
-
-def buffer_preview_control() -> rx.Component:
-    """MapBiomas shown only inside the buffer of the point under the cursor."""
-    return _section(
-        AppState.tr["section_buffer_preview"],
-        rx.hstack(
-            rx.switch(checked=AppState.show_buffer_preview,
-                      on_change=AppState.toggle_buffer_preview),
-            rx.text(AppState.tr["buffer_preview_toggle_label"], size="2"),
-            rx.spacer(),
-            rx.badge(f"{st.BUFFER_PREVIEW_RADIUS_KM:g} km", size="1",
-                     variant="soft", color_scheme="gray"),
-            width="100%", align="center", spacing="2",
-        ),
-        rx.text(
-            AppState.tr["buffer_preview_text"],
-            size="1", color_scheme="gray",
-        ),
-        rx.cond(
-            AppState.show_mapbiomas,
-            rx.text(
-                AppState.tr["buffer_preview_hidden_note"],
-                size="1", color_scheme="amber",
-            ),
-            rx.fragment(),
-        ),
+        info=AppState.tr["mapbiomas_info"],
     )
 
 
 def compare_control() -> rx.Component:
-    """Two MapBiomas years at once, split by a draggable vertical divider."""
+    """One swipe divider, several possible pairings: two MapBiomas years,
+    IBGE Vegetação 2022 vs. MapBiomas 2022, the two SPOT 2008 mosaics
+    against each other (Visual vs. false-colour NIR), or MapBiomas
+    2008/IBGE checked against either SPOT 2008 band — validating a
+    classification straight against the Forest Code's reference-year
+    imagery. See state/_layers.py's set_compare_mode and
+    SPOT_COMPARE_SIDES. A single select replaces what used to be two
+    separate always-visible sections (compare_control/ibge_compare_control)
+    that only knew about each other enough to turn one another off.
+    """
     return _section(
         AppState.tr["section_compare"],
         rx.hstack(
-            rx.switch(checked=AppState.compare_enabled,
-                      on_change=AppState.toggle_compare),
-            rx.text(AppState.tr["compare_toggle_label"], size="2"),
+            rx.select(
+                AppState.compare_mode_options,
+                value=AppState.compare_mode_label,
+                on_change=AppState.set_compare_mode_by_label,
+                width="100%",
+            ),
+            rx.cond(AppState.layer_busy, rx.spinner(size="1"), rx.fragment()),
             width="100%", align="center", spacing="2",
         ),
         rx.cond(
-            AppState.compare_enabled,
+            AppState.compare_mode == "years",
             rx.vstack(
                 rx.hstack(
                     rx.text(AppState.tr["compare_year_left"], size="1",
@@ -200,6 +209,43 @@ def compare_control() -> rx.Component:
             ),
             rx.fragment(),
         ),
+        rx.cond(
+            AppState.compare_mode == "ibge",
+            rx.text(AppState.tr["ibge_compare_note"], size="1",
+                    color_scheme="gray"),
+            rx.fragment(),
+        ),
+        rx.cond(
+            AppState.compare_mode == "spot",
+            rx.text(AppState.tr["spot_compare_note"], size="1",
+                    color_scheme="gray"),
+            rx.fragment(),
+        ),
+        rx.cond(
+            AppState.compare_mode == "mb_spot_visual",
+            rx.text(AppState.tr["mb_spot_visual_note"], size="1",
+                    color_scheme="gray"),
+            rx.fragment(),
+        ),
+        rx.cond(
+            AppState.compare_mode == "mb_spot_analytic",
+            rx.text(AppState.tr["mb_spot_analytic_note"], size="1",
+                    color_scheme="gray"),
+            rx.fragment(),
+        ),
+        rx.cond(
+            AppState.compare_mode == "ibge_spot_visual",
+            rx.text(AppState.tr["ibge_spot_visual_note"], size="1",
+                    color_scheme="gray"),
+            rx.fragment(),
+        ),
+        rx.cond(
+            AppState.compare_mode == "ibge_spot_analytic",
+            rx.text(AppState.tr["ibge_spot_analytic_note"], size="1",
+                    color_scheme="gray"),
+            rx.fragment(),
+        ),
+        info=AppState.tr["compare_info"],
     )
 
 
@@ -249,6 +295,7 @@ def change_mask_control() -> rx.Component:
             ),
             rx.fragment(),
         ),
+        info=AppState.tr["change_mask_info"],
     )
 
 
@@ -365,6 +412,7 @@ def ifn_control() -> rx.Component:
             ),
             rx.fragment(),
         ),
+        info=AppState.tr["ifn_info"],
     )
 
 
@@ -404,6 +452,7 @@ def user_points_control() -> rx.Component:
             ),
             rx.fragment(),
         ),
+        info=AppState.tr["user_points_info"],
     )
 
 
@@ -479,6 +528,7 @@ def multi_select_control() -> rx.Component:
             ),
             rx.fragment(),
         ),
+        info=AppState.tr["multi_select_info"],
     )
 
 
@@ -503,6 +553,12 @@ def biome_control() -> rx.Component:
     return _section(
         AppState.tr["section_biomes"],
         rx.hstack(
+            rx.switch(checked=AppState.show_biome_labels,
+                      on_change=AppState.toggle_biome_labels),
+            rx.text(AppState.tr["biomes_labels_toggle_label"], size="2"),
+            width="100%", align="center", spacing="2",
+        ),
+        rx.hstack(
             rx.switch(checked=AppState.show_biomes,
                       on_change=AppState.toggle_biomes),
             rx.text(AppState.tr["biomes_toggle_label"], size="2"),
@@ -519,19 +575,16 @@ def biome_control() -> rx.Component:
                 ),
                 rx.slider(
                     min=0, max=80, step=5,
-                    default_value=[35],
+                    default_value=[55],
                     on_change=AppState.set_biome_opacity,
                     width="100%",
                 ),
                 _biome_legend(),
-                rx.text(
-                    AppState.tr["biomes_hover_note"],
-                    size="1", color_scheme="gray",
-                ),
                 spacing="2", width="100%", padding_top="0.25rem",
             ),
             rx.fragment(),
         ),
+        info=AppState.tr["biomes_info"],
     )
 
 
@@ -587,6 +640,7 @@ def biomass_control() -> rx.Component:
             ),
             rx.fragment(),
         ),
+        info=AppState.tr["biomass_info"],
     )
 
 
@@ -622,30 +676,10 @@ def ibge_vegetation_control() -> rx.Component:
             ),
             rx.fragment(),
         ),
+        info=AppState.tr["ibge_veg_info"],
     )
 
 
-def ibge_compare_control() -> rx.Component:
-    """IBGE Vegetação 2022 vs. MapBiomas 2022, split by the same draggable
-    divider as compare_control — no year picker (both sides are fixed to
-    2022) and no opacity sliders of its own, since it reuses whatever
-    mapbiomas_opacity/ibge_veg_opacity are already set to."""
-    return _section(
-        AppState.tr["section_ibge_compare"],
-        rx.hstack(
-            rx.switch(checked=AppState.ibge_compare_enabled,
-                      on_change=AppState.toggle_ibge_compare),
-            rx.text(AppState.tr["compare_toggle_label"], size="2"),
-            rx.spacer(),
-            rx.cond(AppState.layer_busy, rx.spinner(size="1"), rx.fragment()),
-            width="100%", align="center", spacing="2",
-        ),
-        rx.cond(
-            AppState.ibge_compare_enabled,
-            rx.text(AppState.tr["ibge_compare_note"], size="1", color_scheme="gray"),
-            rx.fragment(),
-        ),
-    )
 
 
 def hansen_control() -> rx.Component:
@@ -747,6 +781,7 @@ def hansen_control() -> rx.Component:
             on_change=AppState.set_hansen_treecover_threshold,
             width="100%",
         ),
+        info=AppState.tr["hansen_info"],
     )
 
 
@@ -803,8 +838,26 @@ def point_control() -> rx.Component:
                 rx.text(AppState.tr["buffer_square_toggle_label"], size="1"),
                 spacing="2", align="center",
             ),
+            rx.hstack(
+                rx.switch(checked=AppState.show_buffer_preview,
+                          on_change=AppState.toggle_buffer_preview),
+                rx.text(AppState.tr["buffer_preview_toggle_label"], size="1"),
+                rx.spacer(),
+                rx.badge(f"{st.BUFFER_PREVIEW_RADIUS_KM:g} km", size="1",
+                         variant="soft", color_scheme="gray"),
+                width="100%", align="center", spacing="2",
+            ),
+            rx.cond(
+                AppState.show_mapbiomas,
+                rx.text(
+                    AppState.tr["buffer_preview_hidden_note"],
+                    size="1", color_scheme="amber",
+                ),
+                rx.fragment(),
+            ),
             spacing="1", align_items="start", width="100%",
         ),
+        info=AppState.tr["point_info"],
     )
 
 
@@ -826,8 +879,6 @@ def geometry_control() -> rx.Component:
             rx.text(AppState.tr["geometry_draw_toggle_label"], size="2"),
             width="100%", align="center", spacing="2",
         ),
-        rx.text(AppState.tr["geometry_draw_hint"], size="1", color_scheme="gray",
-                style={"lineHeight": "1.4"}),
         rx.cond(
             AppState.has_geometry,
             rx.hstack(
@@ -848,6 +899,7 @@ def geometry_control() -> rx.Component:
                        color_scheme="amber", size="1", width="100%"),
             rx.fragment(),
         ),
+        info=AppState.tr["geometry_info"],
     )
 
 
@@ -860,8 +912,6 @@ def layer_panel() -> rx.Component:
         basemap_control(),
         rx.divider(),
         mapbiomas_control(),
-        rx.divider(),
-        buffer_preview_control(),
         rx.divider(),
         compare_control(),
         rx.divider(),
@@ -877,8 +927,6 @@ def layer_panel() -> rx.Component:
         biomass_control(),
         rx.divider(),
         ibge_vegetation_control(),
-        rx.divider(),
-        ibge_compare_control(),
         rx.divider(),
         hansen_control(),
         rx.spacer(),

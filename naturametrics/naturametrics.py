@@ -28,8 +28,8 @@ def _ga_head_components() -> list[rx.Component]:
     if not GA_MEASUREMENT_ID:
         return []
     return [
-        rx.script(src=f"https://www.googletagmanager.com/gtag/js?id={GA_MEASUREMENT_ID}", async_=True),
-        rx.script(f"""
+        rx.el.script(src=f"https://www.googletagmanager.com/gtag/js?id={GA_MEASUREMENT_ID}", async_=True),
+        rx.el.script(f"""
             window.dataLayer = window.dataLayer || [];
             function gtag(){{ dataLayer.push(arguments); }}
             gtag('js', new Date());

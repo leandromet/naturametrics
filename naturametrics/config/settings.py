@@ -46,6 +46,11 @@ def _bool(name: str, default: bool = False) -> bool:
 #: limits, and the fan-out design assumes Partner concurrency.
 GCP_PROJECT_ID = os.environ.get("GCP_PROJECT_ID", "ee-leandromet")
 
+#: GA4 Measurement ID, shared with the portal and the other three subdomains
+#: (same registrable domain umaterra.com.br, one unified property). Empty in
+#: local dev so testing never pollutes real traffic data.
+GA_MEASUREMENT_ID = os.environ.get("NM_GA_MEASUREMENT_ID", "")
+
 #: 'partner' | 'contributor'. Sizes the EE thread pool. Everything must still
 #: work at 'contributor' — just slower (D5).
 EE_TIER = os.environ.get("NM_EE_TIER", "partner").strip().lower()

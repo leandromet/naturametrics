@@ -84,4 +84,12 @@ steps:
       # No EE credentials: Cloud Run supplies ADC for the attached service
       # account via the metadata server (auth method 2 in ee_client.py), which
       # is how yvynation-reflex runs. PORT is injected by Cloud Run — never set.
-      - --set-env-vars=GCP_PROJECT_ID=${PROJECT_ID},NM_EE_TIER=partner,NM_EE_CONCURRENCY=64,NM_BASEMAP=esri_imagery,NM_SPOT_ENABLED=false
+      #
+      # --set-env-vars REPLACES the whole env var list on every deploy — it is
+      # not additive. NM_GA_MEASUREMENT_ID must live here, not be set later via
+      # `gcloud run services update`, or the next push silently drops it again
+      # (found 2026-08-24: that's exactly what happened the first time this was
+      # wired up). Not a secret — GA4 Measurement IDs are public by design,
+      # shipped in every page's HTML — so a literal here is fine, same as the
+      # other config values on this line.
+      - --set-env-vars=GCP_PROJECT_ID=${PROJECT_ID},NM_EE_TIER=partner,NM_EE_CONCURRENCY=64,NM_BASEMAP=esri_imagery,NM_SPOT_ENABLED=false,NM_GA_MEASUREMENT_ID=G-HKS5YTT9DP

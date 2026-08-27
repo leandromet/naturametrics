@@ -18,12 +18,20 @@ from naturametrics.services.landscape_metrics import (  # noqa: E402
 )
 
 
-def _summary_row(radius_km, area_ha, patches, largest_patch_ha, edge_m):
+def _summary_row(radius_km, area_ha, patches, largest_patch_ha, edge_m,
+                  patch_area_sq_ha=None):
+    if patch_area_sq_ha is None:
+        # No fixture here models the full per-patch size distribution, so this
+        # default is an arbitrary stand-in, not a real Σ(patch area²) — tests
+        # that care about its exact value pass patch_area_sq_ha explicitly
+        # (test_aggregate_sums_patch_area_sq_and_recomputes_meff).
+        patch_area_sq_ha = largest_patch_ha ** 2
     return {
         "radius_km": radius_km, "area_ha": area_ha, "patches": patches,
         "patch_density": patches / area_ha, "largest_patch_ha": largest_patch_ha,
         "largest_patch_pct": largest_patch_ha / area_ha * 100.0, "edge_m": edge_m,
         "edge_density": edge_m / area_ha, "mean_patch_ha": area_ha / patches,
+        "patch_area_sq_ha": patch_area_sq_ha, "meff_ha": patch_area_sq_ha / area_ha,
         # Per-point diversity is discarded by the aggregator — placeholder
         # values here to prove that, not values the test depends on.
         "shannon": -1.0, "simpson": -1.0, "simpson_evenness": -1.0,
@@ -70,6 +78,18 @@ def test_aggregate_sums_area_patches_and_edge_length():
     assert row["patches"] == pytest.approx(3.0)
     assert row["edge_m"] == pytest.approx(150.0)
     assert row["edge_density"] == pytest.approx(10.0)  # 150 / 15
+
+
+def test_aggregate_sums_patch_area_sq_and_recomputes_meff():
+    """meff_ha (effective mesh size) must be recomputed from the summed
+    Σ(patch area²) term, not summed or averaged directly itself — same
+    reasoning as edge_density/patch_density/mean_patch_ha above it."""
+    s1 = pd.DataFrame([_summary_row(1.0, 10.0, 2, 6.0, 100.0, patch_area_sq_ha=40.0)])
+    s2 = pd.DataFrame([_summary_row(1.0, 5.0, 1, 5.0, 50.0, patch_area_sq_ha=25.0)])
+    out = aggregate_landscape_metrics([s1, s2], [])
+    row = out.iloc[0]
+    assert row["patch_area_sq_ha"] == pytest.approx(65.0)
+    assert row["meff_ha"] == pytest.approx(65.0 / 15.0)
 
 
 def test_aggregate_takes_the_max_largest_patch_not_a_sum():

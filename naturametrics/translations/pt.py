@@ -278,9 +278,27 @@ TRANSLATIONS_PT: dict[str, str] = {
     "metrics_patch_density": "Manchas/ha",
     "metrics_lpi": "Maior mancha (%)",
     "metrics_edge_density": "Borda (m/ha)",
+    "metrics_meff": "Meff (ha)",
     "metrics_shannon": "Shannon",
     "metrics_simpson": "Simpson",
     "metrics_evenness": "Equidade",
+    "connectivity_hint": (
+        "Distância média até o fragmento de floresta mais próximo (vizinho "
+        "mais próximo, ENN) — mais custosa que as métricas acima porque "
+        "vetoriza os fragmentos de cada buffer e faz uma busca espacial "
+        "local, em vez de reaproveitar uma imagem já calculada."
+    ),
+    "connectivity_run_button": "Calcular conectividade (mais lento)",
+    "connectivity_running": "Vetorizando fragmentos e calculando distâncias…",
+    "connectivity_empty": "Ainda não calculada — clique para rodar.",
+    "err_connectivity_failed": "Falha ao calcular a conectividade: {exc}",
+    "connectivity_n_fragments": "Fragmentos",
+    "connectivity_enn_mean": "Dist. média viz. mais próx. (m)",
+    "connectivity_enn_median": "Mediana (m)",
+    "export_chart_aria": "Baixar este gráfico (PNG)",
+    "export_table_aria": "Baixar esta tabela (CSV)",
+    "export_chart_label": "Exportar figura",
+    "export_table_label": "Exportar tabela",
     "biomass_tab": "Biomassa",
     "biomass_running": "Lendo a biomassa acima do solo (ESA CCI)…",
     "biomass_empty": "Biomassa ainda não disponível.",
@@ -334,6 +352,23 @@ TRANSLATIONS_PT: dict[str, str] = {
     ),
     "download_point_button": "Baixar planilha do ponto (.ods)",
     "download_point_hint": "Clique num ponto ou num conglomerado do mapa para habilitar.",
+    "report_section_title": "Relatório em HTML (formato de artigo)",
+    "report_section_desc": (
+        "Um único arquivo HTML autocontido com os gráficos e/ou tabelas já "
+        "calculados, formatado para leitura ou impressão em PDF — "
+        "complementa a planilha acima, não a substitui."
+    ),
+    "check_report_figures_label": "Gráficos",
+    "check_report_figures_detail": (
+        "Uso da terra, idade da vegetação e biomassa, um gráfico por raio de "
+        "buffer."
+    ),
+    "check_report_tables_label": "Tabelas",
+    "check_report_tables_detail": (
+        "Variação de área por classe, métricas de paisagem, conectividade "
+        "(se já calculada) e a proveniência de cada consulta."
+    ),
+    "download_report_button": "Baixar relatório (HTML)",
     "selection_title_submitted": "Lista enviada",
     "selection_title_default": "Seleção de conglomerados",
     "selection_note": (

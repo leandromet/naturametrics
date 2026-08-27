@@ -273,9 +273,27 @@ TRANSLATIONS_EN: dict[str, str] = {
     "metrics_patch_density": "Patches/ha",
     "metrics_lpi": "Largest patch (%)",
     "metrics_edge_density": "Edge (m/ha)",
+    "metrics_meff": "Meff (ha)",
     "metrics_shannon": "Shannon",
     "metrics_simpson": "Simpson",
     "metrics_evenness": "Evenness",
+    "connectivity_hint": (
+        "Mean distance to the nearest forest fragment (nearest-neighbour "
+        "distance, ENN) — costlier than the metrics above because it "
+        "vectorises each buffer's fragments and runs a local spatial search "
+        "instead of reusing an image that is already computed."
+    ),
+    "connectivity_run_button": "Compute connectivity (slower)",
+    "connectivity_running": "Vectorising fragments and computing distances…",
+    "connectivity_empty": "Not computed yet — click to run.",
+    "err_connectivity_failed": "Failed to compute connectivity: {exc}",
+    "connectivity_n_fragments": "Fragments",
+    "connectivity_enn_mean": "Mean nearest-neighbour dist. (m)",
+    "connectivity_enn_median": "Median (m)",
+    "export_chart_aria": "Download this chart (PNG)",
+    "export_table_aria": "Download this table (CSV)",
+    "export_chart_label": "Export figure",
+    "export_table_label": "Export table",
     "biomass_tab": "Biomass",
     "biomass_running": "Reading above-ground biomass (ESA CCI)…",
     "biomass_empty": "Biomass is not available yet.",
@@ -327,6 +345,22 @@ TRANSLATIONS_EN: dict[str, str] = {
     ),
     "download_point_button": "Download point spreadsheet (.ods)",
     "download_point_hint": "Click a point or a cluster on the map to enable this.",
+    "report_section_title": "HTML report (paper-friendly layout)",
+    "report_section_desc": (
+        "One self-contained HTML file with the figures and/or tables already "
+        "computed, laid out for reading or printing to PDF — complements "
+        "the spreadsheet above, not a replacement for it."
+    ),
+    "check_report_figures_label": "Figures",
+    "check_report_figures_detail": (
+        "Land use, vegetation age and biomass, one chart per buffer radius."
+    ),
+    "check_report_tables_label": "Tables",
+    "check_report_tables_detail": (
+        "Area change by class, landscape metrics, connectivity (if already "
+        "computed) and the provenance of every query."
+    ),
+    "download_report_button": "Download report (HTML)",
     "selection_title_submitted": "Submitted list",
     "selection_title_default": "Cluster selection",
     "selection_note": (

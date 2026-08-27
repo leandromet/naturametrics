@@ -12,6 +12,92 @@ import reflex as rx
 
 from ..state import AppState
 
+#: Standard chart config across the app: no Plotly modebar (see the history-
+#: chart's own comment below — the modebar has no "away" state on touch, where
+#: it would sit permanently on top of the plot). Export instead goes through
+#: _chart_export_button, a plain icon placed outside the plot's own hit area.
+_PLOTLY_CONFIG = {"displayModeBar": False, "displaylogo": False, "responsive": True}
+
+
+def _chart_export_button(wrap_id: str, filename: str) -> rx.Component:
+    """A small "download this chart" icon, deliberately not Plotly's own
+    modebar button (see _PLOTLY_CONFIG above for why that one stays off).
+    Plotly.downloadImage runs entirely client-side — no server round-trip,
+    no kaleido/headless-browser dependency (the browser already drew the
+    figure; this just rasterises it).
+
+    Targets the plot via ``.js-plotly-plot`` — the class Plotly.js itself
+    always stamps onto the graph div it creates, part of its own public DOM
+    contract (its own modebar button finds "self" the same way) — inside a
+    plain ``id`` on the wrapping box, rather than a ``divId`` prop threaded
+    through react-plotly.js's wrapper: a first attempt using ``div_id`` on
+    ``rx.plotly`` threw at click time (that prop was not reaching the actual
+    rendered node the way the react-plotly.js docs suggest it should), while
+    a bare HTML ``id`` on a plain ``rx.box`` has no such wrapper-specific
+    plumbing to go wrong.
+
+    The icon's own ``rx.icon(..., size=...)`` is not set here: IconButton.create
+    (reflex/components/radix/themes/components/icon_button.py) unconditionally
+    overwrites its child icon's size from the button's own ``size`` token via
+    RADIX_TO_LUCIDE_SIZE, so any size passed to the inner icon is silently
+    discarded — the button's size="2" below is what actually renders at 24px."""
+    return rx.tooltip(
+        rx.icon_button(
+            rx.icon("image-down"),
+            on_click=rx.call_script(
+                "(function(){"
+                f"var gd = document.querySelector('#{wrap_id} .js-plotly-plot');"
+                "if (gd && window.Plotly) { window.Plotly.downloadImage(gd, "
+                f"{{format: 'png', filename: '{filename}', scale: 2}}); }}"
+                "})()"
+            ),
+            size="2", variant="ghost", color_scheme="gray",
+            aria_label=AppState.tr["export_chart_aria"],
+        ),
+        content=AppState.tr["export_chart_label"],
+    )
+
+
+def _table_export_button(on_click) -> rx.Component:
+    """The table counterpart of _chart_export_button — a plain CSV of the
+    same records already on screen, for a paper's own reprocessing rather
+    than a screenshot."""
+    return rx.tooltip(
+        rx.icon_button(
+            rx.icon("download"),
+            on_click=on_click,
+            size="2", variant="ghost", color_scheme="gray",
+            aria_label=AppState.tr["export_table_aria"],
+        ),
+        content=AppState.tr["export_table_label"],
+    )
+
+
+def _chart_box(figure, wrap_id: str, filename: str, height,
+               box_props: dict | None = None) -> rx.Component:
+    """A plotly chart plus its own export icon — the one shape shared by
+    every chart in this file, so the config/wrap id/icon placement cannot
+    drift between charts one at a time. ``box_props`` carries whatever the
+    surrounding layout needs on the outer box (e.g. the flex/min_width a
+    chart shares a row with a side column under) — the plot itself always
+    fills it at width="100%".
+
+    The icon sits in its own slim row *below* the plot, not layered on top
+    of it: an absolutely-positioned overlay (the first version of this)
+    sat on top of the chart's own corner — legend, hover targets, axis —
+    rather than in the blank space every chart already has underneath.
+    """
+    return rx.box(
+        rx.plotly(data=figure, config=_PLOTLY_CONFIG, width="100%", height=height),
+        rx.hstack(
+            rx.spacer(),
+            _chart_export_button(wrap_id, filename),
+            width="100%", padding_top="0.15rem",
+        ),
+        id=wrap_id, width="100%",
+        **(box_props or {}),
+    )
+
 
 def _legend_row(row: rx.Var) -> rx.Component:
     return rx.hstack(
@@ -151,22 +237,14 @@ def _land_use_panel() -> rx.Component:
                 rx.cond(
                     AppState.has_result | AppState.multi_active,
                     rx.flex(
-                        rx.box(
-                            rx.plotly(
-                                data=AppState.history_figure,
-                                # The modebar is hover-revealed on desktop but
-                                # permanently visible on touch, where it sits on
-                                # top of the plot. Chart export is a planned
-                                # feature of our own, so nothing is lost by
-                                # removing it.
-                                config={"displayModeBar": False,
-                                        "displaylogo": False,
-                                        "responsive": True},
-                                width="100%",
-                                height=["300px", "320px", "340px", "340px"],
-                            ),
-                            flex=["1 1 100%", "1 1 100%", "1 1 100%", "1 1 0"],
-                            min_width="0", width="100%",
+                        _chart_box(
+                            AppState.history_figure, "nm-plot-history",
+                            "naturametrics_uso_do_solo",
+                            ["300px", "320px", "340px", "340px"],
+                            box_props={
+                                "flex": ["1 1 100%", "1 1 100%", "1 1 100%", "1 1 0"],
+                                "min_width": "0",
+                            },
                         ),
                         rx.vstack(
                             rx.text(
@@ -233,12 +311,8 @@ def _age_summary_line(row: rx.Var) -> rx.Component:
                         color_scheme="gray",
                         style={"textTransform": "uppercase",
                                "letterSpacing": "0.06em"}),
-                rx.plotly(
-                    data=AppState.change_figure,
-                    config={"displayModeBar": False, "displaylogo": False,
-                            "responsive": True},
-                    width="100%", height="150px",
-                ),
+                _chart_box(AppState.change_figure, "nm-plot-change",
+                          "naturametrics_mudanca_2008_2024", "150px"),
                 spacing="1", width="100%", padding_top="0.5rem",
             ),
             rx.fragment(),
@@ -263,26 +337,36 @@ def _landscape_metric_row(row: rx.Var) -> rx.Component:
         rx.text(row["patch_density"], size="1"),
         rx.text(row["largest"], size="1"),
         rx.text(row["edge"], size="1"),
+        rx.text(row["meff"], size="1"),
         rx.text(row["shannon"], size="1"),
         rx.text(row["simpson"], size="1"),
         rx.text(row["evenness"], size="1"),
-        columns="repeat(8, minmax(0, 1fr))",
+        columns="repeat(9, minmax(0, 1fr))",
         gap="0.4rem", width="100%",
     )
 
 
 def _landscape_metrics_panel() -> rx.Component:
     return rx.vstack(
-        rx.text(
-            "NP · PD · LPI · ED · Shannon · Simpson",
-            size="1", color_scheme="gray",
+        rx.hstack(
+            rx.text(
+                "NP · PD · LPI · ED · Meff · Shannon · Simpson",
+                size="1", color_scheme="gray",
+            ),
+            rx.spacer(),
+            rx.cond(
+                AppState.landscape_metrics_has_result,
+                _table_export_button(AppState.download_landscape_metrics_csv),
+                rx.fragment(),
+            ),
+            width="100%", align="center",
         ),
         rx.grid(
             *[rx.text(AppState.tr[key], size="1", weight="bold") for key in (
                 "metrics_buffer", "metrics_patches", "metrics_patch_density",
-                "metrics_lpi", "metrics_edge_density", "metrics_shannon",
-                "metrics_simpson", "metrics_evenness")],
-            columns="repeat(8, minmax(0, 1fr))",
+                "metrics_lpi", "metrics_edge_density", "metrics_meff",
+                "metrics_shannon", "metrics_simpson", "metrics_evenness")],
+            columns="repeat(9, minmax(0, 1fr))",
             gap="0.4rem", width="100%",
         ),
         rx.cond(
@@ -306,7 +390,74 @@ def _landscape_metrics_panel() -> rx.Component:
         ),
         rx.text(AppState.landscape_metrics_provenance_line, size="1",
                 color_scheme="gray"),
+        _connectivity_section(),
         spacing="2", width="100%", overflow_x="auto",
+    )
+
+
+def _connectivity_row(row: rx.Var) -> rx.Component:
+    return rx.grid(
+        rx.text(row["buffer"], size="1", weight="medium"),
+        rx.text(row["n_fragments"], size="1"),
+        rx.text(row["enn_mean"], size="1"),
+        rx.text(row["enn_median"], size="1"),
+        columns="repeat(4, minmax(0, 1fr))",
+        gap="0.4rem", width="100%",
+    )
+
+
+def _connectivity_section() -> rx.Component:
+    """The costly, opt-in half of landscape metrics — mean/median distance to
+    the nearest forest fragment (services.connectivity), behind its own
+    button rather than fetched alongside the table above (see that module's
+    docstring for why it is not free the way meff_ha is)."""
+    return rx.cond(
+        AppState.connectivity_available,
+        rx.vstack(
+            rx.divider(),
+            rx.text(AppState.tr["connectivity_hint"], size="1", color_scheme="gray"),
+            rx.button(
+                rx.icon("route", size=13),
+                rx.text(AppState.tr["connectivity_run_button"], size="1"),
+                on_click=AppState.run_connectivity,
+                loading=AppState.connectivity_running,
+                disabled=AppState.connectivity_running,
+                size="1", variant="soft", color_scheme="amber",
+            ),
+            rx.cond(
+                AppState.connectivity_error != "",
+                rx.text(AppState.connectivity_error, size="1", color_scheme="amber"),
+                rx.cond(
+                    AppState.connectivity_has_result,
+                    rx.vstack(
+                        rx.hstack(
+                            rx.grid(
+                                *[rx.text(AppState.tr[key], size="1", weight="bold")
+                                  for key in ("metrics_buffer", "connectivity_n_fragments",
+                                             "connectivity_enn_mean",
+                                             "connectivity_enn_median")],
+                                columns="repeat(4, minmax(0, 1fr))",
+                                gap="0.4rem", flex="1",
+                            ),
+                            _table_export_button(AppState.download_connectivity_csv),
+                            width="100%", align="center",
+                        ),
+                        rx.foreach(AppState.connectivity_rows, _connectivity_row),
+                        rx.text(AppState.connectivity_provenance_line, size="1",
+                                color_scheme="gray"),
+                        spacing="1", width="100%",
+                    ),
+                    rx.cond(
+                        AppState.connectivity_running,
+                        rx.fragment(),
+                        rx.text(AppState.tr["connectivity_empty"], size="1",
+                                color_scheme="gray"),
+                    ),
+                ),
+            ),
+            spacing="2", width="100%", padding_top="0.5rem",
+        ),
+        rx.fragment(),
     )
 
 
@@ -330,13 +481,9 @@ def _biomass_panel() -> rx.Component:
                            color_scheme="amber", size="1", width="100%"),
                 rx.cond(
                     AppState.biomass_has_result,
-                    rx.plotly(
-                        data=AppState.biomass_figure,
-                        config={"displayModeBar": False, "displaylogo": False,
-                                "responsive": True},
-                        width="100%",
-                        height=["260px", "280px", "280px", "280px"],
-                    ),
+                    _chart_box(AppState.biomass_figure, "nm-plot-biomass",
+                              "naturametrics_biomassa",
+                              ["260px", "280px", "280px", "280px"]),
                     rx.text(AppState.tr["biomass_empty"], size="1", color_scheme="gray"),
                 ),
             ),
@@ -376,13 +523,9 @@ def _ibge_comparison_panel() -> rx.Component:
                                      size="2", variant="soft", color_scheme="grass"),
                             spacing="2", wrap="wrap",
                         ),
-                        rx.plotly(
-                            data=AppState.veg_compare_figure,
-                            config={"displayModeBar": False, "displaylogo": False,
-                                    "responsive": True},
-                            width="100%",
-                            height=["340px", "380px", "380px", "380px"],
-                        ),
+                        _chart_box(AppState.veg_compare_figure, "nm-plot-ibge",
+                                  "naturametrics_ibge_x_mapbiomas",
+                                  ["340px", "380px", "380px", "380px"]),
                         spacing="2", width="100%",
                     ),
                     rx.text(AppState.tr["ibge_veg_empty"], size="1", color_scheme="gray"),
@@ -415,25 +558,18 @@ def _age_body() -> rx.Component:
                 AppState.age_has_result,
                 rx.cond(
                     AppState.age_showing_point,
-                    rx.plotly(
-                        data=AppState.age_point_figure,
-                        config={"displayModeBar": False, "displaylogo": False,
-                                "responsive": True},
-                        width="100%",
-                        height=["260px", "280px", "280px", "280px"],
-                    ),
+                    _chart_box(AppState.age_point_figure, "nm-plot-age-point",
+                              "naturametrics_idade_vegetacao_ponto",
+                              ["260px", "280px", "280px", "280px"]),
                     rx.flex(
-                        rx.box(
-                            rx.plotly(
-                                data=AppState.age_histogram_figure,
-                                config={"displayModeBar": False,
-                                        "displaylogo": False,
-                                        "responsive": True},
-                                width="100%",
-                                height=["260px", "280px", "280px", "280px"],
-                            ),
-                            flex=["1 1 100%", "1 1 100%", "1 1 100%", "1 1 0"],
-                            min_width="0", width="100%",
+                        _chart_box(
+                            AppState.age_histogram_figure, "nm-plot-age-hist",
+                            "naturametrics_idade_vegetacao_histograma",
+                            ["260px", "280px", "280px", "280px"],
+                            box_props={
+                                "flex": ["1 1 100%", "1 1 100%", "1 1 100%", "1 1 0"],
+                                "min_width": "0",
+                            },
                         ),
                         rx.cond(
                             AppState.age_has_summary,

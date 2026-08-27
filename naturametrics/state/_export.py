@@ -47,6 +47,15 @@ class ExportMixin(rx.State, mixin=True):
     #: export contains.
     export_source: str = "filtros"
 
+    # --- the study-point "paper-friendly" HTML report (services.report) --
+    # A third export path alongside the ODS above and the per-chart/per-
+    # table icons in components/results.py — see services/report.py's own
+    # docstring for why these are complementary, not redundant. Both default
+    # off: the ODS button above stays the one-click default action, and nothing
+    # about it changes just because these two exist.
+    exp_report_figures: bool = False
+    exp_report_tables: bool = False
+
     # --- what to include in the selection export --------------------------
     exp_points: bool = True
     exp_pixel: bool = True
@@ -89,6 +98,12 @@ class ExportMixin(rx.State, mixin=True):
         prefix = self.tr["export_source_manual_prefix"]
         self.export_source = "manual" if str(raw).startswith(prefix) else "filtros"
         self.export_confirm_pending = False
+
+    def toggle_exp_report_figures(self, checked: bool):
+        self.exp_report_figures = checked
+
+    def toggle_exp_report_tables(self, checked: bool):
+        self.exp_report_tables = checked
 
     def toggle_exp_points(self, checked: bool):
         self.exp_points = checked
@@ -333,6 +348,89 @@ class ExportMixin(rx.State, mixin=True):
             self.export_result = f"{name} ({len(data) // 1024} KiB)"
         return rx.download(data=data, filename=name, mime_type=MIMETYPE)
 
+    @rx.var
+    def export_report_any(self) -> bool:
+        return self.exp_report_figures or self.exp_report_tables
+
+    @rx.event(background=True)
+    async def download_study_point_report(self):
+        """The "paper-friendly" HTML report (services.report) — a separate
+        download from the ODS above, not a second file the same click
+        produces: two near-simultaneous rx.download calls risk a browser's
+        own multiple-download prompt, and the two files answer different
+        questions anyway (read this vs. reprocess that)."""
+        async with self:
+            if not self.has_result:
+                self.export_error = self.tr["export_choose_point_first"]
+                return
+            if not self.export_report_any:
+                return
+            self.export_busy = True
+            self.export_stage = self.tr["export_stage_building_point"]
+            self.export_error = ""
+            self.export_result = ""
+
+        # Same wait as download_study_point above — the report reads whatever
+        # has landed in state, and a click right after the chart appears must
+        # not ship a report with blank figures/tables for fetches still in
+        # flight (doc/11 §5, same reasoning, same bound).
+        waited = 0.0
+        while waited < 20.0:
+            async with self:
+                running = (self.age_running or self.landscape_metrics_running
+                          or self.biomass_running)
+            if not running:
+                break
+            async with self:
+                self.export_stage = self.tr["export_stage_waiting_age"]
+            await asyncio.sleep(0.4)
+            waited += 0.4
+
+        async with self:
+            self.export_stage = self.tr["export_stage_building_point"]
+            history, prov = plain(self._history), plain(self._provenance)
+            age_buffers = plain(self._age_buffers)
+            age_buffers_prov = plain(self._age_buffers_provenance)
+            change = plain(self._change_stats)
+            landscape_metrics = plain(self._landscape_metrics)
+            landscape_metrics_prov = plain(self._landscape_metrics_provenance)
+            connectivity = plain(self._connectivity)
+            connectivity_prov = plain(self._connectivity_provenance)
+            biomass = plain(self._biomass)
+            biomass_prov = plain(self._biomass_provenance)
+            lat, lon, shape = self.study_lat, self.study_lon, self.buffer_shape
+            include_figures, include_tables = (self.exp_report_figures,
+                                               self.exp_report_tables)
+            lang = self.language
+            identity = {
+                "source": self.point_source,
+                "conglomerado": self.point_conglomerado,
+                "uf": self.point_uf,
+                "municipio": self.point_municipio,
+                "bioma": self.point_bioma,
+            }
+
+        loop = asyncio.get_running_loop()
+        try:
+            data, name = await loop.run_in_executor(
+                None, _build_study_point_report, lat, lon, history, prov,
+                identity, age_buffers, age_buffers_prov, change,
+                landscape_metrics, landscape_metrics_prov, connectivity,
+                connectivity_prov, biomass, biomass_prov, shape,
+                include_figures, include_tables, lang)
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("Study-point report failed")
+            async with self:
+                self.export_busy = False
+                self.export_error = f"Falha ao gerar o relatório: {exc}"
+            return
+
+        async with self:
+            self.export_busy = False
+            self.export_stage = ""
+            self.export_result = f"{name} ({len(data) // 1024} KiB)"
+        return rx.download(data=data, filename=name, mime_type="text/html")
+
     # ---------------------------------------------------------------------- #
     # Conglomerado selection
     # ---------------------------------------------------------------------- #
@@ -546,4 +644,44 @@ def _build_study_point(lat, lon, history, prov, pixel, pixel_prov, identity,
         biomass=pd.DataFrame(biomass) if biomass else None,
         biomass_prov=revive(biomass_prov),
         buffer_shape=buffer_shape,
+    )
+
+
+def _build_study_point_report(lat, lon, history, prov, identity, age_buffers,
+                              age_buffers_prov, change, landscape_metrics,
+                              landscape_metrics_prov, connectivity,
+                              connectivity_prov, biomass, biomass_prov,
+                              buffer_shape, include_figures, include_tables, lang):
+    """Rebuild the frames and write the report, off the event loop — same
+    revive-from-dict shape as _build_study_point above, minus the pixel
+    series the report does not carry (it is a single-pixel caveat table, not
+    a figure or a headline number)."""
+    import pandas as pd
+
+    from ..services.geo import point
+    from ..services.provenance import Provenance
+    from ..services.report import study_point_report_html
+
+    def revive(d: dict | None) -> Provenance | None:
+        return Provenance(**d) if d else None
+
+    change = {float(k): v for k, v in (change or {}).items()}
+
+    return study_point_report_html(
+        point(lat=lat, lon=lon),
+        pd.DataFrame(history), revive(prov) or Provenance(
+            name="landuse_history", dataset_id=""),
+        identity=identity,
+        age_buffers=pd.DataFrame(age_buffers) if age_buffers else None,
+        age_buffers_prov=revive(age_buffers_prov),
+        change=change,
+        landscape_metrics=pd.DataFrame(landscape_metrics) if landscape_metrics else None,
+        landscape_metrics_prov=revive(landscape_metrics_prov),
+        connectivity=pd.DataFrame(connectivity) if connectivity else None,
+        connectivity_prov=revive(connectivity_prov),
+        biomass=pd.DataFrame(biomass) if biomass else None,
+        biomass_prov=revive(biomass_prov),
+        buffer_shape=buffer_shape,
+        include_figures=include_figures, include_tables=include_tables,
+        lang=lang,
     )

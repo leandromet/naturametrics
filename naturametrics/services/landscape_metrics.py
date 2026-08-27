@@ -31,10 +31,24 @@ logger = logging.getLogger(__name__)
 #: multi-selection sum — the *same* formula in both cases, applied to whatever
 #: histogram is at hand, rather than a per-point value that a sum would then
 #: have to (wrongly) average.
+#:
+#: ``meff_ha`` is the effective mesh size (Jaeger 2000) — a fragmentation/
+#: connectivity proxy: the size a patch would need to be, alone in the
+#: landscape, for a randomly placed pair of points to have the same chance of
+#: falling in the same patch as they do here. It falls out of the same
+#: connected-components image already built for ``largest_patch_ha``, at the
+#: cost of one more ``reduceRegions`` call (see ``mesh_reduced`` below), which
+#: is why it is always computed rather than gated behind its own button the
+#: way the costlier true nearest-neighbour distance is (services.connectivity).
+#: ``patch_area_sq_ha`` is the Σ(patch area²) numerator behind it, kept as its
+#: own column for the same reason ``edge_m`` sits next to ``edge_density``: a
+#: multi-selection sum can add it across independent buffers and only divide
+#: once, at the end (see :func:`aggregate_landscape_metrics`).
 METRIC_COLUMNS = [
     "radius_km", "area_ha", "patches", "patch_density",
     "largest_patch_ha", "largest_patch_pct", "edge_m", "edge_density",
-    "mean_patch_ha", "shannon", "simpson", "simpson_evenness",
+    "mean_patch_ha", "patch_area_sq_ha", "meff_ha", "shannon", "simpson",
+    "simpson_evenness",
 ]
 
 #: The per-class histogram behind the summary above — same long format as
@@ -78,6 +92,13 @@ def _summary_from_properties(
     # length, edge_m, alongside the ratio, so a multi-selection sum can add
     # lengths and areas separately and only divide once, at the end).
     edge_m = edge_fraction * pixels * pixel_scale_m
+    # Σ(patch pixel-count²) across the buffer — see mesh_reduced in
+    # _landscape_metrics_from_collection for how this sum, taken over the
+    # *same* per-pixel patch-size image as largest_patch above, equals
+    # Σ(patch area²) once scaled by pixel_area_m2² (each patch's n_i pixels
+    # each carry the value n_i, so summing them gives n_i² per patch).
+    patch_size_sum = float(props.get("patch_size_sum") or 0)
+    patch_area_sq_ha = patch_size_sum * (pixel_area_m2 ** 2) / 1e8
     summary = {
         "radius_km": float(radius),
         "area_ha": area_ha,
@@ -88,6 +109,8 @@ def _summary_from_properties(
         "edge_m": edge_m,
         "edge_density": edge_m / max(area_ha, 1e-9),
         "mean_patch_ha": area_ha / max(patches, 1.0),
+        "patch_area_sq_ha": patch_area_sq_ha,
+        "meff_ha": patch_area_sq_ha / max(area_ha, 1e-9),
     }
     hist_records = [
         {"radius_km": float(radius), "class_id": class_id,
@@ -127,6 +150,12 @@ def _landscape_metrics_from_collection(
                                          scale=EE_DEFAULT_SCALE_M, tileScale=EE_TILE_SCALE)
     largest_reduced = component_size.reduceRegions(collection=fc, reducer=ee.Reducer.max(),
                                                     scale=EE_DEFAULT_SCALE_M, tileScale=EE_TILE_SCALE)
+    # Same component_size image as largest_reduced above, summed instead of
+    # maxed: Σ(n_i pixels each valued at n_i) = Σn_i² across patches, the
+    # numerator behind the effective-mesh-size proxy (meff_ha, see
+    # METRIC_COLUMNS docstring and _summary_from_properties).
+    mesh_reduced = component_size.reduceRegions(collection=fc, reducer=ee.Reducer.sum(),
+                                                scale=EE_DEFAULT_SCALE_M, tileScale=EE_TILE_SCALE)
     edge_reduced = edge.reduceRegions(collection=fc, reducer=ee.Reducer.mean(),
                                       scale=EE_DEFAULT_SCALE_M, tileScale=EE_TILE_SCALE)
     area_reduced = ee.Image.pixelArea().reduceRegions(
@@ -136,6 +165,7 @@ def _landscape_metrics_from_collection(
     hist_info = reduced.getInfo()
     patch_info = patch_reduced.getInfo()
     largest_info = largest_reduced.getInfo()
+    mesh_info = mesh_reduced.getInfo()
     edge_info = edge_reduced.getInfo()
     area_info = area_reduced.getInfo()
 
@@ -146,12 +176,14 @@ def _landscape_metrics_from_collection(
         radius = float(props.get("radius_km", sorted(radii_km)[index]))
         patch_props = patch_info["features"][index].get("properties", {})
         largest_props = largest_info["features"][index].get("properties", {})
+        mesh_props = mesh_info["features"][index].get("properties", {})
         edge_props = edge_info["features"][index].get("properties", {})
         area_props = area_info["features"][index].get("properties", {})
         summary, records = _summary_from_properties(
             {"histogram": props.get("histogram"),
              "patches": patch_props.get("countDistinct", patch_props.get("count")),
              "largest_patch": largest_props.get("max"),
+             "patch_size_sum": mesh_props.get("sum"),
              "edge_fraction": edge_props.get("mean")},
             radius, float(area_props.get("mean") or 900.0), EE_DEFAULT_SCALE_M,
         )
@@ -278,11 +310,16 @@ def aggregate_landscape_metrics(
 ) -> pd.DataFrame:
     """Sum several conglomerados' landscape metrics into one, per radius.
 
-    ``area_ha``, ``patches`` and ``edge_m`` **add** — the same "sum over
-    sampling units, overlap counted in each" reading ``aggregate_histories``
-    gives the land-cover sum. ``largest_patch_ha`` takes the **max** across
-    points (the single biggest patch found in any contributing buffer — a sum
-    or average of "the largest" would not describe anything real). Shannon/
+    ``area_ha``, ``patches``, ``edge_m`` and ``patch_area_sq_ha`` **add** — the
+    same "sum over sampling units, overlap counted in each" reading
+    ``aggregate_histories`` gives the land-cover sum (patches at different
+    points are, by construction, never the same patch, so Σ(patch area²) over
+    the combined set is simply the sum of each point's own Σ(patch area²)).
+    ``largest_patch_ha`` takes the **max** across points (the single biggest
+    patch found in any contributing buffer — a sum or average of "the
+    largest" would not describe anything real). ``meff_ha`` is **recomputed**
+    from the summed ``patch_area_sq_ha``/``area_ha``, same reasoning as
+    ``edge_density``/``patch_density``/``mean_patch_ha`` below. Shannon/
     Simpson/evenness are **recomputed from the pooled class-area histogram**,
     not averaged: an average of diversity indices is not the diversity of the
     combined landscape, the same reasoning that keeps area_pct out of the
@@ -301,6 +338,7 @@ def aggregate_landscape_metrics(
         area_ha=("area_ha", "sum"),
         patches=("patches", "sum"),
         edge_m=("edge_m", "sum"),
+        patch_area_sq_ha=("patch_area_sq_ha", "sum"),
         largest_patch_ha=("largest_patch_ha", "max"),
     )
     safe_area = agg["area_ha"].clip(lower=1e-9)
@@ -308,6 +346,7 @@ def aggregate_landscape_metrics(
     agg["largest_patch_pct"] = agg["largest_patch_ha"] / safe_area * 100.0
     agg["edge_density"] = agg["edge_m"] / safe_area
     agg["mean_patch_ha"] = agg["area_ha"] / agg["patches"].clip(lower=1.0)
+    agg["meff_ha"] = agg["patch_area_sq_ha"] / safe_area
 
     diversity = [_diversity(combined_hist, r) for r in agg["radius_km"]]
     agg["shannon"] = [d["shannon"] for d in diversity]

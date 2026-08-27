@@ -19,7 +19,8 @@ from ..config.settings import (
 )
 from ..services.buffers import buffer_geojson
 from ..services.change_mask import change_stats
-from ..services.landscape_metrics import landscape_metrics
+from ..services.connectivity import CONNECTIVITY_COLUMNS, fragment_connectivity
+from ..services.landscape_metrics import METRIC_COLUMNS, landscape_metrics
 from ..services.biomass import biomass_history
 from ..services.ibge_vegetation import bucket_matrix, mapbiomas_comparison
 from ..services.vegetation_age import age_summary, buffer_forest_age_histogram, point_forest_age_series
@@ -27,6 +28,21 @@ from ..services.geo import CoordinateError, point
 from ..services.mapbiomas_history import land_cover_history, point_pixel_series
 
 logger = logging.getLogger(__name__)
+
+
+def _records_to_csv(records: list[dict[str, Any]], columns: list[str]) -> bytes:
+    """One data table, straight from the same records already on screen — the
+    per-table "download this one" affordance next to landscape_metrics_rows
+    and connectivity_rows, for a paper's own reprocessing rather than a
+    screenshot (see components/results.py's export icons)."""
+    import csv
+    import io
+
+    buf = io.StringIO()
+    writer = csv.DictWriter(buf, fieldnames=columns, extrasaction="ignore")
+    writer.writeheader()
+    writer.writerows(records)
+    return buf.getvalue().encode("utf-8")
 
 
 class AnalysisMixin(rx.State, mixin=True):
@@ -86,6 +102,19 @@ class AnalysisMixin(rx.State, mixin=True):
     _landscape_metrics: list[dict[str, Any]] = []
     _landscape_metrics_provenance: dict[str, Any] = {}
 
+    #: services.connectivity.fragment_connectivity — the costly true
+    #: nearest-neighbour-distance proxy, run only when the user clicks its own
+    #: button (never folded into the automatic fetch above; see that module's
+    #: docstring for why). Single-point only: a multi-selection fan-out of a
+    #: per-buffer vectorise-then-local-search is a different cost order again.
+    connectivity_running: bool = False
+    connectivity_error: str = ""
+    _connectivity: list[dict[str, Any]] = []
+    _connectivity_provenance: dict[str, Any] = {}
+    #: Same reasoning as _run_token: a click on a new point must not let this
+    #: button's slower fetch overwrite that newer point's state.
+    _connectivity_token: int = 0
+
     #: services.biomass (ESA CCI Biomass_cci v6.0) — a third, independent
     #: product read alongside age/landscape-metrics, same isolation reasoning.
     biomass_running: bool = False
@@ -117,6 +146,15 @@ class AnalysisMixin(rx.State, mixin=True):
             self.landscape_metrics_error = ""
             self._landscape_metrics = []
             self._landscape_metrics_provenance = {}
+            # Not re-run automatically (see fragment_connectivity's docstring
+            # for why), but a stale result from the *previous* point must not
+            # linger under the new one's panel — and bumping the token here
+            # discards a still in-flight connectivity fetch for that old point.
+            self._connectivity_token += 1
+            self.connectivity_running = False
+            self.connectivity_error = ""
+            self._connectivity = []
+            self._connectivity_provenance = {}
             self.biomass_running = True
             self.biomass_error = ""
             self._biomass = []
@@ -278,6 +316,44 @@ class AnalysisMixin(rx.State, mixin=True):
                     self._veg_compare = veg_compare_df.to_dict("records")
                     self._veg_compare_provenance = veg_compare_prov.to_dict()
                     self.veg_compare_running = False
+
+    @rx.event(background=True)
+    async def run_connectivity(self):
+        """Compute the costly fragment-to-fragment connectivity metric for the
+        current study point — only on an explicit click of its own button
+        (services.connectivity.fragment_connectivity), never as part of
+        run_analysis above."""
+        async with self:
+            self._connectivity_token += 1
+            token = self._connectivity_token
+            self.connectivity_running = True
+            self.connectivity_error = ""
+            lat, lon, shape = self.study_lat, self.study_lon, self.buffer_shape
+
+        loop = asyncio.get_running_loop()
+        try:
+            p = point(lat=lat, lon=lon)
+            df, prov = await loop.run_in_executor(
+                None, fragment_connectivity, p, BUFFER_RADII_KM,
+                BUFFER_MODE_DEFAULT, shape)
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("Fragment connectivity failed")
+            async with self:
+                if token == self._connectivity_token:
+                    self.connectivity_running = False
+                    self.connectivity_error = \
+                        self.tr["err_connectivity_failed"].format(exc=exc)
+                    self._connectivity = []
+                    self._connectivity_provenance = {}
+            return
+
+        async with self:
+            if token != self._connectivity_token:
+                logger.info("Discarding superseded connectivity result for %s", p)
+                return
+            self._connectivity = df.to_dict("records")
+            self._connectivity_provenance = prov.to_dict()
+            self.connectivity_running = False
 
     def set_selected_radius(self, value: str | list[str]):
         """Set the buffer whose history is charted.
@@ -484,6 +560,17 @@ class AnalysisMixin(rx.State, mixin=True):
             return self.multi_busy
         return self.landscape_metrics_running
 
+    def download_landscape_metrics_csv(self):
+        """The raw numeric records behind landscape_metrics_rows, not the
+        display-formatted strings (percent signs, thousands separators) —
+        a paper reprocessing this wants floats, not "10,5%"."""
+        records = self._landscape_metrics_records()
+        if not records:
+            return None
+        return rx.download(
+            data=_records_to_csv(records, METRIC_COLUMNS),
+            filename="naturametrics_metricas_paisagem.csv", mime_type="text/csv")
+
     @rx.var(cache=True)
     def landscape_metrics_rows(self) -> list[dict[str, str]]:
         rows = []
@@ -495,6 +582,12 @@ class AnalysisMixin(rx.State, mixin=True):
                 "patch_density": f'{record["patch_density"]:.2f}',
                 "largest": f'{record["largest_patch_pct"]:.1f}%',
                 "edge": f'{record["edge_density"]:.1f}',
+                # Effective mesh size — a fragmentation/connectivity proxy
+                # (services.landscape_metrics.METRIC_COLUMNS docstring), always
+                # available (unlike the true nearest-neighbour distance,
+                # which is costly enough to sit behind its own button — see
+                # connectivity_rows below).
+                "meff": f'{record["meff_ha"]:,.1f}',
                 "shannon": f'{record["shannon"]:.2f}',
                 "simpson": f'{record["simpson"]:.2f}',
                 "evenness": f'{record["simpson_evenness"]:.2f}',
@@ -531,6 +624,54 @@ class AnalysisMixin(rx.State, mixin=True):
             f"MapBiomas {p.get('extra', {}).get('year', '')} · {p.get('scale_m')} m · "
             f"{p.get('reducer')}{degraded}{note}"
         )
+
+    # --- fragment connectivity (services.connectivity, on-demand) ------- #
+
+    @rx.var(cache=True)
+    def connectivity_available(self) -> bool:
+        """Gates the button itself, not just its result — fragment_connectivity
+        reads a radius-based buffer around one point (services.buffers), which
+        neither a multi-selection sum nor a drawn/uploaded region has."""
+        return not self.multi_mode and not self.geometry_active
+
+    @rx.var(cache=True)
+    def connectivity_has_result(self) -> bool:
+        return bool(self._connectivity)
+
+    @rx.var(cache=True)
+    def connectivity_rows(self) -> list[dict[str, str]]:
+        rows = []
+        for record in self._connectivity:
+            enn_mean = record.get("enn_mean_m")
+            enn_median = record.get("enn_median_m")
+            rows.append({
+                "buffer": self._radius_label(float(record["radius_km"])),
+                "n_fragments": f'{record["n_fragments"]:,.0f}',
+                "enn_mean": f'{enn_mean:,.0f}' if enn_mean is not None else "—",
+                "enn_median": f'{enn_median:,.0f}' if enn_median is not None else "—",
+            })
+        return rows
+
+    @rx.var(cache=True)
+    def connectivity_provenance_line(self) -> str:
+        """Its own line — services.connectivity has a different reducer
+        (vectorise + local nearest-neighbour, not a raster reduceRegions) from
+        every other provenance line on this page."""
+        p = self._connectivity_provenance
+        if not p:
+            return ""
+        degraded = self.tr["provenance_degraded"] if p.get("degraded") else ""
+        return (
+            f"MapBiomas {p.get('extra', {}).get('year', '')} · {p.get('scale_m')} m · "
+            f"{p.get('reducer')}{degraded}"
+        )
+
+    def download_connectivity_csv(self):
+        if not self._connectivity:
+            return None
+        return rx.download(
+            data=_records_to_csv(self._connectivity, CONNECTIVITY_COLUMNS),
+            filename="naturametrics_conectividade.csv", mime_type="text/csv")
 
     # --- biomass (services.biomass, ESA CCI Biomass_cci v6.0) ----------- #
 

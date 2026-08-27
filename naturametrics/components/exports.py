@@ -87,6 +87,28 @@ def _study_point_section() -> rx.Component:
             rx.text(AppState.tr["download_point_hint"],
                     size="1", color_scheme="gray"),
         ),
+        rx.divider(),
+        rx.text(AppState.tr["report_section_title"], size="2", weight="medium"),
+        rx.text(AppState.tr["report_section_desc"], size="1", color_scheme="gray",
+                style={"lineHeight": "1.4"}),
+        _check(
+            AppState.tr["check_report_figures_label"],
+            AppState.tr["check_report_figures_detail"],
+            AppState.exp_report_figures, AppState.toggle_exp_report_figures,
+        ),
+        _check(
+            AppState.tr["check_report_tables_label"],
+            AppState.tr["check_report_tables_detail"],
+            AppState.exp_report_tables, AppState.toggle_exp_report_tables,
+        ),
+        rx.button(
+            rx.icon("file-text", size=14),
+            AppState.tr["download_report_button"],
+            on_click=AppState.download_study_point_report,
+            disabled=(~AppState.has_result | AppState.export_busy
+                     | ~AppState.export_report_any),
+            size="2", variant="soft", color_scheme="jade", width="100%",
+        ),
         spacing="2", align_items="start", width="100%",
     )
 

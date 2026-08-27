@@ -51,6 +51,10 @@ app = rx.App(
         ),
         rx.el.meta(name="theme-color", content="#ffffff"),
         *_ga_head_components(),
+        # Idle tabs otherwise keep the Reflex WebSocket reconnecting forever,
+        # which pins a billed Cloud Run instance with nobody using it — see
+        # assets/idle_guard.js and assets/paused.html.
+        rx.el.script(src="/assets/idle_guard.js", defer=True),
     ],
 )
 

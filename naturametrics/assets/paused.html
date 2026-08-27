@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sessão pausada — Naturametrics</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: Inter, system-ui, sans-serif;
+    background: #f7f7f5;
+    color: #1a1a1a;
+    text-align: center;
+    padding: 24px;
+    box-sizing: border-box;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { background: #16181d; color: #e8e8e6; }
+  }
+  .card { max-width: 420px; }
+  h1 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+  p { opacity: 0.75; line-height: 1.5; }
+  button {
+    margin-top: 1.5rem;
+    padding: 0.6rem 1.4rem;
+    font-size: 1rem;
+    border-radius: 8px;
+    border: none;
+    background: #3b7a3f;
+    color: white;
+    cursor: pointer;
+  }
+  button:hover { background: #2f6132; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1 id="title">Sessão pausada por inatividade</h1>
+    <p id="msg">Para economizar recursos, a análise foi pausada após alguns minutos sem uso. Clique abaixo para continuar de onde parou.</p>
+    <button id="resume">Continuar</button>
+  </div>
+  <script>
+    if (!(navigator.language || "").toLowerCase().startsWith("pt")) {
+      document.getElementById("title").textContent = "Session paused due to inactivity";
+      document.getElementById("msg").textContent = "To save resources, the analysis paused after a few idle minutes. Click below to pick up where you left off.";
+      document.getElementById("resume").textContent = "Resume";
+    }
+    document.getElementById("resume").addEventListener("click", function () {
+      var url = "/";
+      try {
+        url = sessionStorage.getItem("idle_guard_resume_url") || "/";
+      } catch (e) {}
+      window.location.href = url;
+    });
+  </script>
+</body>
+</html>

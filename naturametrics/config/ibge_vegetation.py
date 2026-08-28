@@ -1,10 +1,11 @@
-"""IBGE Vegetação do Brasil (1:250.000, 2022 vintage) — classification, official
-colours, and the shared natural/anthropic/forest taxonomy used to compare this
-dataset against MapBiomas for quality control.
+"""IBGE Vegetação do Brasil (1:250.000, 2022 vintage) — classification, a
+web-legible colour palette, and the shared natural/anthropic/forest taxonomy
+used to compare this dataset against MapBiomas for quality control.
 
 Source shapefile: ``vege_area`` (145,458 polygons), uploaded to Earth Engine as
-:data:`IBGE_VEG_ASSET`. Symbology ported from the official QGIS style
-(``simbologia_vege_area/vege_legenda2.qml``).
+:data:`IBGE_VEG_ASSET`. Class ids and labels are ported from the official QGIS
+style (``simbologia_vege_area/vege_legenda2.qml``); the colours are not — see
+:data:`IBGE_VEG_COLOR_MAP`'s own docstring for why.
 
 **Why ``legenda_2``, not ``legenda_1`` or the full ``legenda``.** The source
 shapefile carries several classification fields at different granularity.
@@ -25,22 +26,15 @@ same suffix pattern repeats across Campinarana and Savana-Estépica. No separate
 canopy model is needed; :data:`IBGE_VEG_TO_GROUP` below just encodes that
 reading once.
 
-**Provenance of ``leg2_id`` -> (label, colour).** The label per ``leg2_id`` was
-read from the shapefile's own ``.dbf`` (ground truth for what the asset's
-``leg2_id`` property actually means — verified UTF-8 via the shapefile's
-``.cpg``). The colour per label was read from the ``.qml``'s ``<symbol>``
-blocks, joined **by label text**, not by symbol index: the ``.qml``'s rule
-order and this shapefile's ``leg2_id`` numbering diverge from id 41 onward
-(the style file inserts "Contato (Ecótono)" earlier and reorders Dunas /
-Afloramento Rochoso relative to this export), so symbol-index arithmetic
-(``leg2_id == symbol_name + 1``) silently mismatches classes past id 48. Joining
-on the label string in the ``.qml``'s own ``filter="legenda_2 = '...'"``
-clauses is what the shapefile and the style actually agree on.
+**Provenance of ``leg2_id`` -> label.** Read from the shapefile's own ``.dbf``
+(ground truth for what the asset's ``leg2_id`` property actually means —
+verified UTF-8 via the shapefile's ``.cpg``).
 """
 
 from __future__ import annotations
 
-from typing import Dict
+import colorsys
+from typing import Dict, List
 
 # --------------------------------------------------------------------------- #
 # Asset
@@ -59,7 +53,7 @@ IBGE_VEG_ATTRIBUTION = "IBGE — Mapa de Vegetação do Brasil, escala 1:250.000
 IBGE_COMPARE_YEAR = 2022
 
 # --------------------------------------------------------------------------- #
-# Class labels and official colours, leg2_id 1-54
+# Class labels, leg2_id 1-54
 # --------------------------------------------------------------------------- #
 
 IBGE_VEG_LABELS_PT: Dict[int, str] = {
@@ -119,35 +113,10 @@ IBGE_VEG_LABELS_PT: Dict[int, str] = {
     54: "Corpo d'água continental",
 }
 
-#: Official IBGE colours (``vege_legenda2.qml``), joined by label text — see
-#: module docstring. Note 49 "Vegetação Secundária" reads as blue (``0073e1``)
-#: in the source style, which looks like a water colour; that is what the
-#: official style actually assigns, not a transcription slip here.
-IBGE_VEG_COLOR_MAP: Dict[int, str] = {
-    1: "a8ff00", 2: "73ff00", 3: "00f500", 4: "00ff73", 5: "00cd00",
-    6: "d6ffa8", 7: "c0ffa8", 8: "a8ffa8", 9: "99d4e6", 10: "99c2e6",
-    11: "9ccd89", 12: "51a800", 13: "007e00", 14: "e6e699", 15: "d4e699",
-    16: "c2e699", 17: "becd89", 18: "cdcd89", 19: "cdbe89", 20: "a8a873",
-    21: "8fa873", 22: "89cdcd", 23: "a8ffc0", 24: "a8ffeb", 25: "a8ebff",
-    26: "ffa8a8", 27: "ffc0a8", 28: "ffd6a8", 29: "ffeba8", 30: "cdcd00",
-    31: "e6c200", 32: "fcbc7d", 33: "ffd600", 34: "f5f500", 35: "e6d499",
-    36: "e6c299", 37: "e6ae99", 38: "00ffd6", 39: "00d6ff", 40: "a8d6ff",
-    41: "ff0073", 42: "ffa8ff", 43: "ffa8d6", 44: "e9e9e9", 45: "e9e9e9",
-    46: "e9e9e9", 47: "b2b2b2", 48: "b2b2b2", 49: "0073e1", 50: "c9a538",
-    51: "e39e00", 52: "c0a8ff", 53: "ffff00", 54: "73fff7",
-}
-
-#: ``getMapId`` vis params for the classified raster (services.layers /
-#: services.ibge_vegetation). Codes are contiguous 1-54, so a plain min/max
-#: palette renders every class without a remap.
-IBGE_VEG_VIS = {
-    "min": 1,
-    "max": 54,
-    "palette": [IBGE_VEG_COLOR_MAP[i] for i in range(1, 55)],
-}
-
 # --------------------------------------------------------------------------- #
-# Shared natural/anthropic/forest taxonomy — the QC comparison axis
+# Shared natural/anthropic/forest taxonomy — the QC comparison axis, and the
+# basis for the web palette below (IBGE_VEG_COLOR_MAP needs GROUP_COLORS and
+# IBGE_VEG_TO_GROUP, so this section has to come before it).
 # --------------------------------------------------------------------------- #
 #: Six buckets both datasets get reduced to for the comparison tab. Built once
 #: so IBGE and MapBiomas 2022 are compared on the same terms rather than
@@ -190,7 +159,11 @@ GROUP_COLORS: Dict[str, str] = {
     GROUP_NATURAL_FOREST: "#1f8d49",
     GROUP_NATURAL_NON_FOREST: "#d6bc74",
     GROUP_ANTHROPIC_FOREST: "#7a5900",
-    GROUP_ANTHROPIC_REGROWTH: "#a8d6ff",
+    # Not blue: a class named "Vegetação Secundária" reading as water is
+    # exactly the confusion IBGE_VEG_COLOR_MAP's own docstring below is
+    # fixing — a yellow-green instead says "vegetation, recovering", clear
+    # of both the forest family's hue and water's.
+    GROUP_ANTHROPIC_REGROWTH: "#8fd400",
     GROUP_ANTHROPIC_NON_FOREST: "#e974ed",
     GROUP_WATER: "#2532e4",
     GROUP_OTHER: "#999999",
@@ -240,3 +213,80 @@ def ibge_group(leg2_id: int) -> str:
 
 def mapbiomas_group(class_id: int) -> str:
     return MAPBIOMAS_TO_GROUP.get(int(class_id), GROUP_OTHER)
+
+
+# --------------------------------------------------------------------------- #
+# Web palette, leg2_id 1-54
+# --------------------------------------------------------------------------- #
+#: A first version of this map ported the official QGIS style
+#: (``vege_legenda2.qml``) colour-for-colour. IBGE's own live web map
+#: (bdiaweb.ibge.gov.br) uses that exact same style — its own
+#: ``GetLegendGraphic`` was checked directly against this file while building
+#: the palette below — and it has the same problem there: "Vegetação
+#: Secundária" reads as water-blue, three "Refúgio Vegetacional" subtypes read
+#: as alert-red/magenta, "Florestamento/Reflorestamento" reads as violet. None
+#: of that is a transcription slip on either side; it is simply not built for
+#: a map with no accompanying legend, which is exactly how it was shown here
+#: before this module started generating its own.
+#:
+#: This palette instead derives every class's colour from its
+#: :data:`IBGE_VEG_TO_GROUP` family's own :data:`GROUP_COLORS` hue — every
+#: shade of green is some kind of natural forest, every tan/olive is natural
+#: non-forest, every blue is water, and so on — with lightness spread across
+#: each family so the ~54 subtypes stay distinguishable without borrowing a
+#: hue that means something else on this map (red already means "loss",
+#: elsewhere in this app family). Water and "other" keep a single official-ish
+#: colour each (one member, nothing to spread).
+def _hex_to_hls(hex_color: str) -> tuple[float, float, float]:
+    r, g, b = (int(hex_color[i:i + 2], 16) / 255.0 for i in (0, 2, 4))
+    h, l, s = colorsys.rgb_to_hls(r, g, b)
+    return h, l, s
+
+
+def _shade(hue: float, sat: float, index: int, count: int) -> str:
+    """One member of a colour family: same hue/saturation as the group's
+    base colour, lightness spread across the family so a 24-member group
+    (natural forest) and a 1-member one (water) both read sensibly — light
+    end capped short of white, dark end short of black, so no shade
+    disappears against a light or dark basemap."""
+    frac = (index + 0.5) / count if count else 0.5
+    lightness = 0.78 - 0.46 * frac  # 0.78 down to 0.32
+    r, g, b = colorsys.hls_to_rgb(hue, lightness, sat)
+    return f"{round(r * 255):02x}{round(g * 255):02x}{round(b * 255):02x}"
+
+
+def _build_color_map() -> Dict[int, str]:
+    members: Dict[str, List[int]] = {group: [] for group in GROUP_ORDER}
+    for leg2_id in sorted(IBGE_VEG_TO_GROUP):
+        members[IBGE_VEG_TO_GROUP[leg2_id]].append(leg2_id)
+
+    out: Dict[int, str] = {}
+    for group in GROUP_ORDER:
+        ids = members[group]
+        if not ids:
+            continue
+        base = GROUP_COLORS[group].lstrip("#")
+        if len(ids) == 1:
+            # Nothing to spread — the group's own colour as-is, not
+            # renormalised to _shade's mid-range lightness band (which would
+            # flatten a deliberately dark or light single base colour).
+            out[ids[0]] = base
+            continue
+        hue, _lightness, sat = _hex_to_hls(base)
+        sat = max(sat, 0.35)  # GROUP_OTHER's grey has sat≈0; give it a floor
+        for i, leg2_id in enumerate(ids):
+            out[leg2_id] = _shade(hue, sat, i, len(ids))
+    return out
+
+
+#: leg2_id -> "rrggbb", grouped and shaded per the docstring above.
+IBGE_VEG_COLOR_MAP: Dict[int, str] = _build_color_map()
+
+#: ``getMapId`` vis params for the classified raster (services.layers /
+#: services.ibge_vegetation). Codes are contiguous 1-54, so a plain min/max
+#: palette renders every class without a remap.
+IBGE_VEG_VIS = {
+    "min": 1,
+    "max": 54,
+    "palette": [IBGE_VEG_COLOR_MAP[i] for i in range(1, 55)],
+}

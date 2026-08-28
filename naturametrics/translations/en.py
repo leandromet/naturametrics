@@ -306,8 +306,11 @@ TRANSLATIONS_EN: dict[str, str] = {
     "ibge_veg_forest_label": "Forest",
     "ibge_veg_natural_label": "Natural",
     "ibge_veg_layer_note": (
-        "IBGE Vegetação, 1:250,000 (2022) — 54 official classes, colours from "
-        "IBGE's own map style."
+        "IBGE Vegetação, 1:250,000 (2022) — 54 official classes; coloured "
+        "by family (forest in green, non-forest in tan, anthropic in pink, "
+        "water in blue) for readability on the map. Turn the layer on with "
+        "a point selected to see the present classes in the legend, in the "
+        "map's corner."
     ),
     "ibge_compare_note": (
         "Drag the white line on the map. The right side is MapBiomas 2022, "

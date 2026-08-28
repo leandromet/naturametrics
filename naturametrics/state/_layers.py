@@ -143,6 +143,15 @@ class LayersMixin(rx.State, mixin=True):
     #: year to pick — just a toggle and an opacity slider.
     show_ibge_veg: bool = False
     ibge_veg_opacity: float = 0.6
+    #: The leg2_id-level (54-class) breakdown for the study point's buffer —
+    #: what the on-map legend's class swatches read from. Distinct from
+    #: state._analysis's veg_compare, which reduces the same asset to the
+    #: 6-bucket natural/anthropic taxonomy for the QC comparison tab; this
+    #: keeps the finer classes a legend actually needs. Populated only when
+    #: the layer is toggled on — see toggle_ibge_veg / _run_ibge_veg_history.
+    ibge_veg_rows: list[dict[str, Any]] = []
+    ibge_veg_busy: bool = False
+    ibge_veg_error: str = ""
 
     # --- Hansen Global Forest Change, ported from the Canada page ---------
     #: One threshold governs both sub-layers (tree cover 2000, loss/gain), so
@@ -966,28 +975,99 @@ class LayersMixin(rx.State, mixin=True):
     async def toggle_ibge_veg(self, checked: bool):
         async with self:
             self.show_ibge_veg = checked
+            has_point = getattr(self, "has_point", False)
+            lat, lon = getattr(self, "study_lat", 0.0), getattr(self, "study_lon", 0.0)
             if not checked or self._ibge_veg_url:
                 self._refresh_layers()
-                return
-            self.layer_busy = True
+            else:
+                self.layer_busy = True
+
+        if checked and not self._ibge_veg_url:
+            loop = asyncio.get_running_loop()
+            try:
+                spec = await loop.run_in_executor(None, layer_service.ibge_vegetation_spec)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("Could not build IBGE vegetation layer: %s", exc)
+                spec = None
+
+            async with self:
+                if spec:
+                    self._ibge_veg_url = spec["url"]
+                self.layer_busy = False
+                self._refresh_layers()
+
+        # The legend's class swatches — only worth fetching once the layer
+        # is actually visible, and only if a point exists to scope them to.
+        # Deliberately a separate, on-demand computation (also called
+        # directly from state._analysis's run_analysis when a new point is
+        # picked while this layer is already on) rather than folded into
+        # run_analysis's always-on products — most sessions never toggle
+        # this layer at all.
+        if checked and has_point:
+            await self._run_ibge_veg_history(lat, lon)
+        elif not checked:
+            async with self:
+                self.ibge_veg_rows = []
+
+    async def _run_ibge_veg_history(self, lat: float, lon: float) -> None:
+        from ..config.settings import BUFFER_MODE_DEFAULT, BUFFER_RADII_KM
+        from ..services.geo import point as make_point
+        from ..services.ibge_vegetation import veg_history
+
+        async with self:
+            self.ibge_veg_busy = True
+            self.ibge_veg_error = ""
+            shape = getattr(self, "buffer_shape", "circle")
 
         loop = asyncio.get_running_loop()
         try:
-            spec = await loop.run_in_executor(None, layer_service.ibge_vegetation_spec)
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("Could not build IBGE vegetation layer: %s", exc)
-            spec = None
+            p = make_point(lat=lat, lon=lon)
+            df, _prov = await loop.run_in_executor(
+                None, veg_history, p, BUFFER_RADII_KM, BUFFER_MODE_DEFAULT, shape)
+        except Exception as exc:                       # noqa: BLE001
+            logger.warning("IBGE vegetation legend failed: %s", exc)
+            async with self:
+                self.ibge_veg_busy = False
+                self.ibge_veg_rows = []
+                self.ibge_veg_error = self.tr["err_ibge_veg_failed"].format(exc=exc)
+            return
 
         async with self:
-            if spec:
-                self._ibge_veg_url = spec["url"]
-            self.layer_busy = False
-            self._refresh_layers()
+            self.ibge_veg_busy = False
+            self.ibge_veg_rows = df.to_dict("records") if not df.empty else []
 
     def set_ibge_veg_opacity(self, value: list[int | float]):
         raw = value[0] if isinstance(value, (list, tuple)) else value
         self.ibge_veg_opacity = round(float(raw) / 100.0, 2)
         self._refresh_layers()
+
+    @rx.var(cache=True, deps=["ibge_veg_rows", "selected_radius", "language"],
+            auto_deps=False)
+    def ibge_veg_summary_rows(self) -> list[dict[str, Any]]:
+        """Top classes at the same radius the main chart shows, for the
+        on-map legend — same shape as AnalysisMixin's own summary_rows
+        (state._analysis), read from the finer leg2_id-level breakdown
+        _run_ibge_veg_history fetches rather than veg_compare's 6 buckets.
+        ``selected_radius`` is read via getattr: it lives on AnalysisMixin,
+        a sibling mixin invisible to a static checker looking only at this
+        class — deps must be explicit here for the same reason as every
+        other cross-mixin read in this app (see e.g. camposcope's
+        ImovelMixin.disclosure)."""
+        radius = getattr(self, "selected_radius", 10.0)
+        lang = getattr(self, "language", "pt")
+        label_key = "label_en" if lang == "en" else "label_pt"
+        rows = [r for r in self.ibge_veg_rows if r.get("radius_km") == radius]
+        total = sum(r["area_ha"] for r in rows) or 1.0
+        out = [
+            {
+                "name": r.get(label_key, r.get("label_pt", "")),
+                "color": f"#{r['color']}",
+                "pct": f"{(r['area_ha'] / total * 100):.1f}%",
+            }
+            for r in rows
+        ]
+        out.sort(key=lambda r: r["pct"], reverse=True)
+        return out[:8]
 
     # ---------------------------------------------------------------------- #
     # Hansen Global Forest Change (ported from the Canada page)

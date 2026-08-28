@@ -317,6 +317,24 @@ class AnalysisMixin(rx.State, mixin=True):
                     self._veg_compare_provenance = veg_compare_prov.to_dict()
                     self.veg_compare_running = False
 
+        # The on-map legend's IBGE Vegetação class swatches (state._layers)
+        # are scoped to the study point, same as everything above — if the
+        # layer is already on, a newly chosen point must refresh them too,
+        # or the legend keeps showing the previous point's classes under a
+        # map that has already moved on. No-ops instantly if the layer is
+        # off. Called directly (``await self...``), not chained via
+        # ``type(self).x(...)``/``self.__class__.x(...)`` — that cross-mixin
+        # EventSpec pattern crashed the whole backend worker here
+        # ("StateProxy has no attribute run_ibge_veg_history", a real
+        # AttributeError inside an already-background handler, not just a
+        # graceful state error) — calling the plain instance method instead
+        # sidesteps the StateProxy lookup entirely.
+        async with self:
+            current = token == self._run_token
+            show_veg = self.show_ibge_veg
+        if current and show_veg:
+            await self._run_ibge_veg_history(lat, lon)
+
     @rx.event(background=True)
     async def run_connectivity(self):
         """Compute the costly fragment-to-fragment connectivity metric for the
@@ -489,6 +507,70 @@ class AnalysisMixin(rx.State, mixin=True):
             }
             for _, r in rows.iterrows()
         ]
+
+    def _class_rows_for_year(self, year: int) -> list[dict[str, str]]:
+        """Same shape as summary_rows, but for a SPECIFIC year rather than
+        whichever is latest — what the on-map legend needs (state._layers'
+        map_legend.py), since the map's MapBiomas overlay can show any year
+        the layer's own selector picks, not just the most recent one.
+        summary_rows stays "latest year" on purpose for its own use (the
+        chart-side snapshot card, which answers "what does this point look
+        like today" independent of whatever the map layer happens to be
+        showing) — the two questions are different, so this is a sibling,
+        not a replacement.
+        """
+        import pandas as pd
+
+        df = pd.DataFrame(self._chart_records())
+        if df.empty or "radius_km" not in df.columns:
+            return []
+        sub = df[(df["radius_km"] == self._chart_radius) & (df["year"] == year)]
+        if sub.empty:
+            return []
+        total = sub["area_ha"].sum()
+        rows = sub.nlargest(6, "area_ha")
+        name_col = "class_pt" if self.language == "pt" else "class_en"
+        return [
+            {
+                "name": str(r[name_col]),
+                "color": str(r["color"]),
+                "pct": f"{(r['area_ha'] / total * 100):.1f}%",
+            }
+            for _, r in rows.iterrows()
+        ]
+
+    @rx.var(cache=True, deps=["_history", "_multi_history", "_multi_bbox_history",
+                              "multi_mode", "multi_view_mode", "selected_radius",
+                              "geometry_active", "mapbiomas_year", "language"],
+            auto_deps=False)
+    def mapbiomas_legend_classes(self) -> list[dict[str, str]]:
+        """The on-map legend's MapBiomas class swatches — the year the layer
+        itself is showing (LayersMixin.mapbiomas_year), not summary_rows'
+        always-latest snapshot. mapbiomas_year lives on a sibling mixin,
+        invisible to a static checker looking only at this class — explicit
+        deps for the same reason as every other cross-mixin read in this
+        app (see e.g. camposcope's ImovelMixin.disclosure)."""
+        return self._class_rows_for_year(getattr(self, "mapbiomas_year", 0))
+
+    @rx.var(cache=True, deps=["_history", "_multi_history", "_multi_bbox_history",
+                              "multi_mode", "multi_view_mode", "selected_radius",
+                              "geometry_active", "compare_year", "language"],
+            auto_deps=False)
+    def compare_year_classes(self) -> list[dict[str, str]]:
+        """The "years" comparison's other side — compare_year (LayersMixin),
+        same reasoning as mapbiomas_legend_classes."""
+        return self._class_rows_for_year(getattr(self, "compare_year", 0))
+
+    @rx.var(cache=True, deps=["_history", "_multi_history", "_multi_bbox_history",
+                              "multi_mode", "multi_view_mode", "selected_radius",
+                              "geometry_active", "language"],
+            auto_deps=False)
+    def mapbiomas_2022_classes(self) -> list[dict[str, str]]:
+        """The "ibge" comparison's MapBiomas side — always 2022
+        (config.ibge_vegetation.IBGE_COMPARE_YEAR), the one year an IBGE
+        2022 snapshot can honestly be checked against, regardless of
+        whichever year the plain MapBiomas layer happens to be on."""
+        return self._class_rows_for_year(2022)
 
     @rx.var(cache=True)
     def provenance_line(self) -> str:

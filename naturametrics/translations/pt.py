@@ -311,8 +311,11 @@ TRANSLATIONS_PT: dict[str, str] = {
     "ibge_veg_forest_label": "Floresta",
     "ibge_veg_natural_label": "Natural",
     "ibge_veg_layer_note": (
-        "Vegetação IBGE, 1:250.000 (2022) — 54 classes oficiais, cores do "
-        "estilo cartográfico do próprio IBGE."
+        "Vegetação IBGE, 1:250.000 (2022) — 54 classes oficiais; cores "
+        "agrupadas por família (floresta em verde, não-floresta em bege, "
+        "antrópico em rosa, água em azul) para facilitar a leitura no mapa. "
+        "Ative a camada com um ponto selecionado para ver as classes "
+        "presentes na legenda, no canto do mapa."
     ),
     "ibge_compare_note": (
         "Arraste a linha branca no mapa. À direita fica o MapBiomas 2022, "

@@ -58,34 +58,41 @@ def _swatch_row(color: str, label) -> rx.Component:
     )
 
 
+def _class_swatch_list(rows: rx.Var) -> rx.Component:
+    """Colour + label + share, one row per class — shared by every section
+    below that shows a real class breakdown instead of just a toggle.
+    Mirrors camposcope's own ``_class_legend_rows``."""
+    return rx.vstack(
+        rx.foreach(
+            rows,
+            lambda r: rx.hstack(
+                rx.box(width="10px", height="10px", border_radius="2px",
+                      background=r["color"], flex_shrink="0"),
+                rx.text(r["name"], size="1", style={"flex": "1"},
+                       no_of_lines=1),
+                rx.text(r["pct"], size="1", color="var(--gray-11)"),
+                spacing="2", align="center", width="100%",
+            ),
+        ),
+        spacing="1", width="100%",
+    )
+
+
 def _mapbiomas_section() -> rx.Component:
     """Real class swatches when a study point/buffer is selected
-    (``summary_rows`` — top 6 classes for the active radius and year);
-    otherwise just the year, since the full-country layer has no single
-    "active" set of classes to list."""
+    (``mapbiomas_legend_classes`` — top 6 classes at the layer's OWN year,
+    ``mapbiomas_year``; deliberately not ``summary_rows``, which is always
+    the latest year regardless of what the map is actually showing —
+    see that var's own docstring); otherwise just the year, since the
+    full-country layer has no single "active" set of classes to list."""
     return rx.cond(
         AppState.show_mapbiomas,
         rx.vstack(
             _row_header(AppState.tr["section_landcover"],
                        AppState.show_mapbiomas, AppState.toggle_mapbiomas),
             rx.cond(
-                AppState.summary_rows,
-                rx.vstack(
-                    rx.foreach(
-                        AppState.summary_rows,
-                        lambda r: rx.hstack(
-                            rx.box(width="10px", height="10px",
-                                  border_radius="2px", background=r["color"],
-                                  flex_shrink="0"),
-                            rx.text(r["name"], size="1", style={"flex": "1"},
-                                   no_of_lines=1),
-                            rx.text(r["pct"], size="1",
-                                   color="var(--gray-11)"),
-                            spacing="2", align="center", width="100%",
-                        ),
-                    ),
-                    spacing="1", width="100%",
-                ),
+                AppState.mapbiomas_legend_classes,
+                _class_swatch_list(AppState.mapbiomas_legend_classes),
                 rx.text(AppState.mapbiomas_year.to_string(), size="1",
                        color="var(--gray-11)"),
             ),
@@ -95,11 +102,23 @@ def _mapbiomas_section() -> rx.Component:
     )
 
 
+def _compare_side(title, rows: rx.Var, fallback) -> rx.Component:
+    return rx.vstack(
+        rx.text(title, size="1", weight="medium"),
+        rx.cond(rows, _class_swatch_list(rows), fallback),
+        spacing="1", width="100%",
+    )
+
+
 def _compare_section() -> rx.Component:
-    """No swatch of its own — the pairing already reuses whichever layer's
-    classes/colours are shown above (MapBiomas years, IBGE Vegetação, SPOT
-    2008). Turning it off here resets the select to "None" directly, the
-    same effect the sidebar's own dropdown gives."""
+    """Real classes for both sides of the "years" and "ibge" pairings — the
+    same treatment camposcope's Validação tab now gets (state._analysis's
+    mapbiomas_legend_classes / compare_year_classes / mapbiomas_2022_classes,
+    plus ibge_veg_summary_rows for the IBGE side). The SPOT pairings stay
+    label-only: SPOT is imagery, nothing to classify, same as SPOT's own
+    treatment on the camposcope Validação tab. Turning it off here resets
+    the select to "None" directly, the same effect the sidebar's own
+    dropdown gives."""
     return rx.cond(
         AppState.compare_mode != "off",
         rx.vstack(
@@ -115,6 +134,39 @@ def _compare_section() -> rx.Component:
             ),
             rx.text(AppState.compare_mode_label, size="1",
                    color="var(--gray-11)"),
+            rx.cond(
+                AppState.compare_mode == "years",
+                rx.vstack(
+                    _compare_side(
+                        AppState.compare_year.to_string(),
+                        AppState.compare_year_classes,
+                        rx.fragment(),
+                    ),
+                    _compare_side(
+                        AppState.mapbiomas_year.to_string(),
+                        AppState.mapbiomas_legend_classes,
+                        rx.fragment(),
+                    ),
+                    spacing="2", width="100%",
+                ),
+                rx.fragment(),
+            ),
+            rx.cond(
+                AppState.compare_mode == "ibge",
+                rx.vstack(
+                    _compare_side(
+                        "IBGE", AppState.ibge_veg_summary_rows,
+                        rx.text(AppState.tr["ibge_compare_note"], size="1",
+                               color="var(--gray-11)"),
+                    ),
+                    _compare_side(
+                        "MapBiomas 2022", AppState.mapbiomas_2022_classes,
+                        rx.fragment(),
+                    ),
+                    spacing="2", width="100%",
+                ),
+                rx.fragment(),
+            ),
             spacing="2", width="100%",
         ),
         rx.fragment(),
@@ -205,10 +257,29 @@ def _biomass_section() -> rx.Component:
 
 
 def _ibge_veg_section() -> rx.Component:
+    """Real class swatches when a study point is selected
+    (``ibge_veg_summary_rows`` — top classes at the chart's own radius,
+    coloured by the grouped web palette config.ibge_vegetation now
+    generates instead of IBGE's own official style, which the palette's
+    docstring explains reads as water-blue/alert-red out of context);
+    otherwise just the toggle, since the full-country layer has no single
+    "active" set of classes to list."""
     return rx.cond(
         AppState.show_ibge_veg,
-        _row_header(AppState.tr["section_ibge_veg"], AppState.show_ibge_veg,
-                   AppState.toggle_ibge_veg),
+        rx.vstack(
+            _row_header(AppState.tr["section_ibge_veg"], AppState.show_ibge_veg,
+                       AppState.toggle_ibge_veg),
+            rx.cond(
+                AppState.ibge_veg_busy,
+                rx.hstack(rx.spinner(size="1"), spacing="2", align="center"),
+                rx.cond(
+                    AppState.ibge_veg_summary_rows,
+                    _class_swatch_list(AppState.ibge_veg_summary_rows),
+                    rx.fragment(),
+                ),
+            ),
+            spacing="2", width="100%",
+        ),
         rx.fragment(),
     )
 

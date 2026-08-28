@@ -85,15 +85,23 @@ def _style(fig: go.Figure, lang: str, normalise: bool) -> go.Figure:
         y_title = "Area (%)" if normalise else "Area (ha)"
     fig.update_layout(
         barmode="stack", bargap=0.06, template="plotly_white",
-        margin=dict(l=56, r=8, t=8, b=36), height=340,
-        legend=dict(orientation="h", yanchor="top", y=-0.16, x=0,
-                    font=dict(size=10), itemsizing="constant"),
+        # See naturametrics/components/charts.py's own `_style()` for the
+        # full rationale on both changes below (ported):
+        # - b=84/height=400: the legend can wrap to several rows on a
+        #   phone-width chart where it only ever needed one on desktop.
+        # - dragmode/fixedrange: stops a one-finger touch on the chart from
+        #   being captured as a zoom gesture instead of scrolling past it.
+        margin=dict(l=56, r=8, t=8, b=84), height=400,
+        legend=dict(orientation="h", yanchor="top", y=-0.14, x=0,
+                    font=dict(size=9), itemsizing="constant", tracegroupgap=2),
         hovermode="x unified",
+        dragmode=False,
         # dtick=2, not 5: the ACI series is 17 years against MapBiomas' 40, so a
         # 5-year tick leaves only four labels across the whole axis.
-        xaxis=dict(title=None, tickmode="linear", dtick=2, showgrid=False),
+        xaxis=dict(title=None, tickmode="linear", dtick=2, showgrid=False,
+                   fixedrange=True),
         yaxis=dict(title=y_title, showgrid=True, gridcolor="rgba(0,0,0,0.06)",
-                   zeroline=False),
+                   zeroline=False, fixedrange=True),
         plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
     )
     if normalise:
@@ -137,11 +145,13 @@ def _style_age(fig: go.Figure, lang: str) -> go.Figure:
     fig.update_layout(
         template="plotly_white", margin=dict(l=48, r=8, t=8, b=44), height=180,
         bargap=0.25, showlegend=False,
+        dragmode=False,
         xaxis=dict(title="Idade (anos)" if lang == "pt" else "Age (years)",
                    showgrid=False, categoryorder="array",
-                   categoryarray=fc_cfg.AGE_BIN_ORDER),
+                   categoryarray=fc_cfg.AGE_BIN_ORDER, fixedrange=True),
         yaxis=dict(title="Área (ha)" if lang == "pt" else "Area (ha)",
-                   showgrid=True, gridcolor="rgba(0,0,0,0.06)", zeroline=False),
+                   showgrid=True, gridcolor="rgba(0,0,0,0.06)", zeroline=False,
+                   fixedrange=True),
         plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
     )
     return fig
@@ -239,11 +249,12 @@ def _style_loss(fig: go.Figure, lang: str) -> go.Figure:
         legend=dict(orientation="h", yanchor="top", y=-0.18, x=0,
                     font=dict(size=9)),
         hovermode="x unified",
+        dragmode=False,
         xaxis=dict(title=None, tickmode="linear", dtick=4, showgrid=False,
-                   tickfont=dict(size=9)),
+                   tickfont=dict(size=9), fixedrange=True),
         yaxis=dict(title="ha", showgrid=True, gridcolor="rgba(0,0,0,0.06)",
                    zeroline=False, title_font=dict(size=10),
-                   tickfont=dict(size=9)),
+                   tickfont=dict(size=9), fixedrange=True),
         plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
     )
     return fig

@@ -102,12 +102,20 @@ def _land_cover_panel() -> rx.Component:
                     S.aci_has_data,
                     rx.flex(
                         rx.box(
+                            # More height below "lg" than desktop's 340px,
+                            # not less — see the main app's own results.py
+                            # for the full rationale: the figure's own
+                            # legend (charts.py's _style()) wraps to more
+                            # rows on the exact widths that used to get
+                            # less room, and config.responsive resizes the
+                            # plot to match this box's rendered height, not
+                            # the figure's own layout.height.
                             rx.plotly(
                                 data=S.history_figure,
                                 config={"displayModeBar": False,
                                         "displaylogo": False, "responsive": True},
                                 width="100%",
-                                height=["300px", "320px", "340px", "340px"],
+                                height=["400px", "400px", "360px", "340px"],
                             ),
                             flex=["1 1 100%", "1 1 100%", "1 1 100%", "1 1 0"],
                             min_width="0", width="100%",

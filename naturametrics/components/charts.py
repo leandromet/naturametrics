@@ -99,11 +99,23 @@ def _style(fig: go.Figure, radius_km: float, lang: str, normalise: bool) -> go.F
         barmode="stack",
         bargap=0.06,
         template="plotly_white",
-        margin=dict(l=56, r=8, t=8, b=36),
-        height=340,
+        # b=84/height=400, not the old b=36/height=340 — ported from
+        # camposcope's own land-cover chart fix: this legend
+        # (orientation="h") wraps to as many rows as it needs to fit its own
+        # *width*, and a property can carry a dozen-plus MapBiomas classes
+        # across the plotted years. On a desktop-width drawer that's one
+        # row; on a ~360-400px phone it can be three or four, and the old
+        # margin/height only ever reserved room for one — the extra rows had
+        # nowhere to go but past the figure's own fixed-height boundary.
+        # Same values at every screen size deliberately: a Python-built
+        # figure has no way to know the client's actual viewport width, so
+        # sizing for the narrowest case is the only number safe everywhere;
+        # desktop just gets a little unused space below a short legend.
+        margin=dict(l=56, r=8, t=8, b=84),
+        height=400,
         legend=dict(
-            orientation="h", yanchor="top", y=-0.16, x=0,
-            font=dict(size=10), itemsizing="constant",
+            orientation="h", yanchor="top", y=-0.14, x=0,
+            font=dict(size=9), itemsizing="constant", tracegroupgap=2,
         ),
         hovermode="x unified",
         # dragmode False + fixedrange on both axes: with the modebar off

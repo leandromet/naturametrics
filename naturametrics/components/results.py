@@ -237,10 +237,19 @@ def _land_use_panel() -> rx.Component:
                 rx.cond(
                     AppState.has_result | AppState.multi_active,
                     rx.flex(
+                        # More height below "lg" than desktop's 340px, not
+                        # less — the old ["300px",...] shrank the container
+                        # on exactly the screens where the figure's own
+                        # legend (charts.py's _style()) wraps to the most
+                        # rows. rx.plotly's config.responsive resizes the
+                        # plot to match *this* box's rendered height, not
+                        # the figure's own layout.height, so this is the
+                        # number that actually controls how much room the
+                        # wrapped legend gets on a phone.
                         _chart_box(
                             AppState.history_figure, "nm-plot-history",
                             "naturametrics_uso_do_solo",
-                            ["300px", "320px", "340px", "340px"],
+                            ["400px", "400px", "360px", "340px"],
                             box_props={
                                 "flex": ["1 1 100%", "1 1 100%", "1 1 100%", "1 1 0"],
                                 "min_width": "0",

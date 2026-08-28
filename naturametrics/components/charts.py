@@ -106,9 +106,18 @@ def _style(fig: go.Figure, radius_km: float, lang: str, normalise: bool) -> go.F
             font=dict(size=10), itemsizing="constant",
         ),
         hovermode="x unified",
-        xaxis=dict(title=None, tickmode="linear", dtick=5, showgrid=False),
+        # dragmode False + fixedrange on both axes: with the modebar off
+        # (_PLOTLY_CONFIG in components/results.py), Plotly's own click-drag
+        # zoom/pan was already undiscoverable on desktop, but on a phone it
+        # still grabbed a one-finger touch-drag for itself — the gesture that
+        # should have scrolled the sheet/page past the chart instead started
+        # a zoom. Disabling it here lets that touch fall through to the
+        # container (same fix applied to every chart in this module).
+        dragmode=False,
+        xaxis=dict(title=None, tickmode="linear", dtick=5, showgrid=False,
+                   fixedrange=True),
         yaxis=dict(title=y_title, ticksuffix="" if normalise else "", showgrid=True,
-                   gridcolor="rgba(0,0,0,0.06)", zeroline=False),
+                   gridcolor="rgba(0,0,0,0.06)", zeroline=False, fixedrange=True),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
     )
@@ -177,10 +186,13 @@ def _style_age_line(fig: go.Figure, lang: str) -> go.Figure:
         margin=dict(l=48, r=8, t=8, b=36),
         height=280,
         hovermode="closest",
-        xaxis=dict(title=None, tickmode="linear", dtick=5, showgrid=False),
+        # See _style()'s dragmode/fixedrange comment above.
+        dragmode=False,
+        xaxis=dict(title=None, tickmode="linear", dtick=5, showgrid=False,
+                   fixedrange=True),
         yaxis=dict(title="Idade (anos)" if lang == "pt" else "Age (years)",
                    showgrid=True, gridcolor="rgba(0,0,0,0.06)", zeroline=True,
-                   rangemode="tozero"),
+                   rangemode="tozero", fixedrange=True),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
     )
@@ -267,8 +279,11 @@ def change_bar_figure(loss_ha: float, gain_ha: float, lang: str = "pt") -> go.Fi
         margin=dict(l=4, r=4, t=20, b=4),
         height=150,
         showlegend=False,
-        xaxis=dict(title=None, showgrid=False, tickfont=dict(size=10)),
-        yaxis=dict(visible=False, range=[0, max(values, default=1) * 1.35]),
+        dragmode=False,
+        xaxis=dict(title=None, showgrid=False, tickfont=dict(size=10),
+                   fixedrange=True),
+        yaxis=dict(visible=False, range=[0, max(values, default=1) * 1.35],
+                   fixedrange=True),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         bargap=0.45,
@@ -282,10 +297,13 @@ def _style_age_hist(fig: go.Figure, lang: str) -> go.Figure:
         margin=dict(l=56, r=8, t=8, b=56),
         height=280,
         bargap=0.25,
+        dragmode=False,
         xaxis=dict(title=None, showgrid=False, tickangle=-20,
-                   categoryorder="array", categoryarray=_AGE_BIN_ORDER),
+                   categoryorder="array", categoryarray=_AGE_BIN_ORDER,
+                   fixedrange=True),
         yaxis=dict(title="Área (ha)" if lang == "pt" else "Area (ha)",
-                   showgrid=True, gridcolor="rgba(0,0,0,0.06)", zeroline=False),
+                   showgrid=True, gridcolor="rgba(0,0,0,0.06)", zeroline=False,
+                   fixedrange=True),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
         showlegend=False,
@@ -353,13 +371,14 @@ def _style_biomass(fig: go.Figure, lang: str, years: list[int]) -> go.Figure:
         margin=dict(l=48, r=8, t=8, b=36),
         height=280,
         hovermode="closest",
+        dragmode=False,
         xaxis=dict(title=None, showgrid=False,
-                   tickmode="array", tickvals=years),
+                   tickmode="array", tickvals=years, fixedrange=True),
         yaxis=dict(
             title="Biomassa acima do solo (Mg/ha)" if lang == "pt"
             else "Above-ground biomass (Mg/ha)",
             showgrid=True, gridcolor="rgba(0,0,0,0.06)", zeroline=True,
-            rangemode="tozero",
+            rangemode="tozero", fixedrange=True,
         ),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
@@ -388,7 +407,8 @@ def ibge_comparison_figure(matrix: dict[str, Any], lang: str = "pt") -> go.Figur
             text="Sem dados" if lang == "pt" else "No data",
             showarrow=False, font=dict(size=13, color="#888"),
         )
-        fig.update_layout(height=280, plot_bgcolor="rgba(0,0,0,0)",
+        fig.update_layout(height=280, dragmode=False,
+                          plot_bgcolor="rgba(0,0,0,0)",
                           paper_bgcolor="rgba(0,0,0,0)")
         return fig
 
@@ -412,8 +432,11 @@ def ibge_comparison_figure(matrix: dict[str, Any], lang: str = "pt") -> go.Figur
         template="plotly_white",
         margin=dict(l=8, r=8, t=8, b=8),
         height=380,
-        xaxis=dict(title="MapBiomas", side="bottom", automargin=True),
-        yaxis=dict(title="IBGE", automargin=True, autorange="reversed"),
+        dragmode=False,
+        xaxis=dict(title="MapBiomas", side="bottom", automargin=True,
+                   fixedrange=True),
+        yaxis=dict(title="IBGE", automargin=True, autorange="reversed",
+                   fixedrange=True),
         plot_bgcolor="rgba(0,0,0,0)",
         paper_bgcolor="rgba(0,0,0,0)",
     )

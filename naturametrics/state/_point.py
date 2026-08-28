@@ -102,7 +102,12 @@ class PointMixin(rx.State, mixin=True):
         # Show the land cover inside the largest buffer straight away — it needs
         # no Earth Engine call, so it lands well before the analysis does.
         self._set_preview(p.lat, p.lon)
-        return type(self).run_analysis(p.lat, p.lon)
+        # Nudges the mobile sheet open toward "half" — never smaller — the
+        # same map-app convention camposcope's equivalent selection paths
+        # use. See pages/index.py::_SHEET_SCRIPT's window.__nmSheetSnapTo.
+        return [type(self).run_analysis(p.lat, p.lon),
+               rx.call_script(
+                   "window.__nmSheetSnapTo && window.__nmSheetSnapTo('half')")]
 
     def clear_study_point(self):
         self.has_point = False

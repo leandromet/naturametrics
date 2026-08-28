@@ -25,8 +25,6 @@ ACCENT = "jade"  # distinct from Yvynation's palette — see doc/07-ui-ux.md §8
 
 HEADER_H = "56px"
 
-#: Shown only below the desktop breakpoint.
-_MOBILE_ONLY = ["flex", "flex", "flex", "none"]
 #: Shown only at the desktop breakpoint and above.
 _DESKTOP_ONLY = ["none", "none", "none", "flex"]
 
@@ -62,16 +60,18 @@ def canada_link() -> rx.Component:
 
 
 def header() -> rx.Component:
+    # Below desktop, the sidebar is folded into the mobile bottom sheet
+    # (pages/index.py::_mobile_sheet()) — always mounted, opened by dragging
+    # its own handle, not by a boolean open/close toggle the way the old
+    # overlay drawer worked. A header button pointing at it turned out to be
+    # the wrong fix for "nobody notices how to open this": a small grey
+    # ghost-icon button competing with five other header controls was easy
+    # to miss too. The sheet's handle is now a solid, accent-coloured tab
+    # (pages/index.py::_drag_handle()) — visible at every scroll position,
+    # not one more thing to find in the header — so the button was removed
+    # rather than also made louder; two competing "open" affordances would
+    # be its own kind of confusing.
     return rx.hstack(
-        rx.button(
-            rx.icon("panel-left", size=18),
-            on_click=AppState.toggle_sidebar,
-            size="1",
-            variant="ghost",
-            color_scheme="gray",
-            display=_MOBILE_ONLY,
-            aria_label=AppState.tr["nav_toggle_layers_aria"],
-        ),
         rx.hstack(
             rx.icon("layers", size=20, color=f"var(--{ACCENT}-11)"),
             rx.heading("Naturametrics", size=rx.breakpoints(initial="3", md="4"),
@@ -104,91 +104,42 @@ def header() -> rx.Component:
     )
 
 
-def _mobile_sidebar(sidebar: rx.Component) -> rx.Component:
-    """Overlay drawer for phone and tablet widths."""
-    return rx.fragment(
-        rx.cond(
-            AppState.sidebar_open,
-            rx.box(
-                on_click=AppState.toggle_sidebar,
-                position="fixed",
-                top=HEADER_H,
-                left="0",
-                width="100vw",
-                height=f"calc(100dvh - {HEADER_H})",
-                background="rgba(0,0,0,0.45)",
-                z_index="900",
-                display=_MOBILE_ONLY,
-            ),
-            rx.fragment(),
+#: Below desktop, the sidebar no longer has an overlay-drawer form of its
+#: own — its content (``layer_panel()``) is folded into the mobile bottom
+#: sheet built in ``pages/index.py::_mobile_sheet()``, alongside
+#: ``results_drawer()``. ``workspace()`` below only ever mounts one Leaflet
+#: map (the sheet is a viewport-``position: fixed`` overlay, not a second
+#: map instance) — see ``pages/index.py::workspace_main()`` for how the map
+#: and the results content it used to sit above/below now share one flex
+#: column across every breakpoint.
+def workspace(sidebar: rx.Component, main: rx.Component) -> rx.Component:
+    return rx.hstack(
+        # Static sidebar, desktop only.
+        rx.box(
+            sidebar,
+            width="320px",
+            min_width="320px",
+            height="100%",
+            border_right="1px solid var(--gray-5)",
+            background="var(--color-panel-solid)",
+            overflow_y="auto",
+            display=_DESKTOP_ONLY,
         ),
         rx.box(
-            rx.vstack(
-                rx.hstack(
-                    rx.text(AppState.tr["drawer_title"], size="2", weight="bold"),
-                    rx.spacer(),
-                    rx.button(
-                        rx.icon("x", size=16),
-                        on_click=AppState.toggle_sidebar,
-                        size="1", variant="ghost", color_scheme="gray",
-                        aria_label=AppState.tr["drawer_close_aria"],
-                    ),
-                    width="100%", align="center",
-                    padding="0.6rem 0.75rem 0",
-                ),
-                sidebar,
-                spacing="0", align_items="stretch", width="100%",
-            ),
-            position="fixed",
-            top=HEADER_H,
-            left="0",
-            width=["86vw", "78vw", "360px", "360px"],
-            max_width="380px",
-            height=f"calc(100dvh - {HEADER_H})",
-            background="var(--color-panel-solid)",
-            border_right="1px solid var(--gray-5)",
-            box_shadow="4px 0 24px rgba(0,0,0,.18)",
-            overflow_y="auto",
-            z_index="901",
-            # Slide rather than pop: transform keeps it off the paint path when
-            # closed, and avoids the layout shift a display toggle would cause.
-            transform=rx.cond(AppState.sidebar_open, "translateX(0)", "translateX(-105%)"),
-            transition="transform .22s ease",
-            display=_MOBILE_ONLY,
-        ),
-    )
-
-
-def workspace(sidebar: rx.Component, main: rx.Component) -> rx.Component:
-    return rx.fragment(
-        _mobile_sidebar(sidebar),
-        rx.hstack(
-            # Static sidebar, desktop only.
-            rx.box(
-                sidebar,
-                width="320px",
-                min_width="320px",
-                height="100%",
-                border_right="1px solid var(--gray-5)",
-                background="var(--color-panel-solid)",
-                overflow_y="auto",
-                display=_DESKTOP_ONLY,
-            ),
-            rx.box(
-                main,
-                flex="1",
-                height=["auto", "auto", "auto", "100%"],
-                min_width="0",
-                position="relative",
-            ),
-            width="100%",
+            main,
             flex="1",
-            spacing="0",
-            align_items="stretch",
-            # Below desktop the whole column scrolls; at desktop nothing does.
-            overflow_y=["auto", "auto", "auto", "hidden"],
-            overflow_x="hidden",
+            height="100%",
+            min_width="0",
+            position="relative",
         ),
+        width="100%",
+        flex="1",
+        spacing="0",
+        align_items="stretch",
+        # Nothing scrolls at the page level at any breakpoint any more: the
+        # mobile sheet owns its own internal scroll, and desktop never
+        # needed the column to scroll in the first place.
+        overflow="hidden",
     )
 
 

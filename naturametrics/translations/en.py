@@ -8,6 +8,7 @@ TRANSLATIONS_EN: dict[str, str] = {
     "nav_subtitle": "Land-use history and landscape analysis",
     "drawer_title": "Layers and analysis",
     "drawer_close_aria": "Close panel",
+    "sheet_handle_aria": "Resize panel — drag or use the arrow keys",
 
     # --- layer panel: sections -------------------------------------------- #
     "section_basemap": "Base map",

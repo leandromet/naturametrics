@@ -8,6 +8,7 @@ TRANSLATIONS_PT: dict[str, str] = {
     "nav_subtitle": "História de uso da terra e análise da paisagem",
     "drawer_title": "Camadas e análise",
     "drawer_close_aria": "Fechar painel",
+    "sheet_handle_aria": "Redimensionar painel — arraste ou use as setas",
 
     # --- layer panel: sections -------------------------------------------- #
     "section_basemap": "Mapa base",

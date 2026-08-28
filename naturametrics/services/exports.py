@@ -38,6 +38,8 @@ from ..config.settings import (
     BUFFER_MODE_DEFAULT, BUFFER_RADII_KM, EXPORT_AGE_ROWS_PER_POINT_PER_RADIUS,
     EXPORT_BIOMASS_ROWS_PER_POINT_PER_RADIUS, EXPORT_BYTES_PER_ROW,
     EXPORT_CHANGE_ROWS_PER_POINT_PER_RADIUS,
+    EXPORT_CONNECTIVITY_ROWS_PER_POINT_PER_RADIUS,
+    EXPORT_CONNECTIVITY_SECONDS_PER_POINT,
     EXPORT_LANDSCAPE_METRICS_ROWS_PER_POINT_PER_RADIUS, EXPORT_MAX_BUFFER_POINTS,
     EXPORT_ODS_ROWS_PER_SHEET, EXPORT_POINT_TIMEOUT_S, EXPORT_ROWS_PER_POINT,
     EXPORT_SECONDS_PER_POINT, EXPORT_WARN_FILE_MB,
@@ -46,6 +48,7 @@ from . import ifn, ods
 from .biomass import BIOMASS_COLUMNS, biomass_history, full_area_biomass_history
 from .buffers import BufferShape
 from .change_mask import FOREST_CODE_BASELINE_YEAR, change_stats
+from .connectivity import CONNECTIVITY_COLUMNS, fragment_connectivity
 from .geo import Point, point
 from .landscape_metrics import (
     METRIC_COLUMNS, full_area_landscape_metrics, landscape_metrics,
@@ -212,6 +215,8 @@ def study_point_workbook(
     change_prov: Provenance | None = None,
     landscape_metrics: pd.DataFrame | None = None,
     landscape_metrics_prov: Provenance | None = None,
+    connectivity: pd.DataFrame | None = None,
+    connectivity_prov: Provenance | None = None,
     biomass: pd.DataFrame | None = None,
     biomass_prov: Provenance | None = None,
     buffer_shape: BufferShape = "circle",
@@ -234,6 +239,7 @@ def study_point_workbook(
     change = change or {}
     landscape_metrics = (landscape_metrics if landscape_metrics is not None
                          else pd.DataFrame())
+    connectivity = connectivity if connectivity is not None else pd.DataFrame()
     biomass = biomass if biomass is not None else pd.DataFrame()
 
     context: list[list[Any]] = [
@@ -271,6 +277,13 @@ def study_point_workbook(
             "Ainda não calculada quando este arquivo foi gerado — tente "
             "baixar novamente após a aba «Métricas de paisagem» carregar.",
         ])
+    if connectivity.empty:
+        context.append([
+            "AVISO — aba conectividade",
+            "A distância ao vizinho mais próximo (ENN) não é calculada "
+            "automaticamente — clique em «Calcular conectividade» na aba "
+            "«Métricas de paisagem» e baixe novamente para incluí-la.",
+        ])
     if biomass.empty:
         context.append([
             "AVISO — aba biomassa",
@@ -287,6 +300,8 @@ def study_point_workbook(
         provenances.append(change_prov)
     if landscape_metrics_prov is not None:
         provenances.append(landscape_metrics_prov)
+    if connectivity_prov is not None:
+        provenances.append(connectivity_prov)
     if biomass_prov is not None:
         provenances.append(biomass_prov)
 
@@ -332,6 +347,8 @@ def study_point_workbook(
 
     sheets.append(ods.sheet_from_dataframe(
         "metricas_paisagem", landscape_metrics, METRIC_COLUMNS))
+    sheets.append(ods.sheet_from_dataframe(
+        "conectividade", connectivity, CONNECTIVITY_COLUMNS))
     sheets.append(ods.sheet_from_dataframe("biomassa", biomass, BIOMASS_COLUMNS))
 
     sheets.append(_classes_sheet())
@@ -376,6 +393,12 @@ class SelectionSpec:
     include_points: bool = True
     include_pixel: bool = True
     include_buffers: bool = False
+    #: The nearest-neighbour fragment distance (services.connectivity) — kept
+    #: as its own flag rather than folded into include_buffers because it is a
+    #: second, pricier Earth Engine call plus a local geometry search per
+    #: point (see selection_connectivity_frame), not part of the land-cover/
+    #: age/change fan-out the "buffers" checkbox already covers.
+    include_connectivity: bool = False
     #: Bounding box enclosing every selected point's buffer, analysed as one
     #: region instead of summed per point. Only meaningful for a manual
     #: selection (see ``is_manual``) — a filter selection can span thousands
@@ -843,6 +866,92 @@ def selection_landscape_metrics_frame(
     return out, prov, failed
 
 
+def selection_connectivity_frame(
+    spec: SelectionSpec,
+    points: Sequence[dict[str, Any]],
+    progress: Callable[[int, int], None] | None = None,
+) -> tuple[pd.DataFrame, Provenance, list[str]]:
+    """Fragment nearest-neighbour distance for every selected conglomerado —
+    same fan-out shape as :func:`selection_landscape_metrics_frame`, over
+    services.connectivity.fragment_connectivity instead of landscape_metrics.
+
+    This is the pricier of the two "how connected is this landscape" tables:
+    fragment_connectivity's own docstring explains why (a second Earth Engine
+    call to vectorise fragments, then a local shapely STRtree search) — which
+    is also why it is its own opt-in checkbox (SelectionSpec.include_connectivity)
+    rather than folded into include_buffers.
+    """
+    from .ee_concurrency import get_ee_executor
+
+    executor = get_ee_executor()
+    prov = Provenance(
+        name="selection_connectivity",
+        dataset_id=mb.MAPBIOMAS_COLLECTIONS[mb.MAPBIOMAS_DEFAULT_COLLECTION],
+        reducer="reduceToVectors + local nearest-neighbour (shapely STRtree)",
+        pixel_area_basis="n/a — vector polygons, planar AEQD metres",
+        extra={"filters": spec.filter_label(), "buffer_mode": BUFFER_MODE_DEFAULT,
+               "buffer_shape": spec.buffer_shape, "n_requested": len(points)},
+    )
+
+    started = time.time()
+    radii = tuple(sorted(spec.radii)) or tuple(sorted(BUFFER_RADII_KM))
+    prov.extra["radii_km"] = list(radii)
+    futures = {
+        executor.submit(fragment_connectivity, point(lat=row["lat"], lon=row["lon"]),
+                        radii, BUFFER_MODE_DEFAULT, spec.buffer_shape): row
+        for row in points
+    }
+
+    frames: list[pd.DataFrame] = []
+    failed: list[str] = []
+    degraded = 0
+    done = 0
+
+    for future in futures:
+        row = futures[future]
+        try:
+            df, point_prov = future.result(timeout=EXPORT_POINT_TIMEOUT_S)
+            if point_prov.degraded:
+                degraded += 1
+            if not df.empty:
+                df = df.copy()
+                df.insert(0, "conglomerado", row["conglomerado"])
+                df.insert(1, "uf", row["uf"])
+                df.insert(2, "municipio", row["municipio"])
+                df.insert(3, "bioma", row["bioma"])
+                frames.append(df)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Connectivity export failed for %s: %s",
+                           row["conglomerado"], exc)
+            failed.append(str(row["conglomerado"]))
+        finally:
+            done += 1
+            if progress:
+                progress(done, len(futures))
+
+    if frames:
+        out = pd.concat(frames, ignore_index=True)
+        out = out.sort_values(["conglomerado", "radius_km"]).reset_index(drop=True)
+    else:
+        out = pd.DataFrame(columns=["conglomerado", "uf", "municipio", "bioma",
+                                    *CONNECTIVITY_COLUMNS])
+
+    if degraded:
+        prov.degrade(
+            f"{degraded} de {len(points)} conglomerados tinham buffers com "
+            f"mais fragmentos de floresta do que o limite por busca; a "
+            f"distância ao vizinho mais próximo considerou só os primeiros "
+            f"retornados pelo Earth Engine, não a totalidade.")
+    prov.extra["n_ok"] = len(points) - len(failed)
+    prov.extra["n_failed"] = len(failed)
+    prov.extra["n_rows"] = len(out)
+    prov.extra["elapsed_s"] = round(time.time() - started, 1)
+    logger.info("Selection connectivity frame: %s rows from %s points in %.1f s "
+                "(%s failed)", len(out), len(points), time.time() - started,
+                len(failed))
+    return out, prov, failed
+
+
 def selection_biomass_frame(
     spec: SelectionSpec,
     points: Sequence[dict[str, Any]],
@@ -1036,6 +1145,7 @@ def selection_workbook(
     age: tuple[pd.DataFrame, Provenance, list[str]] | None = None,
     change: tuple[pd.DataFrame, Provenance, list[str]] | None = None,
     landscape_metrics: tuple[pd.DataFrame, Provenance, list[str]] | None = None,
+    connectivity: tuple[pd.DataFrame, Provenance, list[str]] | None = None,
     biomass: tuple[pd.DataFrame, Provenance, list[str]] | None = None,
     full_area: tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame,
                      Provenance, Provenance, Provenance, Provenance] | None = None,
@@ -1126,6 +1236,18 @@ def selection_workbook(
             context.append(["conglomerados que falharam (métricas de paisagem)",
                             ", ".join(lm_failed)])
 
+    if connectivity is not None:
+        conn_df, conn_prov, conn_failed = connectivity
+        provenances.append(conn_prov)
+        sheets.append(ods.sheet_from_dataframe(
+            "conectividade", conn_df, ["conglomerado", "uf", "municipio",
+                                       "bioma", *CONNECTIVITY_COLUMNS]))
+        context.append(["conglomerados com conectividade",
+                        conn_prov.extra.get("n_ok", 0)])
+        if conn_failed:
+            context.append(["conglomerados que falharam (conectividade)",
+                            ", ".join(conn_failed)])
+
     if biomass is not None:
         bio_df, bio_prov, bio_failed = biomass
         provenances.append(bio_prov)
@@ -1186,33 +1308,42 @@ def selection_workbook(
 # How much a buffer export costs, before running it
 # --------------------------------------------------------------------------- #
 
-def rows_per_point(radii: Sequence[float]) -> int:
-    """Budgeted rows one conglomerado contributes for these radii, across all
-    five buffer tables — land-cover history, vegetation age, the change mask,
-    landscape metrics and biomass — since a buffer export now always includes
-    all five (state/_export.py download_selection fans out all five together
-    whenever ``exp_buffers`` is on)."""
+def rows_per_point(radii: Sequence[float], include_connectivity: bool = False) -> int:
+    """Budgeted rows one conglomerado contributes for these radii, across the
+    five buffer tables a buffer export always includes — land-cover history,
+    vegetation age, the change mask, landscape metrics and biomass (state/
+    _export.py download_selection fans out all five together whenever
+    ``exp_buffers`` is on) — plus connectivity when that separate, opt-in
+    checkbox (``include_connectivity``) is also on."""
     land_cover = sum(EXPORT_ROWS_PER_POINT.get(float(r), 500) for r in radii)
     age = len(radii) * EXPORT_AGE_ROWS_PER_POINT_PER_RADIUS
     change = len(radii) * EXPORT_CHANGE_ROWS_PER_POINT_PER_RADIUS
     landscape_metrics = len(radii) * EXPORT_LANDSCAPE_METRICS_ROWS_PER_POINT_PER_RADIUS
     biomass = len(radii) * EXPORT_BIOMASS_ROWS_PER_POINT_PER_RADIUS
-    return (land_cover + age + change + landscape_metrics + biomass) or 1
+    connectivity = (len(radii) * EXPORT_CONNECTIVITY_ROWS_PER_POINT_PER_RADIUS
+                    if include_connectivity else 0)
+    return (land_cover + age + change + landscape_metrics + biomass
+            + connectivity) or 1
 
 
-def estimated_seconds(n: int) -> int:
-    return max(3, int(n * EXPORT_SECONDS_PER_POINT))
+def estimated_seconds(n: int, include_connectivity: bool = False) -> int:
+    per_point = EXPORT_SECONDS_PER_POINT + (
+        EXPORT_CONNECTIVITY_SECONDS_PER_POINT if include_connectivity else 0)
+    return max(3, int(n * per_point))
 
 
-def estimated_file_mb(n: int, radii: Sequence[float]) -> float:
-    return n * rows_per_point(radii) * EXPORT_BYTES_PER_ROW / 1_000_000
+def estimated_file_mb(n: int, radii: Sequence[float],
+                      include_connectivity: bool = False) -> float:
+    return (n * rows_per_point(radii, include_connectivity)
+            * EXPORT_BYTES_PER_ROW / 1_000_000)
 
 
 def _thousands(n: int) -> str:
     return f"{n:,}".replace(",", ".")
 
 
-def buffer_estimate(n: int, radii: Sequence[float]) -> dict[str, Any]:
+def buffer_estimate(n: int, radii: Sequence[float],
+                    include_connectivity: bool = False) -> dict[str, Any]:
     """What a buffer export of this size will cost — never whether it is allowed.
 
     Nothing here refuses anything. The only hard limit in the format is rows per
@@ -1227,14 +1358,14 @@ def buffer_estimate(n: int, radii: Sequence[float]) -> dict[str, Any]:
     largest biome rather than from a guess about file sizes.
     """
     radii = [float(r) for r in radii] or list(BUFFER_RADII_KM)
-    rows = n * rows_per_point(radii)
-    megabytes = estimated_file_mb(n, radii)
+    rows = n * rows_per_point(radii, include_connectivity)
+    megabytes = estimated_file_mb(n, radii, include_connectivity)
     widest = max(EXPORT_ROWS_PER_POINT.get(r, 500) for r in radii)
     return {
         "points": n,
         "rows": rows,
         "megabytes": megabytes,
-        "seconds": estimated_seconds(n),
+        "seconds": estimated_seconds(n, include_connectivity),
         # One land-cover tab per radius (plus however many extra parts a radius
         # needs), one age tab per radius (never splits in practice — see
         # _age_sheets), one combined change-mask tab, and one combined tab
@@ -1242,16 +1373,17 @@ def buffer_estimate(n: int, radii: Sequence[float]) -> dict[str, Any]:
         # practice — see rows_per_point's per-radius budgets for both).
         "tabs": sum(max(1, -(-(n * EXPORT_ROWS_PER_POINT.get(r, 500))
                              // EXPORT_ODS_ROWS_PER_SHEET)) for r in radii)
-                + len(radii) + 3,
+                + len(radii) + 3 + (1 if include_connectivity else 0),
         "split": n * widest > EXPORT_ODS_ROWS_PER_SHEET,
         "heavy": megabytes > EXPORT_WARN_FILE_MB,
         "over_limit": n > EXPORT_MAX_BUFFER_POINTS,
     }
 
 
-def buffer_estimate_message(n: int, radii: Sequence[float]) -> str:
+def buffer_estimate_message(n: int, radii: Sequence[float],
+                            include_connectivity: bool = False) -> str:
     """The cost, in the user's terms. Advisory: nothing here blocks the export."""
-    est = buffer_estimate(n, radii)
+    est = buffer_estimate(n, radii, include_connectivity)
     seconds = est["seconds"]
     when = (f"{seconds // 60} min {seconds % 60} s" if seconds >= 60
             else f"{seconds} s")
@@ -1261,19 +1393,22 @@ def buffer_estimate_message(n: int, radii: Sequence[float]) -> str:
             else f"~{est['megabytes'] * 1000:.0f} KB")
     tabs = "1 aba" if est["tabs"] == 1 else f"{est['tabs']} abas"
 
+    over_limit_products = ("uso da terra, idade da vegetação, mudança e "
+                           "conectividade" if include_connectivity
+                           else "uso da terra, idade da vegetação e mudança")
     if est["over_limit"]:
         return (
             f"A seleção tem {_thousands(n)} conglomerados; o limite para dados "
-            f"de buffer (uso da terra, idade da vegetação e mudança) é "
+            f"de buffer ({over_limit_products}) é "
             f"{_thousands(EXPORT_MAX_BUFFER_POINTS)} — o suficiente para "
             f"qualquer bioma inteiro (o maior, a Amazônia, tem 5.801). Reduza a "
             f"seleção com os filtros. A lista de pontos e a classe do pixel não "
             f"têm limite: saem para os 17.479 conglomerados."
         )
 
-    text = (f"≈ {when} para {_thousands(n)} conglomerados (uso da terra, idade "
-            f"da vegetação e mudança) · ~{_thousands(est['rows'])} linhas · "
-            f"{size} · {tabs} ({chosen}).")
+    products = over_limit_products
+    text = (f"≈ {when} para {_thousands(n)} conglomerados ({products}) · "
+            f"~{_thousands(est['rows'])} linhas · {size} · {tabs} ({chosen}).")
     if est["split"]:
         text += (" Um raio passa do máximo de linhas por aba e será dividido em "
                  "«…_2», «…_3» — as partes são contínuas.")

@@ -224,6 +224,11 @@ EXPORT_CHANGE_ROWS_PER_POINT_PER_RADIUS = 1
 #: no year axis, so this is exact, not a budget.
 EXPORT_LANDSCAPE_METRICS_ROWS_PER_POINT_PER_RADIUS = 1
 
+#: One summary row per radius (services.connectivity.fragment_connectivity) —
+#: same shape as the landscape-metrics tab it sits beside in the UI, exact
+#: rather than a budget.
+EXPORT_CONNECTIVITY_ROWS_PER_POINT_PER_RADIUS = 1
+
 #: One row per (radius, year); not imported from services.biomass.AGB_YEARS
 #: to avoid a config→services import cycle (that module already imports this
 #: one) — keep in sync with its length by hand if the year list ever changes.
@@ -306,6 +311,15 @@ EXPORT_WARN_FILE_MB = _int("NM_EXPORT_WARN_FILE_MB", 25)
 #: 200-point pooled measurement came to 0.171 s/point. 0.18 is quoted for a
 #: little headroom, not because it was observed.
 EXPORT_SECONDS_PER_POINT = _float("NM_EXPORT_SECONDS_PER_POINT", 0.18)
+
+#: Connectivity is priced separately from EXPORT_SECONDS_PER_POINT above: it
+#: is a *second* Earth Engine call (reduceToVectors) plus a local shapely
+#: STRtree search per buffer (services/connectivity.py) — not part of the
+#: land-cover/age/change fan-out that constant was measured from. Not yet
+#: pooled at bulk-export scale; set with headroom over single-point traces
+#: until a real measurement replaces it.
+EXPORT_CONNECTIVITY_SECONDS_PER_POINT = _float(
+    "NM_EXPORT_CONNECTIVITY_SECONDS_PER_POINT", 0.5)
 
 #: Per-point timeout inside the fan-out. One slow conglomerado must not hold the
 #: whole export.

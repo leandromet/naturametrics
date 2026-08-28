@@ -60,6 +60,11 @@ class ExportMixin(rx.State, mixin=True):
     exp_points: bool = True
     exp_pixel: bool = True
     exp_buffers: bool = False
+    #: The nearest-neighbour fragment distance (services.connectivity) — its
+    #: own checkbox, not folded into exp_buffers: a second, pricier Earth
+    #: Engine call plus a local geometry search per point, same reasoning as
+    #: services.exports.SelectionSpec.include_connectivity.
+    exp_connectivity: bool = False
     #: "" means every radius; otherwise the one radius asked for, as a string
     #: so it can drive a select directly.
     exp_radius: str = ""
@@ -115,6 +120,10 @@ class ExportMixin(rx.State, mixin=True):
         self.exp_buffers = checked
         self.export_confirm_pending = False
 
+    def toggle_exp_connectivity(self, checked: bool):
+        self.exp_connectivity = checked
+        self.export_confirm_pending = False
+
     def toggle_exp_full_area(self, checked: bool):
         self.exp_full_area = checked
         self.export_confirm_pending = False
@@ -153,6 +162,7 @@ class ExportMixin(rx.State, mixin=True):
                 buffer_shape=self.buffer_shape,
                 include_points=self.exp_points, include_pixel=self.exp_pixel,
                 include_buffers=self.exp_buffers,
+                include_connectivity=self.exp_connectivity,
             )
         manual = self.export_source == "manual"
         return exports.SelectionSpec(
@@ -163,6 +173,7 @@ class ExportMixin(rx.State, mixin=True):
             buffer_shape=self.buffer_shape,
             include_points=self.exp_points, include_pixel=self.exp_pixel,
             include_buffers=self.exp_buffers,
+            include_connectivity=self.exp_connectivity,
             include_full_area=self.exp_full_area if manual else False,
         )
 
@@ -224,23 +235,26 @@ class ExportMixin(rx.State, mixin=True):
 
     @rx.var
     def export_buffer_note(self) -> str:
-        """What the buffer export will cost. Advisory — nothing is refused."""
+        """What the buffer (+ connectivity, if checked) export will cost.
+        Advisory — nothing is refused."""
         n = self.export_selection_count
         if n == 0:
             return self.tr["export_no_selection"]
-        return exports.buffer_estimate_message(n, self._radii())
+        return exports.buffer_estimate_message(n, self._radii(), self.exp_connectivity)
 
     @rx.var
     def export_buffer_heavy(self) -> bool:
         """Big enough that the *download* is the risk, not the computation."""
         n = self.export_selection_count
-        return bool(n) and exports.buffer_estimate(n, self._radii())["heavy"]
+        return bool(n) and exports.buffer_estimate(
+            n, self._radii(), self.exp_connectivity)["heavy"]
 
     @rx.var
     def export_buffer_over_limit(self) -> bool:
         """The one refusal: past the largest-biome ceiling."""
         n = self.export_selection_count
-        return bool(n) and exports.buffer_estimate(n, self._radii())["over_limit"]
+        return bool(n) and exports.buffer_estimate(
+            n, self._radii(), self.exp_connectivity)["over_limit"]
 
     @rx.var
     def export_progress_label(self) -> str:
@@ -253,21 +267,21 @@ class ExportMixin(rx.State, mixin=True):
     @rx.var
     def export_nothing_selected(self) -> bool:
         return not (self.exp_points or self.exp_pixel or self.exp_buffers
-                    or self.exp_full_area)
+                    or self.exp_connectivity or self.exp_full_area)
 
     @rx.var
     def export_needs_confirmation(self) -> bool:
-        """Whether the friction step applies: only the expensive fan-out
-        (buffers → land-cover + vegetation age + change mask) and the
-        full-area computation cost real Earth Engine compute per click, so
-        points-only/pixel-only exports stay a single click."""
-        return ((self.exp_buffers or self.exp_full_area)
+        """Whether the friction step applies: only the expensive fan-outs
+        (buffers → land-cover + vegetation age + change mask, connectivity,
+        and the full-area computation) cost real Earth Engine compute per
+        click, so points-only/pixel-only exports stay a single click."""
+        return ((self.exp_buffers or self.exp_connectivity or self.exp_full_area)
                 and self.export_selection_count > 0)
 
     @rx.var
     def export_confirm_message(self) -> str:
-        return exports.buffer_estimate_message(self.export_selection_count,
-                                               self._radii())
+        return exports.buffer_estimate_message(
+            self.export_selection_count, self._radii(), self.exp_connectivity)
 
     # ---------------------------------------------------------------------- #
     # Study point
@@ -297,7 +311,7 @@ class ExportMixin(rx.State, mixin=True):
         while waited < 20.0:
             async with self:
                 running = (self.age_running or self.landscape_metrics_running
-                          or self.biomass_running)
+                          or self.connectivity_running or self.biomass_running)
             if not running:
                 break
             async with self:
@@ -317,6 +331,8 @@ class ExportMixin(rx.State, mixin=True):
             change_prov = plain(self._change_provenance)
             landscape_metrics = plain(self._landscape_metrics)
             landscape_metrics_prov = plain(self._landscape_metrics_provenance)
+            connectivity = plain(self._connectivity)
+            connectivity_prov = plain(self._connectivity_provenance)
             biomass = plain(self._biomass)
             biomass_prov = plain(self._biomass_provenance)
             lat, lon = self.study_lat, self.study_lon
@@ -334,7 +350,8 @@ class ExportMixin(rx.State, mixin=True):
                 None, _build_study_point, lat, lon, history, prov, pixel,
                 pixel_prov, identity, age_point, age_point_prov, age_buffers,
                 age_buffers_prov, change, change_prov, landscape_metrics,
-                landscape_metrics_prov, biomass, biomass_prov, self.buffer_shape)
+                landscape_metrics_prov, connectivity, connectivity_prov,
+                biomass, biomass_prov, self.buffer_shape)
         except Exception as exc:  # noqa: BLE001
             logger.exception("Study-point export failed")
             async with self:
@@ -475,11 +492,12 @@ class ExportMixin(rx.State, mixin=True):
             client_token = self.router.session.client_token
             session_id = self.router.session.session_id
 
-        if spec.include_buffers and len(spec.points()) > EXPORT_MAX_BUFFER_POINTS:
+        if ((spec.include_buffers or spec.include_connectivity)
+                and len(spec.points()) > EXPORT_MAX_BUFFER_POINTS):
             async with self:
                 self.export_busy = False
                 self.export_error = exports.buffer_estimate_message(
-                    len(spec.points()), spec.radii)
+                    len(spec.points()), spec.radii, spec.include_connectivity)
             return
 
         points = spec.points()
@@ -496,7 +514,7 @@ class ExportMixin(rx.State, mixin=True):
         # GCS, so they run off the event loop like every other blocking call
         # here, and both fail OPEN on a bucket error rather than blocking a
         # real user for an infrastructure hiccup.
-        if spec.include_buffers:
+        if spec.include_buffers or spec.include_connectivity:
             ok, reason = await loop.run_in_executor(
                 None, abuse_control.check_session_cooldown, client_token)
             if ok:
@@ -517,7 +535,8 @@ class ExportMixin(rx.State, mixin=True):
                     self.export_error = reason
                 return
 
-        pixel = buffers = age = change = landscape_metrics = biomass = None
+        pixel = buffers = age = change = landscape_metrics = None
+        connectivity = biomass = None
 
         try:
             if spec.include_pixel:
@@ -566,6 +585,11 @@ class ExportMixin(rx.State, mixin=True):
                 biomass = await fan_out(exports.selection_biomass_frame,
                                         self.tr["export_stage_computing_biomass"])
 
+            if spec.include_connectivity:
+                connectivity = await fan_out(
+                    exports.selection_connectivity_frame,
+                    self.tr["export_stage_computing_connectivity"])
+
             full_area = None
             if spec.include_full_area and spec.is_manual:
                 async with self:
@@ -577,7 +601,7 @@ class ExportMixin(rx.State, mixin=True):
                 self.export_stage = self.tr["export_stage_building_sheet"]
             data, name = await loop.run_in_executor(
                 None, exports.selection_workbook, spec, points, pixel, buffers,
-                age, change, landscape_metrics, biomass, full_area)
+                age, change, landscape_metrics, connectivity, biomass, full_area)
         except Exception as exc:  # noqa: BLE001
             logger.exception("Selection export failed")
             async with self:
@@ -590,14 +614,15 @@ class ExportMixin(rx.State, mixin=True):
             self.export_busy = False
             self.export_stage = ""
             self.export_done = self.export_total
-            # Union across the five passes: a point can fail land-cover history
-            # but succeed at vegetation age, or vice versa, and each row is a
+            # Union across the passes: a point can fail land-cover history but
+            # succeed at vegetation age, or vice versa, and each row is a
             # single conglomerado's worth of missing data either way.
             failed = sorted(set(
                 (buffers[2] if buffers else [])
                 + (age[2] if age else [])
                 + (change[2] if change else [])
                 + (landscape_metrics[2] if landscape_metrics else [])
+                + (connectivity[2] if connectivity else [])
                 + (biomass[2] if biomass else [])
             ))
             note = (self.tr["export_result_failed_note"].format(n=len(failed))
@@ -610,6 +635,7 @@ def _build_study_point(lat, lon, history, prov, pixel, pixel_prov, identity,
                        age_point=None, age_point_prov=None, age_buffers=None,
                        age_buffers_prov=None, change=None, change_prov=None,
                        landscape_metrics=None, landscape_metrics_prov=None,
+                       connectivity=None, connectivity_prov=None,
                        biomass=None, biomass_prov=None, buffer_shape="circle"):
     """Rebuild the frames and write the workbook, off the event loop."""
     import pandas as pd
@@ -641,6 +667,8 @@ def _build_study_point(lat, lon, history, prov, pixel, pixel_prov, identity,
         change_prov=revive(change_prov),
         landscape_metrics=pd.DataFrame(landscape_metrics) if landscape_metrics else None,
         landscape_metrics_prov=revive(landscape_metrics_prov),
+        connectivity=pd.DataFrame(connectivity) if connectivity else None,
+        connectivity_prov=revive(connectivity_prov),
         biomass=pd.DataFrame(biomass) if biomass else None,
         biomass_prov=revive(biomass_prov),
         buffer_shape=buffer_shape,

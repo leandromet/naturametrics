@@ -180,6 +180,11 @@ def _selection_section() -> rx.Component:
             ),
             rx.fragment(),
         ),
+        _check(
+            AppState.tr["check_connectivity_label"],
+            AppState.tr["check_connectivity_detail"],
+            AppState.exp_connectivity, AppState.toggle_exp_connectivity,
+        ),
         rx.cond(
             AppState.export_source == "manual",
             _check(
@@ -190,7 +195,7 @@ def _selection_section() -> rx.Component:
             rx.fragment(),
         ),
         rx.cond(
-            AppState.exp_buffers,
+            AppState.exp_buffers | AppState.exp_connectivity,
             rx.callout(
                 AppState.export_buffer_note,
                 # Amber is a warning about size, never a refusal: the export
@@ -246,7 +251,8 @@ def _selection_section() -> rx.Component:
                          # The only size-based refusal, and the remedy is the
                          # sidebar filters rather than anything in this panel — so
                          # the checkbox above stays usable and the note explains.
-                         | (AppState.exp_buffers & AppState.export_buffer_over_limit),
+                         | ((AppState.exp_buffers | AppState.exp_connectivity)
+                            & AppState.export_buffer_over_limit),
                 size="2", color_scheme="jade", width="100%",
             ),
         ),

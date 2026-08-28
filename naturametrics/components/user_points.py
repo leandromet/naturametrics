@@ -53,6 +53,19 @@ def _points_tab() -> rx.Component:
             width="100%", align="center",
         ),
         rx.cond(
+            AppState.user_points_active,
+            rx.button(
+                rx.icon("download", size=14),
+                AppState.tr["send_download_all_button"],
+                on_click=[
+                    AppState.set_user_points_dialog_open(False),
+                    AppState.set_export_open(True),
+                ],
+                size="2", variant="soft", color_scheme="jade", width="100%",
+            ),
+            rx.fragment(),
+        ),
+        rx.cond(
             AppState.user_points_has_errors,
             rx.vstack(
                 rx.foreach(AppState.user_points_errors, _error_row),

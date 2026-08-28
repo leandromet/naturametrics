@@ -388,6 +388,13 @@ TRANSLATIONS_EN: dict[str, str] = {
         "metrics and biomass. This is the expensive part: exporting a "
         "single radius makes the file much smaller and faster."
     ),
+    "check_connectivity_label": "Connectivity (nearest neighbour)",
+    "check_connectivity_detail": (
+        "Mean/median distance to the nearest forest fragment, per cluster and "
+        "per radius — the same computation as the «Calculate connectivity» "
+        "button in the Landscape metrics tab. Pricier than the rest: a second "
+        "Earth Engine call plus a local geometry search per cluster."
+    ),
     "check_full_area_label": "Full area (bounding box)",
     "check_full_area_detail": (
         "One single box enclosing every selected cluster's buffer, with no "
@@ -421,6 +428,7 @@ TRANSLATIONS_EN: dict[str, str] = {
     "export_stage_computing_age": "Computing vegetation age",
     "export_stage_computing_change": "Computing 2008→2024 change",
     "export_stage_computing_metrics": "Computing landscape metrics",
+    "export_stage_computing_connectivity": "Computing connectivity",
     "export_stage_computing_biomass": "Computing biomass",
     "export_stage_computing_full_area": "Computing the full area",
     "export_stage_building_sheet": "Building the spreadsheet",
@@ -444,6 +452,7 @@ TRANSLATIONS_EN: dict[str, str] = {
     "send_format_label": "Format: name (optional), latitude, longitude",
     "send_max_points": "Up to {max} points per list.",
     "send_active_points": "{n} active points",
+    "send_download_all_button": "Download all points together",
     "send_truncated": (
         "The list has more than {max} valid points; only the first "
         "{max} were kept."

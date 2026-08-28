@@ -396,6 +396,14 @@ TRANSLATIONS_PT: dict[str, str] = {
         "métricas de paisagem e biomassa. É a parte cara: exportar um raio "
         "só deixa o arquivo bem menor e mais rápido."
     ),
+    "check_connectivity_label": "Conectividade (vizinho mais próximo)",
+    "check_connectivity_detail": (
+        "Distância média/mediana ao fragmento de floresta mais próximo, por "
+        "conglomerado e por raio — o mesmo cálculo do botão «Calcular "
+        "conectividade» na aba «Métricas de paisagem». Mais caro que os "
+        "demais: uma segunda consulta ao Earth Engine mais uma busca "
+        "geométrica local por conglomerado."
+    ),
     "check_full_area_label": "Área total (caixa delimitadora)",
     "check_full_area_detail": (
         "Uma caixa única envolvendo o buffer de cada conglomerado "
@@ -429,6 +437,7 @@ TRANSLATIONS_PT: dict[str, str] = {
     "export_stage_computing_age": "Calculando a idade da vegetação",
     "export_stage_computing_change": "Calculando a mudança 2008→2024",
     "export_stage_computing_metrics": "Calculando as métricas de paisagem",
+    "export_stage_computing_connectivity": "Calculando a conectividade",
     "export_stage_computing_biomass": "Calculando a biomassa",
     "export_stage_computing_full_area": "Calculando a área total",
     "export_stage_building_sheet": "Montando a planilha",
@@ -452,6 +461,7 @@ TRANSLATIONS_PT: dict[str, str] = {
     "send_format_label": "Formato: nome (opcional), latitude, longitude",
     "send_max_points": "Até {max} pontos por lista.",
     "send_active_points": "{n} pontos ativos",
+    "send_download_all_button": "Baixar todos os pontos juntos",
     "send_truncated": (
         "A lista tem mais de {max} pontos válidos; apenas os primeiros "
         "{max} foram mantidos."

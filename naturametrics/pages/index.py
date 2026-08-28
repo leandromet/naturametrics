@@ -13,6 +13,7 @@ from ..components.conglomerado import conglomerado_card
 from ..components.layer_panel import layer_panel
 from ..components.layout import ACCENT, shell
 from ..components.map import leaflet_map
+from ..components.map_legend import map_legend
 from ..components.results import results_drawer
 from ..state import AppState
 
@@ -231,6 +232,7 @@ def map_pane() -> rx.Component:
             width="100%",
             height="100%",
         ),
+        map_legend(),
         width="100%",
         height="100%",
         # Leaflet needs a positioned, sized container or it renders one grey tile.

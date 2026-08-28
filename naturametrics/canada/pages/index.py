@@ -7,6 +7,7 @@ import reflex as rx
 from ...components.map import leaflet_map
 from ..components.layer_panel import layer_panel
 from ..components.layout import shell
+from ..components.map_legend import map_legend
 from ..components.results import results_drawer
 from ..state import CanadaState as S
 
@@ -26,6 +27,7 @@ def map_pane() -> rx.Component:
             width="100%",
             height="100%",
         ),
+        map_legend(),
         width="100%", height="100%",
         # Leaflet needs a positioned, sized container or it renders one grey tile.
         position="absolute", top="0", left="0",

@@ -1259,6 +1259,18 @@ class LayersMixin(rx.State, mixin=True):
     # ---------------------------------------------------------------------- #
 
     @rx.var
+    def any_analysis_layer_active(self) -> bool:
+        """Whether the on-map legend (components/map_legend.py) has anything
+        to show. Unlike camposcope's single tab-driven layer, several of
+        these can be on at once, so there is no one boolean already tracking
+        this — it is the OR of every independent toggle."""
+        return (self.show_mapbiomas or self.show_change_mask
+                or self.show_hansen_treecover or self.show_hansen_change
+                or self.show_ibge_veg or self.show_biomass
+                or self.show_biomes or self.show_ifn
+                or self.compare_mode != "off")
+
+    @rx.var
     def basemap_label(self) -> str:
         key = "label_pt" if self.language == "pt" else "label_en"
         return ds.ALL_BASEMAPS[self.basemap][key]

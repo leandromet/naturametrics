@@ -184,14 +184,17 @@ def _land_use_panel() -> rx.Component:
                     AppState.region_mode_active,
                     rx.badge(AppState.region_mode_label, size="1",
                              variant="soft", color_scheme="gray"),
-                    rx.segmented_control.root(
-                        rx.foreach(
-                            AppState.radius_options,
-                            lambda opt: rx.segmented_control.item(opt, value=opt),
+                    rx.tooltip(
+                        rx.segmented_control.root(
+                            rx.foreach(
+                                AppState.radius_options,
+                                lambda opt: rx.segmented_control.item(opt, value=opt),
+                            ),
+                            value=AppState.selected_radius_label,
+                            on_change=AppState.set_selected_radius,
+                            size="1",
                         ),
-                        value=AppState.selected_radius_label,
-                        on_change=AppState.set_selected_radius,
-                        size="1",
+                        content=AppState.tr["radius_selector_hint"],
                     ),
                 ),
                 rx.cond(
@@ -596,6 +599,24 @@ def _age_body() -> rx.Component:
     )
 
 
+def _tab_trigger_with_hint(label, value: str, hint) -> rx.Component:
+    """A tabs.trigger with a small info icon carrying an explanatory
+    tooltip — the tooltip can't wrap the trigger itself (Reflex enforces
+    tabs.trigger's parent to be tabs.list at the component level), so the
+    icon lives *inside* the trigger instead, right next to the label."""
+    return rx.tabs.trigger(
+        rx.hstack(
+            rx.text(label),
+            rx.tooltip(
+                rx.icon("info", size=12, color="var(--gray-9)"),
+                content=hint,
+            ),
+            spacing="1", align="center",
+        ),
+        value=value,
+    )
+
+
 def _forest_age_panel() -> rx.Component:
     return rx.tabs.root(
         rx.vstack(
@@ -604,14 +625,18 @@ def _forest_age_panel() -> rx.Component:
                 rx.hstack(
                     rx.icon("trees", size=15, color="var(--jade-11)"),
                     rx.tabs.list(
-                        rx.tabs.trigger(AppState.tr["vegetation_age_title"],
-                                       value="age"),
-                        rx.tabs.trigger(AppState.tr["landscape_metrics_tab"],
-                                        value="metrics"),
-                        rx.tabs.trigger(AppState.tr["biomass_tab"],
-                                        value="biomass"),
-                        rx.tabs.trigger(AppState.tr["ibge_veg_tab"],
-                                        value="ibge_compare"),
+                        _tab_trigger_with_hint(
+                            AppState.tr["vegetation_age_title"], "age",
+                            AppState.tr["vegetation_age_tab_hint"]),
+                        _tab_trigger_with_hint(
+                            AppState.tr["landscape_metrics_tab"], "metrics",
+                            AppState.tr["landscape_metrics_tab_hint"]),
+                        _tab_trigger_with_hint(
+                            AppState.tr["biomass_tab"], "biomass",
+                            AppState.tr["biomass_tab_hint"]),
+                        _tab_trigger_with_hint(
+                            AppState.tr["ibge_veg_tab"], "ibge_compare",
+                            AppState.tr["ibge_veg_tab_hint"]),
                     ),
                     spacing="2", align="center",
                     flex=["1 1 100%", "1 1 100%", "1 1 auto", "1 1 auto"],
@@ -632,15 +657,18 @@ def _forest_age_panel() -> rx.Component:
                                 AppState.region_mode_active,
                                 rx.badge(AppState.region_mode_label, size="1",
                                          variant="soft", color_scheme="gray"),
-                                rx.segmented_control.root(
-                                    rx.foreach(
-                                        AppState.age_tab_options,
-                                        lambda opt: rx.segmented_control.item(
-                                            opt, value=opt),
+                                rx.tooltip(
+                                    rx.segmented_control.root(
+                                        rx.foreach(
+                                            AppState.age_tab_options,
+                                            lambda opt: rx.segmented_control.item(
+                                                opt, value=opt),
+                                        ),
+                                        value=AppState.selected_age_radius,
+                                        on_change=AppState.set_selected_age_radius,
+                                        size="1",
                                     ),
-                                    value=AppState.selected_age_radius,
-                                    on_change=AppState.set_selected_age_radius,
-                                    size="1",
+                                    content=AppState.tr["radius_selector_hint"],
                                 ),
                             ),
                             rx.cond(

@@ -33,6 +33,10 @@ TRANSLATIONS_PT: dict[str, str] = {
     "buffer_square_toggle_label": "Usar buffers quadrados (lado = diâmetro)",
     "buffer_caption_square": "(lado quadrado)",
     "buffer_caption_circle": "(raio círculo)",
+    "radius_selector_hint": (
+        "Alterna o gráfico e a tabela entre os tamanhos de buffer ao redor "
+        "do ponto — um raio maior cobre mais área, mas perde detalhe local."
+    ),
     "multi_shape_change_note": "Altere o formato antes de selecionar pontos múltiplos.",
 
     # --- layer panel: info-icon popovers ---------------------------------- #
@@ -270,7 +274,17 @@ TRANSLATIONS_PT: dict[str, str] = {
     "no_change_label": "Sem alteração observada",
     "change_title": "Mudança 2008→2024",
     "vegetation_age_title": "Idade da vegetação",
+    "vegetation_age_tab_hint": (
+        "Há quanto tempo cada mancha de vegetação natural permanece sem "
+        "distúrbio, datada a partir do último ano em que o MapBiomas "
+        "registrou mudança de cobertura naquele pixel."
+    ),
     "landscape_metrics_tab": "Métricas de paisagem",
+    "landscape_metrics_tab_hint": (
+        "Fragmentação da vegetação natural neste buffer — número de "
+        "manchas, densidade de borda, tamanho efetivo de malha e índices "
+        "de diversidade (Shannon, Simpson)."
+    ),
     "landscape_metrics_empty": "Métricas ainda não disponíveis.",
     "err_landscape_metrics_failed": "Falha ao calcular as métricas de paisagem: {exc}",
     "metrics_buffer": "Buffer",
@@ -301,10 +315,19 @@ TRANSLATIONS_PT: dict[str, str] = {
     "export_chart_label": "Exportar figura",
     "export_table_label": "Exportar tabela",
     "biomass_tab": "Biomassa",
+    "biomass_tab_hint": (
+        "Biomassa acima do solo neste buffer (ESA CCI), uma proxy de "
+        "quanto carbono a vegetação em pé armazena."
+    ),
     "biomass_running": "Lendo a biomassa acima do solo (ESA CCI)…",
     "biomass_empty": "Biomassa ainda não disponível.",
     "err_biomass_failed": "Falha ao calcular a biomassa: {exc}",
     "ibge_veg_tab": "IBGE × MapBiomas",
+    "ibge_veg_tab_hint": (
+        "Confronta a classificação de 30 m do MapBiomas com o mapa "
+        "oficial de vegetação do IBGE, 1:250.000 — duas fontes "
+        "independentes para o mesmo terreno."
+    ),
     "ibge_veg_running": "Comparando a vegetação do IBGE com o MapBiomas 2022…",
     "ibge_veg_empty": "Comparação ainda não disponível.",
     "err_ibge_veg_failed": "Falha ao comparar a vegetação do IBGE com o MapBiomas: {exc}",

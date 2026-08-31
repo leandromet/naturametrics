@@ -82,7 +82,13 @@ def land_cover_history_figure(
             y=values,
             name=name,
             marker_color=mb.color(class_id),
-            marker_line_width=0,
+            # A thin outline on every segment — not just a stylistic
+            # flourish: it draws the left/right edge of each year's column,
+            # which is otherwise only implied by bargap between
+            # same-coloured neighbours (e.g. two "pasture" years in a row
+            # blend into one solid block with no visible seam).
+            marker_line_width=0.5,
+            marker_line_color="rgba(0,0,0,0.35)",
             hovertemplate=f"<b>{name}</b><br>%{{x}}<br>%{{y:,.1f}} {unit}<extra></extra>",
         )
 
@@ -126,8 +132,13 @@ def _style(fig: go.Figure, radius_km: float, lang: str, normalise: bool) -> go.F
         # a zoom. Disabling it here lets that touch fall through to the
         # container (same fix applied to every chart in this module).
         dragmode=False,
-        xaxis=dict(title=None, tickmode="linear", dtick=5, showgrid=False,
-                   fixedrange=True),
+        # tickangle=-90: horizontal year labels were auto-hidden by Plotly
+        # whenever neighbours would overlap, which on a narrow phone-width
+        # plot meant most of them — vertical labels need only a tick's worth
+        # of horizontal space each, so dtick can drop from 5 to 2 (every
+        # other year) and still all stay visible.
+        xaxis=dict(title=None, tickmode="linear", dtick=2, showgrid=False,
+                   tickangle=-90, tickfont=dict(size=9), fixedrange=True),
         yaxis=dict(title=y_title, ticksuffix="" if normalise else "", showgrid=True,
                    gridcolor="rgba(0,0,0,0.06)", zeroline=False, fixedrange=True),
         plot_bgcolor="rgba(0,0,0,0)",

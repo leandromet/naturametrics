@@ -33,6 +33,10 @@ TRANSLATIONS_EN: dict[str, str] = {
     "buffer_square_toggle_label": "Use square buffers (side = diameter)",
     "buffer_caption_square": "(square side)",
     "buffer_caption_circle": "(circle radius)",
+    "radius_selector_hint": (
+        "Switch the chart and table between buffer sizes around the point "
+        "— a bigger radius covers more ground but blurs local detail."
+    ),
     "multi_shape_change_note": "Change the shape before selecting multiple points.",
 
     # --- layer panel: info-icon popovers ---------------------------------- #
@@ -265,7 +269,17 @@ TRANSLATIONS_EN: dict[str, str] = {
     "no_change_label": "No change observed",
     "change_title": "Change 2008→2024",
     "vegetation_age_title": "Vegetation age",
+    "vegetation_age_tab_hint": (
+        "How long each patch of natural vegetation has stood undisturbed, "
+        "dated from the year MapBiomas last recorded a land-cover change on "
+        "that pixel."
+    ),
     "landscape_metrics_tab": "Landscape metrics",
+    "landscape_metrics_tab_hint": (
+        "Fragmentation of the natural vegetation in this buffer — patch "
+        "count, edge density, effective mesh size and diversity indices "
+        "(Shannon, Simpson)."
+    ),
     "landscape_metrics_empty": "Metrics are not available yet.",
     "err_landscape_metrics_failed": "Failed to compute landscape metrics: {exc}",
     "metrics_buffer": "Buffer",
@@ -296,10 +310,19 @@ TRANSLATIONS_EN: dict[str, str] = {
     "export_chart_label": "Export figure",
     "export_table_label": "Export table",
     "biomass_tab": "Biomass",
+    "biomass_tab_hint": (
+        "Above-ground biomass in this buffer (ESA CCI), a proxy for how "
+        "much carbon the standing vegetation holds."
+    ),
     "biomass_running": "Reading above-ground biomass (ESA CCI)…",
     "biomass_empty": "Biomass is not available yet.",
     "err_biomass_failed": "Failed to compute biomass: {exc}",
     "ibge_veg_tab": "IBGE × MapBiomas",
+    "ibge_veg_tab_hint": (
+        "Cross-checks MapBiomas' 30 m classification against IBGE's official "
+        "1:250,000 vegetation map — two independent sources for the same "
+        "ground."
+    ),
     "ibge_veg_running": "Comparing IBGE vegetation against MapBiomas 2022…",
     "ibge_veg_empty": "Comparison is not available yet.",
     "err_ibge_veg_failed": "Failed to compare IBGE vegetation with MapBiomas: {exc}",

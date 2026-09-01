@@ -16,6 +16,15 @@ class UIMixin(rx.State, mixin=True):
     #: always visible. Starts closed so the map is the first thing seen.
     sidebar_open: bool = False
 
+    #: The on-map legend (components/map_legend.py) collapsed to just its
+    #: header. Open by default; `adopt_viewport` closes it on a narrow screen.
+    legend_open: bool = True
+    #: Whether `adopt_viewport` has already run this session. The legend is
+    #: conditionally rendered, so its `on_mount` fires again on every remount
+    #: — without this guard a phone user who opened the legend would have it
+    #: snap shut again on the next re-render.
+    _viewport_adopted: bool = False
+
     #: The header's three info dialogs, each fully controlled. Not decorative:
     #: rx.dialog.close's Radix "asChild" prop-cloning silently fails to reach a
     #: button that Reflex has extracted into its own standalone helper
@@ -49,6 +58,31 @@ class UIMixin(rx.State, mixin=True):
 
     def toggle_sidebar(self):
         self.sidebar_open = not self.sidebar_open
+
+    def toggle_legend(self):
+        self.legend_open = not self.legend_open
+
+    def adopt_viewport(self, narrow: bool):
+        """Collapse the on-map legend on a phone, once per session.
+
+        The default genuinely differs by screen size — on desktop the legend
+        is a small box in a large corner, on a phone the same box covers a
+        third of the only map there is, over exactly the pixels it describes
+        — and a Reflex state default is one Python value that knows nothing
+        about the client. Radix's `display` breakpoints cannot express it
+        either: this is one boolean feeding `rx.cond`, not two variants to
+        show and hide. So the viewport is asked once, from the browser, via
+        `rx.call_script(..., callback=...)` — see
+        `components/map_legend.py::map_legend`.
+
+        Only ever collapses, so it can never fight a user who opened the
+        legend themselves.
+        """
+        if self._viewport_adopted:
+            return
+        self._viewport_adopted = True
+        if narrow:
+            self.legend_open = False
 
     def set_como_usar_open(self, value: bool):
         self.como_usar_open = value

@@ -22,6 +22,11 @@ class CanadaUIMixin(rx.State, mixin=True):
     #: Mobile overlay drawer only; the desktop sidebar is always visible.
     sidebar_open: bool = False
 
+    #: The on-map legend collapsed to just its header — see the Brazil page's
+    #: own ``state/_ui.py`` for why this default is decided in the browser.
+    legend_open: bool = True
+    _viewport_adopted: bool = False
+
     #: The header's two info dialogs, fully controlled for the same reason as
     #: the Brazil page's equivalents (state/_ui.py::UIMixin) — Dialog.Close's
     #: Radix "asChild" prop-cloning never reaches a button Reflex has extracted
@@ -47,6 +52,19 @@ class CanadaUIMixin(rx.State, mixin=True):
 
     def toggle_sidebar(self):
         self.sidebar_open = not self.sidebar_open
+
+    def toggle_legend(self):
+        self.legend_open = not self.legend_open
+
+    def adopt_viewport(self, narrow: bool):
+        """Collapse the on-map legend on a phone, once per session — the
+        Brazil page's ``state/_ui.py::adopt_viewport``, ported. Only ever
+        collapses, so it cannot fight a user who opened it themselves."""
+        if self._viewport_adopted:
+            return
+        self._viewport_adopted = True
+        if narrow:
+            self.legend_open = False
 
     def set_help_open(self, value: bool):
         self.help_open = value

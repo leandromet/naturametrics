@@ -14,6 +14,7 @@ import reflex as rx
 
 from ...config.settings import BUFFER_MODE_DEFAULT, BUFFER_RADII_KM
 from ...services.buffers import buffer_geojson
+from ...state._point import _zoom_to_click
 from ..services.geo import CoordinateError, north_of_aci, point, validate_for_analysis
 
 logger = logging.getLogger(__name__)
@@ -66,7 +67,10 @@ class CanadaPointMixin(rx.State, mixin=True):
         # and the clip is applied in the browser, so it lands with the click
         # rather than after the analysis returns.
         self._set_preview(p.lat, p.lon)
-        return type(self).run_analysis(p.lat, p.lon)
+        # Same click-zoom as the Brazil page — the helper looks both maps up
+        # by id, so there is nothing Canada-specific to duplicate here.
+        return [type(self).run_analysis(p.lat, p.lon),
+               _zoom_to_click(p.lat, p.lon)]
 
     def clear_study_point(self):
         self.has_point = False

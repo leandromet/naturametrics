@@ -10,6 +10,11 @@ TRANSLATIONS_PT: dict[str, str] = {
     "drawer_close_aria": "Fechar painel",
     "sheet_handle_aria": "Redimensionar painel — arraste ou use as setas",
 
+    # --- on-map legend (components/map_legend.py) ------------------------ #
+    "legend_title": "Legenda",
+    "legend_collapse_aria": "Recolher a legenda",
+    "legend_expand_aria": "Expandir a legenda",
+
     # --- layer panel: groups (components/layer_panel.py::_group) -------- #
     "group_study_area": "Área de estudo",
     "group_landcover_base": "Mapa base e cobertura do solo",

@@ -398,6 +398,20 @@ MAP_CENTER: tuple[float, float] = (
 )
 MAP_ZOOM = _int("NM_MAP_ZOOM", 5)
 
+#: Where a map click lands the viewport. The country-wide default zoom above is
+#: for *finding* somewhere; once a point is picked the buffers being analysed
+#: (BUFFER_RADII_KM, single-digit km) are a few pixels across at that scale, so
+#: the map stayed showing half of Brazil while the panel below described a
+#: neighbourhood. 8 frames the buffers and their surroundings without dropping
+#: into a detail level MapBiomas' 30 m pixels cannot fill.
+#:
+#: A FLOOR, never a jump: `state/_point.py::set_study_point` only zooms in when
+#: the map is currently wider than this, so clicking while already zoomed to a
+#: field keeps that detail rather than being pulled back out to 8. That decision
+#: has to happen in the browser — Python's `map_zoom` only records what it last
+#: *asked* for, and nothing syncs the user's own zooming back to it.
+MAP_CLICK_ZOOM = _int("NM_MAP_CLICK_ZOOM", 8)
+
 #: Initial framing, as [[south, west], [north, east]]. Slightly wider than
 #: Brazil's true extent (lon -73.99..-32.39, lat -33.75..5.27) so the outline is
 #: not flush against the edge. Used with Leaflet fitBounds, so it frames correctly

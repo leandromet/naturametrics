@@ -285,7 +285,7 @@ def _land_use_panel() -> rx.Component:
                         # sizes each child to its own content width, not to
                         # this box, which is how a chart ended up wider than
                         # the phone holding it.
-                        align=["stretch", "stretch", "stretch", "start"],
+                        align=rx.breakpoints(initial="stretch", lg="start"),
                     ),
                     rx.fragment(),
                 ),
@@ -600,7 +600,7 @@ def _age_body() -> rx.Component:
                         # See results_drawer() — stretch while this is a
                         # column, so the histogram is bounded by this box
                         # instead of by its own content width.
-                        align=["stretch", "stretch", "stretch", "start"],
+                        align=rx.breakpoints(initial="stretch", lg="start"),
                     ),
                 ),
                 rx.fragment(),
@@ -725,6 +725,8 @@ def results_drawer() -> rx.Component:
                        padding_left=["0", "0", "0", "1rem"]),
                 width="100%",
                 # "stretch" below lg, "start" at lg — NOT "start" everywhere.
+                # (rx.breakpoints, not a plain list: `align` is a typed
+                # literal prop and rejects a list at build time.)
                 # Below lg this flex is a COLUMN, so width is its cross axis
                 # and `align: start` sized each panel to its own content
                 # rather than to this box: measured on a 390px portrait
@@ -735,7 +737,7 @@ def results_drawer() -> rx.Component:
                 # row, width is the main axis again and `start` keeps its
                 # original meaning (top-aligned panels of unequal height),
                 # so desktop is deliberately left exactly as it was.
-                align=["stretch", "stretch", "stretch", "start"], gap="1rem",
+                align=rx.breakpoints(initial="stretch", lg="start"), gap="1rem",
                 direction=rx.breakpoints(initial="column", lg="row"),
                 padding=["0.6rem 0.7rem", "0.6rem 0.75rem", "0.75rem 1rem", "0.75rem 1rem"],
             ),

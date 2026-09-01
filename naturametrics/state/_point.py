@@ -12,7 +12,11 @@ from typing import Literal
 
 import reflex as rx
 
-from ..config.settings import BUFFER_MODE_DEFAULT, BUFFER_RADII_KM
+from ..config.settings import (
+    BUFFER_MODE_DEFAULT,
+    BUFFER_RADII_KM,
+    MAP_CLICK_ZOOM,
+)
 from ..services.buffers import buffer_geojson
 from ..services.geo import CoordinateError, point, validate_for_analysis
 
@@ -107,7 +111,8 @@ class PointMixin(rx.State, mixin=True):
         # use. See pages/index.py::_SHEET_SCRIPT's window.__nmSheetSnapTo.
         return [type(self).run_analysis(p.lat, p.lon),
                rx.call_script(
-                   "window.__nmSheetSnapTo && window.__nmSheetSnapTo('half')")]
+                   "window.__nmSheetSnapTo && window.__nmSheetSnapTo('half')"),
+               _zoom_to_click(p.lat, p.lon)]
 
     def clear_study_point(self):
         self.has_point = False
@@ -151,3 +156,37 @@ class PointMixin(rx.State, mixin=True):
             return ""
         place = " · ".join(x for x in (self.point_municipio, self.point_uf) if x)
         return f"{self.point_conglomerado} — {place}" if place else self.point_conglomerado
+
+
+def _zoom_to_click(lat: float, lon: float):
+    """Centre the map on a freshly clicked point, zooming in to
+    ``MAP_CLICK_ZOOM`` if it is currently wider than that.
+
+    Driven from the browser rather than through the ``map_center``/``map_zoom``
+    state vars this component also honours, for one reason: those vars record
+    what Python last *asked* for, and nothing writes the user's own panning and
+    zooming back into them (``components/map/leaflet_map.js`` deliberately
+    binds ``moveend``/``zoomend`` only to refetch dynamic layers). Setting
+    ``map_zoom = 8`` from here would therefore zoom a user who had worked their
+    way down to a single field back OUT to 8 the moment they clicked. Only the
+    live Leaflet instance knows the real answer, and it is already exposed for
+    exactly this kind of imperative fly-to: ``leaflet_map.js`` hangs the map on
+    its own container node as ``_nmMap`` (see the comment there), and the
+    container carries the literal ``id`` ``LeafletMap`` requires.
+
+    Both pages' maps are looked up, not just the Brazil one, so the Canada page
+    (``nm-canada-map``) gets the same behaviour from its own click handler
+    without a second copy of this.
+    """
+    return rx.call_script(
+        "(function () {"
+        "  var ids = ['nm-map', 'nm-canada-map'];"
+        "  for (var i = 0; i < ids.length; i++) {"
+        "    var el = document.getElementById(ids[i]);"
+        "    var map = el && el._nmMap;"
+        "    if (!map) continue;"
+        f"    var target = Math.max(map.getZoom(), {MAP_CLICK_ZOOM});"
+        f"    map.setView([{lat}, {lon}], target, {{animate: true}});"
+        "  }"
+        "})()"
+    )

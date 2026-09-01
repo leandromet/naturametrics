@@ -32,8 +32,13 @@ _BOX_STYLE = dict(
     box_shadow="0 2px 8px rgba(0,0,0,.15)",
     padding="8px 10px",
     z_index="900",
-    min_width="180px",
-    max_width="220px",
+    # Collapsed this box is just "LEGENDA ⌄", so the 180px floor the
+    # expanded panel wants would leave a wide empty bar sitting over the
+    # map — exactly the clutter collapsing it is meant to remove.
+    min_width=rx.cond(AppState.legend_open, "180px", "0"),
+    # A phone cap as well as the desktop one: 220px of a 390px screen is
+    # over half the map.
+    max_width=["62vw", "62vw", "220px", "220px"],
     max_height="70vh",
     overflow_y="auto",
     font_size="0.75rem",
@@ -328,26 +333,82 @@ def _auto_infracao_section() -> rx.Component:
     )
 
 
+#: Asked once per session, from the browser, when the legend first mounts.
+#: A Reflex state default is one Python value with no idea what it is being
+#: rendered on, and this default genuinely differs by screen: on desktop the
+#: legend is a small box in a large corner; on a phone the same box covers a
+#: third of the only map there is, over exactly the pixels a legend is
+#: describing — and this app can stack up to ten sections in it at once.
+#: 768px is Radix's own `md`. See `AppState.adopt_viewport`.
+_NARROW_VIEWPORT_JS = "window.innerWidth < 768"
+
+
+def _collapse_header() -> rx.Component:
+    """The legend's title bar, and its only collapse affordance.
+
+    The whole row is the control, not a small chevron inside it — a legend on
+    a phone is competing with the map for touch targets, and the row is
+    already there.
+    """
+    return rx.hstack(
+        rx.icon("list", size=13, color="var(--gray-11)", flex_shrink="0"),
+        rx.text(AppState.tr["legend_title"], size="1", weight="bold",
+                color="var(--gray-11)",
+                style={"textTransform": "uppercase", "letterSpacing": "0.06em"}),
+        rx.spacer(),
+        rx.icon(
+            "chevron-down", size=14, color="var(--gray-11)", flex_shrink="0",
+            style={
+                "transition": "transform 150ms ease",
+                "transform": rx.cond(AppState.legend_open,
+                                     "rotate(180deg)", "rotate(0deg)"),
+            },
+        ),
+        on_click=AppState.toggle_legend,
+        role="button",
+        tab_index=0,
+        cursor="pointer",
+        aria_expanded=AppState.legend_open.to_string(),
+        aria_label=rx.cond(AppState.legend_open,
+                           AppState.tr["legend_collapse_aria"],
+                           AppState.tr["legend_expand_aria"]),
+        width="100%", spacing="2", align="center", min_height="28px",
+    )
+
+
 def map_legend() -> rx.Component:
     """Shown only once at least one analysis layer is on — an empty box
     would just be clutter over the map when the sidebar/sheet has nothing
-    active."""
+    active.
+
+    Collapsible, and collapsed by default on a phone (see
+    `_NARROW_VIEWPORT_JS`). Collapsing leaves the header row in place rather
+    than hiding the box outright: a legend that vanishes completely needs a
+    *second* affordance somewhere else to bring it back, and there is no room
+    on this map for one.
+    """
     return rx.cond(
         AppState.any_analysis_layer_active,
         rx.box(
-            rx.vstack(
-                _mapbiomas_section(),
-                _compare_section(),
-                _change_mask_section(),
-                _hansen_section(),
-                _biomass_section(),
-                _ibge_veg_section(),
-                _biomes_section(),
-                _ifn_section(),
-                _embargos_section(),
-                _auto_infracao_section(),
-                spacing="3", width="100%",
+            _collapse_header(),
+            rx.cond(
+                AppState.legend_open,
+                rx.vstack(
+                    _mapbiomas_section(),
+                    _compare_section(),
+                    _change_mask_section(),
+                    _hansen_section(),
+                    _biomass_section(),
+                    _ibge_veg_section(),
+                    _biomes_section(),
+                    _ifn_section(),
+                    _embargos_section(),
+                    _auto_infracao_section(),
+                    spacing="3", width="100%", padding_top="6px",
+                ),
             ),
+            on_mount=rx.call_script(_NARROW_VIEWPORT_JS,
+                                   callback=AppState.adopt_viewport),
             **_BOX_STYLE,
         ),
     )

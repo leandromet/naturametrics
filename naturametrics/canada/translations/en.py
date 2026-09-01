@@ -9,6 +9,11 @@ TRANSLATIONS_EN: dict[str, str] = {
     "nav_title_suffix": "Canada",
     "drawer_title": "Layers and analysis",
     "drawer_close_aria": "Close panel",
+
+    # --- on-map legend (canada/components/map_legend.py) ------------------ #
+    "legend_title": "Legend",
+    "legend_collapse_aria": "Collapse the legend",
+    "legend_expand_aria": "Expand the legend",
     "go_to_brazil": "Go to Brazil",
     "language_label": "Language",
     "close_button": "Close",

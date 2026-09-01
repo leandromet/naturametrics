@@ -10,6 +10,11 @@ TRANSLATIONS_EN: dict[str, str] = {
     "drawer_close_aria": "Close panel",
     "sheet_handle_aria": "Resize panel — drag or use the arrow keys",
 
+    # --- on-map legend (components/map_legend.py) ------------------------ #
+    "legend_title": "Legend",
+    "legend_collapse_aria": "Collapse the legend",
+    "legend_expand_aria": "Expand the legend",
+
     # --- layer panel: groups (components/layer_panel.py::_group) -------- #
     "group_study_area": "Study area",
     "group_landcover_base": "Basemap & land cover",

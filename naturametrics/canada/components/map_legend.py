@@ -22,8 +22,11 @@ _BOX_STYLE = dict(
     box_shadow="0 2px 8px rgba(0,0,0,.15)",
     padding="8px 10px",
     z_index="900",
-    min_width="180px",
-    max_width="220px",
+    # Collapsed this box is just "LEGENDA ⌄", so the 180px floor the
+    # expanded panel wants would leave a wide empty bar sitting over the
+    # map — exactly the clutter collapsing it is meant to remove.
+    min_width=rx.cond(S.legend_open, "180px", "0"),
+    max_width=["62vw", "62vw", "220px", "220px"],
     max_height="70vh",
     overflow_y="auto",
     font_size="0.75rem",
@@ -141,6 +144,39 @@ def _landsat_section() -> rx.Component:
     )
 
 
+#: See the Brazil page's own ``components/map_legend.py`` for why this default
+#: is asked of the browser rather than being a Python state default.
+_NARROW_VIEWPORT_JS = "window.innerWidth < 768"
+
+
+def _collapse_header() -> rx.Component:
+    """The legend's title bar, and its only collapse affordance — the whole
+    row is the control. Ported from the Brazil page's own legend."""
+    return rx.hstack(
+        rx.icon("list", size=13, color="var(--gray-11)", flex_shrink="0"),
+        rx.text(S.tr["legend_title"], size="1", weight="bold",
+                color="var(--gray-11)",
+                style={"textTransform": "uppercase", "letterSpacing": "0.06em"}),
+        rx.spacer(),
+        rx.icon(
+            "chevron-down", size=14, color="var(--gray-11)", flex_shrink="0",
+            style={
+                "transition": "transform 150ms ease",
+                "transform": rx.cond(S.legend_open, "rotate(180deg)",
+                                     "rotate(0deg)"),
+            },
+        ),
+        on_click=S.toggle_legend,
+        role="button",
+        tab_index=0,
+        cursor="pointer",
+        aria_expanded=S.legend_open.to_string(),
+        aria_label=rx.cond(S.legend_open, S.tr["legend_collapse_aria"],
+                           S.tr["legend_expand_aria"]),
+        width="100%", spacing="2", align="center", min_height="28px",
+    )
+
+
 def map_legend() -> rx.Component:
     """Shown only once at least one analysis layer is on — an empty box
     would just be clutter over the map when the sidebar has nothing
@@ -149,13 +185,19 @@ def map_legend() -> rx.Component:
         S.show_aci | S.show_forest_age | S.show_treecover | S.show_change
         | S.show_landsat,
         rx.box(
-            rx.vstack(
-                _aci_section(),
-                _forest_age_section(),
-                _hansen_section(),
-                _landsat_section(),
-                spacing="3", width="100%",
+            _collapse_header(),
+            rx.cond(
+                S.legend_open,
+                rx.vstack(
+                    _aci_section(),
+                    _forest_age_section(),
+                    _hansen_section(),
+                    _landsat_section(),
+                    spacing="3", width="100%", padding_top="6px",
+                ),
             ),
+            on_mount=rx.call_script(_NARROW_VIEWPORT_JS,
+                                   callback=S.adopt_viewport),
             **_BOX_STYLE,
         ),
     )

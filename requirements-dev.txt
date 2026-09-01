@@ -1,0 +1,17 @@
+# Test-only dependencies. Not needed to run the app.
+#
+#     pip install -r requirements.txt -r requirements-dev.txt
+#     pytest -m "not ee"
+
+pytest>=8.0.0
+
+# The INDEPENDENT reader for the ODS tests, and deliberately not a runtime
+# dependency: services/ods.py exists precisely because odfpy is too slow to
+# write with (42 s for 60 000 rows — see that module's docstring). Reading a
+# few hundred rows back in a test is the one thing it is right for, and using
+# a different implementation to read than to write is the whole value of
+# those tests.
+#
+# Without it, tests/test_exports.py and tests/test_gbif_export.py SKIP rather
+# than fail — 7 export tests were silently skipping before this file existed.
+odfpy>=1.4.1

@@ -42,8 +42,8 @@ from ..config import gbif as gc
 from ..config.settings import (
     BUFFER_RADII_KM,
     GBIF_BUFFER_VERTICES,
+    GBIF_EXPORT_SPECIES_LIMIT,
     GBIF_FACET_LIMIT,
-    GBIF_SPECIES_TABLE_LIMIT,
     GBIF_TIMEOUT_CONNECT,
     GBIF_TIMEOUT_READ,
 )
@@ -80,7 +80,10 @@ class BufferSpecies:
 
     radius_km: float
     total: int = 0
-    #: ``(scientific name, occurrence count)``, most-recorded first.
+    #: ``(scientific name, occurrence count)``, most-recorded first, capped at
+    #: GBIF_EXPORT_SPECIES_LIMIT. The results tab renders only the first
+    #: GBIF_SPECIES_TABLE_LIMIT of these; the rest exist so the spreadsheet
+    #: export is not silently truncated to what happened to fit on screen.
     species: list[tuple[str, int]] = field(default_factory=list)
     #: ``(kingdom name, count)`` — the same taxonomy the map colouring uses.
     kingdoms: list[tuple[str, int]] = field(default_factory=list)
@@ -159,7 +162,7 @@ def _one_buffer(lat: float, lon: float, radius_km: float,
 
     out.total = payload.get("count", 0)
     names = _facet_rows(payload, "SCIENTIFIC_NAME")
-    out.species = names[:GBIF_SPECIES_TABLE_LIMIT]
+    out.species = names[:GBIF_EXPORT_SPECIES_LIMIT]
     out.richness = len(names)
     out.richness_truncated = len(names) >= GBIF_FACET_LIMIT
     out.kingdoms = [

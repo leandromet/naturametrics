@@ -610,14 +610,34 @@ def _age_body() -> rx.Component:
     )
 
 
-def _tab_trigger_with_hint(label, value: str, hint) -> rx.Component:
-    """A tabs.trigger with a small info icon carrying an explanatory
-    tooltip — the tooltip can't wrap the trigger itself (Reflex enforces
-    tabs.trigger's parent to be tabs.list at the component level), so the
-    icon lives *inside* the trigger instead, right next to the label."""
+def _tab_trigger_with_hint(label, short_label, value: str, hint) -> rx.Component:
+    """A tabs.trigger showing its full label only while it is the active tab.
+
+    The info icon carries the explanatory tooltip. It can't wrap the trigger
+    itself (Reflex enforces tabs.trigger's parent to be tabs.list at the
+    component level), so it lives *inside* the trigger, next to the label —
+    and it stays on inactive tabs deliberately: an abbreviated label is
+    exactly when a reader most needs the sentence explaining what the tab is.
+
+    **Why both labels are rendered rather than one chosen in Python.** Five
+    full names (77 characters of Portuguese plus five icons) overflow the
+    results header on an ordinary laptop, and horizontal scrolling did not
+    help there — the strip fits its container, it is just too wide to read.
+    Truncating with an ellipsis was the other option and tells a reader
+    nothing: "Métric…" and "Métricas de paisagem" are equally uninformative
+    when what you need is to tell it apart from "Idade da vegetação".
+
+    So each trigger carries both spans and CSS picks one, keyed off the
+    ``data-state`` attribute Radix already sets on the active trigger. Doing it
+    in CSS rather than with ``rx.cond(AppState.selected_age_view == value, …)``
+    means switching tabs is a repaint the browser does by itself, with no state
+    round-trip and no re-render of the panel below — and it cannot drift out of
+    sync with which tab Radix actually considers active.
+    """
     return rx.tabs.trigger(
         rx.hstack(
-            rx.text(label, white_space="nowrap"),
+            rx.text(label, white_space="nowrap", class_name="nm-tab-full"),
+            rx.text(short_label, white_space="nowrap", class_name="nm-tab-short"),
             rx.tooltip(
                 rx.icon("info", size=12, color="var(--gray-9)"),
                 content=hint,
@@ -625,12 +645,21 @@ def _tab_trigger_with_hint(label, value: str, hint) -> rx.Component:
             spacing="1", align="center",
         ),
         value=value,
-        # Both required for the list's horizontal scrolling to work at all.
-        # Without `flexShrink: 0` flex resolves the overflow by squashing every
-        # trigger instead — five labels compressed to ellipses rather than a
-        # strip you can slide — and the container never becomes scrollable
-        # because its content now "fits".
-        style={"flexShrink": 0, "whiteSpace": "nowrap"},
+        style={
+            # Keeps the horizontal-scroll fallback working on a phone, where
+            # even the short labels can overflow: without `flexShrink: 0` flex
+            # resolves the overflow by squashing every trigger instead, so the
+            # content always "fits" and the list never becomes scrollable.
+            "flexShrink": 0,
+            "whiteSpace": "nowrap",
+            # Radix Themes renders each trigger's children TWICE — a visible
+            # copy and a hidden bold one that reserves width so the label does
+            # not shift when it becomes bold on activation. Both copies are
+            # matched by these rules, so the reserved width tracks whichever
+            # label is actually showing.
+            '&[data-state="inactive"] .nm-tab-full': {"display": "none"},
+            '&[data-state="active"] .nm-tab-short': {"display": "none"},
+        },
     )
 
 
@@ -647,19 +676,24 @@ def _forest_age_panel() -> rx.Component:
                             flex_shrink="0"),
                     rx.tabs.list(
                         _tab_trigger_with_hint(
-                            AppState.tr["vegetation_age_title"], "age",
+                            AppState.tr["vegetation_age_title"],
+                            AppState.tr["vegetation_age_tab_short"], "age",
                             AppState.tr["vegetation_age_tab_hint"]),
                         _tab_trigger_with_hint(
-                            AppState.tr["landscape_metrics_tab"], "metrics",
+                            AppState.tr["landscape_metrics_tab"],
+                            AppState.tr["landscape_metrics_tab_short"], "metrics",
                             AppState.tr["landscape_metrics_tab_hint"]),
                         _tab_trigger_with_hint(
-                            AppState.tr["biomass_tab"], "biomass",
+                            AppState.tr["biomass_tab"],
+                            AppState.tr["biomass_tab_short"], "biomass",
                             AppState.tr["biomass_tab_hint"]),
                         _tab_trigger_with_hint(
-                            AppState.tr["ibge_veg_tab"], "ibge_compare",
+                            AppState.tr["ibge_veg_tab"],
+                            AppState.tr["ibge_veg_tab_short"], "ibge_compare",
                             AppState.tr["ibge_veg_tab_hint"]),
                         _tab_trigger_with_hint(
-                            AppState.tr["gbif_species_tab"], "gbif_species",
+                            AppState.tr["gbif_species_tab"],
+                            AppState.tr["gbif_species_tab_short"], "gbif_species",
                             AppState.tr["gbif_species_tab_hint"]),
                         # Five tabs stopped fitting the header once "Espécies
                         # (GBIF)" joined them, so the strip slides sideways

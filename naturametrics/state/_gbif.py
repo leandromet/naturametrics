@@ -29,9 +29,13 @@ import reflex as rx
 from pydantic import BaseModel
 
 from ..config import gbif as gc
-from ..config.settings import BUFFER_RADII_KM, GBIF_MIN_ZOOM
+from ..config.settings import (
+    BUFFER_RADII_KM,
+    GBIF_MIN_ZOOM,
+    GBIF_SPECIES_TABLE_LIMIT,
+)
 from ..services import gbif as gbif_service
-from ..services import gbif_buffers, gbif_taxa
+from ..services import gbif_buffers, gbif_export, gbif_taxa
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +77,15 @@ class GbifBufferRow(BaseModel):
     total_label: str
     richness: int
     richness_label: str
+    #: Up to GBIF_EXPORT_SPECIES_LIMIT rows — what the spreadsheet export
+    #: writes. Not rendered directly.
     species: list[GbifSpeciesRow]
+    #: The first GBIF_SPECIES_TABLE_LIMIT of ``species``, and the only list the
+    #: results tab renders. Two fields rather than slicing at render time
+    #: because rx.foreach has no way to take the head of a list var, and 500
+    #: rows of DOM per card across five cards is a heavy panel for a table
+    #: nobody scrolls to the bottom of on screen.
+    species_top: list[GbifSpeciesRow]
     kingdoms: list[GbifKingdomRow]
     error: str
 
@@ -159,6 +171,7 @@ class GbifMixin(rx.State, mixin=True):
     gbif_buffer_rows: list[GbifBufferRow] = []
     gbif_buffer_busy: bool = False
     gbif_buffer_error: str = ""
+    gbif_export_error: str = ""
 
     # ---------------------------------------------------------------------- #
     # Layer toggle
@@ -259,7 +272,11 @@ class GbifMixin(rx.State, mixin=True):
             return None
         rank = _LEVELS[index][0]
         key = self._gbif_keys.get(f"{rank}:{chosen}")
-        return None if key is None else GbifMixin.load_gbif_children(key, index)
+        # type(self), not GbifMixin: Reflex materialises EventHandler objects
+        # only on the concrete state, so the mixin still holds a plain function
+        # here and calling it would just raise TypeError. This runs in an
+        # ordinary handler, so type(self) is already AppState.
+        return None if key is None else type(self).load_gbif_children(key, index)
 
     # Seven thin wrappers rather than one handler taking the rank: a Reflex
     # rx.select's on_change passes only the new value, so the rank has to be
@@ -525,14 +542,96 @@ class GbifMixin(rx.State, mixin=True):
                     # bare number would state a floor as if it were a count.
                     richness_label=(f"{r.richness}+" if r.richness_truncated
                                     else str(r.richness)),
-                    species=[
+                    species=(species := [
                         GbifSpeciesRow(name=n, count=c,
                                        count_label=f"{c:,}".replace(",", " "))
                         for n, c in r.species
-                    ],
+                    ]),
+                    species_top=species[:GBIF_SPECIES_TABLE_LIMIT],
                     kingdoms=[GbifKingdomRow(name=n, count=c)
                               for n, c in r.kingdoms],
                     error=r.error,
                 )
                 for r in rows
             ]
+
+    # ---------------------------------------------------------------------- #
+    # Export
+    # ---------------------------------------------------------------------- #
+    def _gbif_export_context(self) -> list[list[Any]]:
+        """Where the point was — the metadata sheet's first block."""
+        return [
+            # Floats, not formatted strings: services/ods.py prefixes any
+            # string cell starting with "-" with an apostrophe to defuse
+            # spreadsheet formula injection, so a southern latitude written as
+            # text arrives in the sheet as «'-3.100000». As numbers they take
+            # the numeric branch instead — no apostrophe, and they are usable
+            # in a formula rather than being text that merely looks numeric.
+            ["  latitude", round(self.study_lat, 6)],
+            ["  longitude", round(self.study_lon, 6)],
+            ["  rótulo", self.point_label or "—"],
+            ["  origem", self.point_source or "—"],
+            ["  município", self.point_municipio or "—"],
+            ["  UF", self.point_uf or "—"],
+            ["  bioma", self.point_bioma or "—"],
+        ]
+
+    def _gbif_export_filters(self) -> list[list[str]]:
+        """The accordion, spelled out for the metadata sheet.
+
+        Written from the display state rather than from ``gbif_filters`` so the
+        sheet records what the user chose ("Aves"), not what went on the wire
+        ("taxonKey=212") — the key is meaningless to a reader six months later,
+        and the name is what they will recognise.
+        """
+        out: list[list[str]] = []
+        if self.gbif_taxon_label:
+            out.append(["  táxon", self.gbif_taxon_label])
+        if self.gbif_basis:
+            labels = {code: pt for code, pt, _en in gc.BASIS_OF_RECORD}
+            out.append(["  base do registro",
+                        ", ".join(labels.get(b, b) for b in self.gbif_basis)])
+        if self.gbif_year_from or self.gbif_year_to:
+            out.append(["  ano do evento", self.gbif_year_label])
+        if self.gbif_uf:
+            out.append(["  UF", self.gbif_uf])
+        return out
+
+    def download_gbif_species_ods(self):
+        """The workbook: metadata, then one tab per radius.
+
+        Built from the rows already in state — no re-query, so the file and the
+        screen cannot disagree. Synchronous, unlike the Earth Engine exports:
+        there is no computation here, only formatting a few hundred rows that
+        are already in memory, so a background task would add a round trip and
+        a spinner to something measured in milliseconds.
+        """
+        if not self.gbif_buffer_rows:
+            self.gbif_export_error = self.tr["gbif_export_nothing"]
+            return None
+        self.gbif_export_error = ""
+        try:
+            data, name = gbif_export.build_ods(
+                self.gbif_buffer_rows,
+                self._gbif_export_context(),
+                self._gbif_export_filters(),
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("GBIF species ODS export failed")
+            self.gbif_export_error = str(exc)
+            return None
+        return rx.download(data=data, filename=name,
+                           mime_type=gbif_export.MIMETYPE)
+
+    def download_gbif_species_csv(self):
+        """Every radius in one flat table, for a script rather than a reader.
+
+        Carries none of the workbook's caveats, which is why it sits beside the
+        ODS rather than replacing it — see services/gbif_export.build_csv.
+        """
+        if not self.gbif_buffer_rows:
+            self.gbif_export_error = self.tr["gbif_export_nothing"]
+            return None
+        self.gbif_export_error = ""
+        data, name = gbif_export.build_csv(self.gbif_buffer_rows)
+        return rx.download(data=data, filename=name, mime_type="text/csv")

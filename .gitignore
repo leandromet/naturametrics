@@ -180,6 +180,13 @@ data/*
 # conglomerados are in view" from it, and the export enumerates it. Same
 # argument as the index — a deploy cannot rebuild it.
 !data/ifn_points_biome.csv
+# 205 KiB, 5 571 rows, the município type-ahead's whole table (services/
+# municipios.py). Committed for the same reason as the two above and on the
+# same D9 reasoning as ifn_points.csv: it is small, static and derived, and a
+# deploy cannot rebuild it — the Dockerfile builds from the git checkout, so
+# leaving it ignored means the image ships without it and the município search
+# raises FileNotFoundError in production exactly as it did locally.
+!data/municipios.csv
 
 # Explicit belt-and-braces for the bulk trees
 data/raw/

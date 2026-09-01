@@ -22,3 +22,28 @@ def plain(value):
     if isinstance(value, (list, tuple)):
         return [plain(v) for v in value]
     return value
+
+
+def state_class(state):
+    """The concrete state class behind ``self``, background task or not.
+
+    Returning one event handler from another is written ``type(self).other(...)``
+    throughout these mixins, and that is correct in an ordinary handler where
+    ``self`` is the state instance. Inside ``@rx.event(background=True)`` it is
+    not: Reflex hands the task a ``StateProxy``, so ``type(self)`` is
+    ``StateProxy`` and the lookup fails with
+
+        AttributeError: type object 'StateProxy' has no attribute 'choose_municipio'
+
+    A mixin cannot simply name ``AppState`` either — ``state/__init__.py``
+    imports the mixins, so the reference has to be resolved at call time rather
+    than at import time. Unwrapping the proxy does that without an import and
+    without the caller having to know which kind of handler it is in.
+
+    **Never reach for the mixin class instead** (``SearchMixin.choose_municipio``).
+    Reflex only materialises ``EventHandler`` objects on the concrete state; on
+    the mixin the same name is still a plain function, so calling it invokes the
+    coroutine function directly with the first argument bound to ``self`` — a
+    ``TypeError`` about a missing argument, or worse, silence.
+    """
+    return type(getattr(state, "__wrapped__", state))

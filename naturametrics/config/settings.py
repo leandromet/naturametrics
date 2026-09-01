@@ -284,8 +284,18 @@ GBIF_TAXA_CACHE_TTL_S = _int("NM_GBIF_TAXA_CACHE_TTL_S", 86400)
 #: heavily-sampled reserve truncates rather than hangs.
 GBIF_FACET_LIMIT = _int("NM_GBIF_FACET_LIMIT", 1500)
 
-#: How many species rows the results tab lists per buffer before "and N more".
+#: How many species rows the results tab RENDERS per buffer. Display only —
+#: 500 rows of DOM per card across five cards is a heavy panel for a list
+#: nobody scrolls to the bottom of on screen.
 GBIF_SPECIES_TABLE_LIMIT = _int("NM_GBIF_SPECIES_TABLE_LIMIT", 50)
+
+#: How many species rows are RETAINED per buffer, and therefore how many reach
+#: the spreadsheet. Higher than the display limit because an export is read in
+#: a spreadsheet, where 500 rows is nothing and a truncated list is a silent
+#: loss — but far below GBIF_FACET_LIMIT, because every retained row is held in
+#: session state and shipped to the browser. Where the two differ the metadata
+#: sheet says so rather than leaving the reader to infer it.
+GBIF_EXPORT_SPECIES_LIMIT = _int("NM_GBIF_EXPORT_SPECIES_LIMIT", 500)
 
 #: Vertices used to approximate a buffer disc as the WKT polygon GBIF's
 #: `geometry` filter takes. 48 keeps the chord error under 0.2 % of the radius

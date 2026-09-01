@@ -22,6 +22,7 @@ from typing import Any, Dict, List
 import reflex as rx
 
 from ..services import geocode, municipios
+from ._proxy import state_class
 from ..services.geocode import GeocodeError
 
 logger = logging.getLogger(__name__)
@@ -120,14 +121,14 @@ class SearchMixin(rx.State, mixin=True):
             coord = resolution.payload
             # The one branch that selects a point, not just a place — same
             # entry point a map click uses (state/_point.py).
-            return type(self).set_study_point(coord.lat, coord.lon)
+            return state_class(self).set_study_point(coord.lat, coord.lon)
 
         if kind == "municipio":
             async with self:
                 self.municipio_hits = resolution.payload
             # A single unambiguous hit goes straight there; several are offered.
             if len(resolution.payload) == 1:
-                return type(self).choose_municipio(
+                return state_class(self).choose_municipio(
                     resolution.payload[0]["cod_municipio_ibge"]
                 )
             return

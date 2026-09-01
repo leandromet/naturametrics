@@ -344,7 +344,7 @@ def _buffer_card(row) -> rx.Component:
             ),
             _kingdom_chips(row),
             rx.cond(
-                row.species.length() > 0,
+                row.species_top.length() > 0,
                 rx.scroll_area(
                     rx.table.root(
                         rx.table.header(
@@ -358,7 +358,7 @@ def _buffer_card(row) -> rx.Component:
                         ),
                         rx.table.body(
                             rx.foreach(
-                                row.species,
+                                row.species_top,
                                 lambda sp: rx.table.row(
                                     rx.table.cell(
                                         rx.text(sp.name, size="1",
@@ -410,9 +410,41 @@ def gbif_buffer_panel() -> rx.Component:
                         rx.fragment(),
                     ),
                     rx.spacer(),
+                    # Only once there is something to export — two dead
+                    # buttons beside a "list species" call to action read as
+                    # broken rather than as not-yet-applicable.
+                    rx.cond(
+                        AppState.gbif_buffer_rows.length() > 0,
+                        rx.hstack(
+                            rx.tooltip(
+                                rx.button(
+                                    rx.icon("table", size=14), "ODS",
+                                    size="1", variant="soft", color_scheme="gray",
+                                    on_click=AppState.download_gbif_species_ods,
+                                ),
+                                content=AppState.tr["gbif_export_ods_hint"],
+                            ),
+                            rx.tooltip(
+                                rx.button(
+                                    rx.icon("download", size=14), "CSV",
+                                    size="1", variant="soft", color_scheme="gray",
+                                    on_click=AppState.download_gbif_species_csv,
+                                ),
+                                content=AppState.tr["gbif_export_csv_hint"],
+                            ),
+                            spacing="2", align="center",
+                        ),
+                        rx.fragment(),
+                    ),
                     rx.text(AppState.tr["gbif_buffers_note"], size="1",
                             color_scheme="gray"),
                     width="100%", align="center", spacing="3", wrap="wrap",
+                ),
+                rx.cond(
+                    AppState.gbif_export_error != "",
+                    rx.callout(AppState.gbif_export_error, icon="triangle-alert",
+                               color_scheme="amber", size="1", width="100%"),
+                    rx.fragment(),
                 ),
                 rx.cond(
                     AppState.gbif_buffer_error != "",

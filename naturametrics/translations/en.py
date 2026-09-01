@@ -881,4 +881,22 @@ TRANSLATIONS_EN: dict[str, str] = {
     "gbif_buffers_empty": "No records at this radius with the current filters.",
     "gbif_col_species": "Species",
     "gbif_col_records": "Records",
+
+    # --- results tabs: short labels (components/results.py) --------------- #
+    "vegetation_age_tab_short": "Age",
+    "landscape_metrics_tab_short": "Metrics",
+    "biomass_tab_short": "Biomass",
+    "ibge_veg_tab_short": "IBGE",
+    "gbif_species_tab_short": "Species",
+
+    # --- GBIF species export (services/gbif_export.py) -------------------- #
+    "gbif_export_ods_hint": (
+        "ODS workbook: one metadata tab (point, filters, caveats and licences) "
+        "and one tab per radius, listing species and their record counts."
+    ),
+    "gbif_export_csv_hint": (
+        "Single CSV covering every radius (radius_km, species, records, "
+        "% of radius). No metadata — the workbook's caveats still apply."
+    ),
+    "gbif_export_nothing": "List the species before exporting.",
 }

@@ -96,6 +96,7 @@ All settings are environment variables with working defaults; put them in `.env`
 ```bash
 reflex run                   # dev server with hot reload
 reflex run --env prod        # production build locally
+pip install -r requirements-dev.txt   # pytest + odfpy (test-only)
 pytest -m "not ee"           # fast tests (no network)
 pytest -m ee                 # tests that hit the live Earth Engine API
 pytest                       # everything
@@ -103,7 +104,14 @@ pytest                       # everything
 # Offline data preparation (never run by the app itself)
 python scripts/fetch_ifn.py --list
 python scripts/fetch_ifn.py --all --build-catalog
+python scripts/fetch_municipios.py          # data/municipios.csv, 5 571 rows
 ```
+
+> The derived tables in `data/` are **committed** (decision D9) — a fresh clone
+> needs none of these scripts. Re-run one only to refresh its source. If the app
+> raises `FileNotFoundError: data/… não encontrado`, that file is missing from
+> the checkout: run the script named in the message, then commit the result, or
+> the next deploy fails the same way (the image builds from the git checkout).
 
 ---
 
@@ -148,7 +156,7 @@ naturametrics/
 │  ├─ state/               AppState, composed from mixins
 │  ├─ components/          map, charts, panels
 │  └─ pages/               routes
-├─ scripts/fetch_ifn.py    offline IFN data preparation
+├─ scripts/                offline data preparation (IFN, municípios)
 ├─ data/                   ifn_points.csv committed; raw/ and cache/ gitignored
 ├─ tests/
 └─ doc/                    premises, architecture, roadmap, methodology

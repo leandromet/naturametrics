@@ -894,4 +894,26 @@ TRANSLATIONS_PT: dict[str, str] = {
     "gbif_buffers_empty": "Nenhum registro neste raio com os filtros atuais.",
     "gbif_col_species": "Espécie",
     "gbif_col_records": "Registros",
+
+    # --- results tabs: short labels (components/results.py) --------------- #
+    # Shown on INACTIVE tabs only; the active tab shows the full label above.
+    # Five tabs of full names overflow the results header on a laptop, and
+    # ellipsis truncation ("Métric…") tells a reader nothing — these are real
+    # abbreviations chosen so each stays unambiguous against the other four.
+    "vegetation_age_tab_short": "Idade",
+    "landscape_metrics_tab_short": "Métricas",
+    "biomass_tab_short": "Biomassa",
+    "ibge_veg_tab_short": "IBGE",
+    "gbif_species_tab_short": "Espécies",
+
+    # --- GBIF species export (services/gbif_export.py) -------------------- #
+    "gbif_export_ods_hint": (
+        "Planilha ODS: uma aba de metadados (ponto, filtros, ressalvas e "
+        "licenças) e uma aba por raio, com as espécies e seus registros."
+    ),
+    "gbif_export_csv_hint": (
+        "CSV único com todos os raios (raio_km, espécie, registros, "
+        "% do raio). Sem os metadados — as ressalvas da planilha valem igual."
+    ),
+    "gbif_export_nothing": "Levante as espécies antes de exportar.",
 }

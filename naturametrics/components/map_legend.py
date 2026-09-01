@@ -310,6 +310,24 @@ def _ifn_section() -> rx.Component:
     )
 
 
+def _embargos_section() -> rx.Component:
+    return rx.cond(
+        AppState.show_embargos,
+        _row_header(AppState.tr["section_embargos"], AppState.show_embargos,
+                   AppState.toggle_embargos),
+        rx.fragment(),
+    )
+
+
+def _auto_infracao_section() -> rx.Component:
+    return rx.cond(
+        AppState.show_auto_infracao,
+        _row_header(AppState.tr["section_auto_infracao"], AppState.show_auto_infracao,
+                   AppState.toggle_auto_infracao),
+        rx.fragment(),
+    )
+
+
 def map_legend() -> rx.Component:
     """Shown only once at least one analysis layer is on — an empty box
     would just be clutter over the map when the sidebar/sheet has nothing
@@ -326,6 +344,8 @@ def map_legend() -> rx.Component:
                 _ibge_veg_section(),
                 _biomes_section(),
                 _ifn_section(),
+                _embargos_section(),
+                _auto_infracao_section(),
                 spacing="3", width="100%",
             ),
             **_BOX_STYLE,

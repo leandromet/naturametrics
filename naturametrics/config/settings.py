@@ -81,6 +81,24 @@ HANSEN_TREECOVER_THRESHOLD = _int("NM_HANSEN_TREECOVER_THRESHOLD", 30)
 BRAZIL_BBOX = (-74.5, -34.5, -33.5, 6.5)  # min_lon, min_lat, max_lon, max_lat
 
 # --------------------------------------------------------------------------- #
+# Location search (services.geocode, services.municipios)
+# --------------------------------------------------------------------------- #
+#: Nominatim's usage policy: identify the app, cap request volume, stay inside
+#: Brazil. See services/geocode.py — the geocoder is the last-resort resolver,
+#: tried only after a coordinate and a município have both failed to match.
+GEOCODER_URL = os.environ.get(
+    "NM_GEOCODER_URL", "https://nominatim.openstreetmap.org/search"
+)
+GEOCODER_ENABLED = _bool("NM_GEOCODER_ENABLED", True)
+GEOCODER_USER_AGENT = os.environ.get(
+    "NM_GEOCODER_USER_AGENT",
+    "naturametrics/1.0 (contact: leandromet@gmail.com)",
+)
+GEOCODER_TIMEOUT_CONNECT = _int("NM_GEOCODER_TIMEOUT_CONNECT", 10)
+GEOCODER_TIMEOUT_READ = _int("NM_GEOCODER_TIMEOUT_READ", 20)
+GEOCODER_COUNTRY_CODES = "br"
+
+# --------------------------------------------------------------------------- #
 # Drawn / uploaded study region (services.region_geometry)
 # --------------------------------------------------------------------------- #
 #: Ceiling on a region's own area — protects the reduceRegions calls from a
@@ -180,6 +198,49 @@ IFN_INTERACTIVE_MIN_ZOOM = _int("NM_IFN_INTERACTIVE_MIN_ZOOM", 8)
 #: pathological view (zoom 8 over São Paulo) rather than the server, which reads
 #: this from memory.
 IFN_VIEWPORT_LIMIT = _int("NM_IFN_VIEWPORT_LIMIT", 1500)
+
+# --------------------------------------------------------------------------- #
+# IBAMA embargos layer (services.embargos)
+# --------------------------------------------------------------------------- #
+#: Same as IFN_INTERACTIVE_MIN_ZOOM — dialled back from one tick above it
+#: (9) at the user's request, trading a heavier fetch at a wider viewport
+#: for the layer engaging one zoom step earlier.
+EMBARGOS_MIN_ZOOM = _int("NM_EMBARGOS_MIN_ZOOM", 8)
+
+#: Short-lived: this cache exists to de-duplicate the debounced refetch bursts
+#: leaflet_map.js's "map settle" handler produces, not to serve stale data —
+#: upstream is IBAMA's own service, refreshed on their own schedule, not ours.
+EMBARGOS_CACHE_TTL_S = _int("NM_EMBARGOS_CACHE_TTL_S", 120)
+
+#: EMBARGOS_PAGE_SIZE matches the service's own maxRecordCount; the page count
+#: caps one viewport at 4 000 features — verified live against 91 120 polygons
+#: nationwide (2026-08-31), comfortable headroom over what a single-state
+#: viewport past EMBARGOS_MIN_ZOOM plausibly contains.
+EMBARGOS_PAGE_SIZE = _int("NM_EMBARGOS_PAGE_SIZE", 2000)
+EMBARGOS_MAX_PAGES = _int("NM_EMBARGOS_MAX_PAGES", 2)
+
+EMBARGOS_TIMEOUT_CONNECT = _int("NM_EMBARGOS_TIMEOUT_CONNECT", 10)
+EMBARGOS_TIMEOUT_READ = _int("NM_EMBARGOS_TIMEOUT_READ", 30)
+
+# --------------------------------------------------------------------------- #
+# IBAMA autos de infração layer (services.auto_infracao)
+# --------------------------------------------------------------------------- #
+#: Infraction notices — a much denser point dataset than embargos (710 000
+#: rows nationwide vs. 91 000 polygons, verified live 2026-08-31): a modest
+#: bbox around a single city (Santos/SP) already maxed out one 2 000-row
+#: page. Originally gated two ticks above the old EMBARGOS_MIN_ZOOM (11);
+#: dialled back to match EMBARGOS_MIN_ZOOM exactly (8) at the user's
+#: request — a plain point is cheap enough per feature that the much
+#: higher count doesn't need its own extra margin, only the fetch/render
+#: cost of whatever the page cap below actually returns, same as embargos.
+AUTO_INFRACAO_MIN_ZOOM = _int("NM_AUTO_INFRACAO_MIN_ZOOM", 8)
+
+AUTO_INFRACAO_CACHE_TTL_S = _int("NM_AUTO_INFRACAO_CACHE_TTL_S", 120)
+AUTO_INFRACAO_PAGE_SIZE = _int("NM_AUTO_INFRACAO_PAGE_SIZE", 2000)
+AUTO_INFRACAO_MAX_PAGES = _int("NM_AUTO_INFRACAO_MAX_PAGES", 2)
+
+AUTO_INFRACAO_TIMEOUT_CONNECT = _int("NM_AUTO_INFRACAO_TIMEOUT_CONNECT", 10)
+AUTO_INFRACAO_TIMEOUT_READ = _int("NM_AUTO_INFRACAO_TIMEOUT_READ", 30)
 
 # --------------------------------------------------------------------------- #
 # Exports

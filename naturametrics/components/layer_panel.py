@@ -416,6 +416,80 @@ def ifn_control() -> rx.Component:
     )
 
 
+def embargos_control() -> rx.Component:
+    """IBAMA embargos — a live third-party feed, fetched by the
+    browser per-viewport (services.embargos), not minted by Earth Engine —
+    so unlike mapbiomas_control/biomass_control there is no layer_busy
+    spinner tied to this toggle, same reasoning as biome_control."""
+    return _section(
+        AppState.tr["section_embargos"],
+        rx.hstack(
+            rx.switch(checked=AppState.show_embargos,
+                      on_change=AppState.toggle_embargos),
+            rx.text(AppState.tr["embargos_toggle_label"], size="2"),
+            width="100%", align="center", spacing="2",
+        ),
+        rx.cond(
+            AppState.show_embargos,
+            rx.vstack(
+                rx.hstack(
+                    rx.text(AppState.tr["opacity_label"], size="1", color_scheme="gray"),
+                    rx.spacer(),
+                    rx.text(AppState.embargos_opacity_pct.to_string() + "%", size="1"),
+                    width="100%",
+                ),
+                rx.slider(
+                    min=0, max=100, step=5,
+                    default_value=[70],
+                    on_change=AppState.set_embargos_opacity,
+                    width="100%",
+                ),
+                rx.text(AppState.tr["embargos_note"], size="1", color_scheme="gray"),
+                spacing="2", width="100%", padding_top="0.25rem",
+            ),
+            rx.fragment(),
+        ),
+        info=AppState.tr["embargos_info"],
+    )
+
+
+def auto_infracao_control() -> rx.Component:
+    """IBAMA autos de infração — a second live third-party feed, same
+    mechanism as embargos_control right above it, but far denser (709 803
+    points nationwide vs. embargos' 91 120 polygons), hence the higher
+    min_zoom the layer gates itself behind (services.auto_infracao)."""
+    return _section(
+        AppState.tr["section_auto_infracao"],
+        rx.hstack(
+            rx.switch(checked=AppState.show_auto_infracao,
+                      on_change=AppState.toggle_auto_infracao),
+            rx.text(AppState.tr["auto_infracao_toggle_label"], size="2"),
+            width="100%", align="center", spacing="2",
+        ),
+        rx.cond(
+            AppState.show_auto_infracao,
+            rx.vstack(
+                rx.hstack(
+                    rx.text(AppState.tr["opacity_label"], size="1", color_scheme="gray"),
+                    rx.spacer(),
+                    rx.text(AppState.auto_infracao_opacity_pct.to_string() + "%", size="1"),
+                    width="100%",
+                ),
+                rx.slider(
+                    min=0, max=100, step=5,
+                    default_value=[85],
+                    on_change=AppState.set_auto_infracao_opacity,
+                    width="100%",
+                ),
+                rx.text(AppState.tr["auto_infracao_note"], size="1", color_scheme="gray"),
+                spacing="2", width="100%", padding_top="0.25rem",
+            ),
+            rx.fragment(),
+        ),
+        info=AppState.tr["auto_infracao_info"],
+    )
+
+
 def user_points_control() -> rx.Component:
     """A pasted coordinate list, standing in for the IFN grid while active.
 
@@ -904,7 +978,15 @@ def geometry_control() -> rx.Component:
 
 
 def layer_panel() -> rx.Component:
+    # Imported here, not at module level: search.py imports _section/
+    # _info_icon back from this module, and a top-level import in both
+    # directions would try to read them off a layer_panel module that has
+    # not finished defining them yet.
+    from .search import search_panel
+
     return rx.vstack(
+        search_panel(),
+        rx.divider(),
         point_control(),
         rx.divider(),
         geometry_control(),
@@ -919,6 +1001,9 @@ def layer_panel() -> rx.Component:
         rx.divider(),
         ifn_control(),
         multi_select_control(),
+        rx.divider(),
+        embargos_control(),
+        auto_infracao_control(),
         rx.divider(),
         user_points_control(),
         rx.divider(),
@@ -948,4 +1033,14 @@ def layer_panel() -> rx.Component:
         height="100%",
         width="100%",
         padding="1rem",
+        # Every control in this panel uses text size="1"/"2" (Radix's
+        # --font-size-1/2, 12px/14px by default) — redefining the tokens
+        # here, once, at the panel root, shrinks every one of them by 3px
+        # (~2.25pt) without touching each individual rx.text call, and stays
+        # correct if the app's theme scaling ever changes since it's relative
+        # to the inherited value, not a hard-coded px number.
+        style={
+            "--font-size-1": "calc(var(--font-size-1) - 3px)",
+            "--font-size-2": "calc(var(--font-size-2) - 3px)",
+        },
     )

@@ -21,7 +21,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
 from ..config.settings import IFN_VIEWPORT_LIMIT
-from ..services import biomes, ifn
+from ..services import auto_infracao, biomes, embargos, ifn
 
 logger = logging.getLogger(__name__)
 
@@ -114,6 +114,66 @@ async def ifn_points_geojson(request: Request) -> Response:
     return JSONResponse(payload, headers={"Cache-Control": "no-store"})
 
 
+async def embargos_geojson(request: Request) -> Response:
+    """IBAMA embargo polygons inside a viewport, proxied live per pan.
+
+    Unlike ``ifn_points_geojson``, the backing call does real network I/O
+    against a third party and can genuinely throw — ``embargos.polygons_in_bbox``
+    already catches everything internally and returns an empty FeatureCollection
+    on failure, but this try/except is the belt-and-suspenders match for
+    ``biomes_geojson``'s pattern in case something upstream of that (e.g. the
+    executor itself) misbehaves.
+    """
+    west = _float_param(request, "west")
+    south = _float_param(request, "south")
+    east = _float_param(request, "east")
+    north = _float_param(request, "north")
+    if None in (west, south, east, north):
+        west, south, east, north = -180.0, -90.0, 180.0, 90.0
+
+    try:
+        payload = await _run_blocking(
+            lambda: embargos.polygons_in_bbox(west, south, east, north)
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("IBAMA embargos GeoJSON could not be produced")
+        return JSONResponse(
+            {"error": "embargos indisponíveis", "detail": str(exc)}, status_code=503
+        )
+
+    # Live, per-viewport content — never cached by the browser, same reasoning
+    # as ifn_points_geojson.
+    return JSONResponse(payload, headers={"Cache-Control": "no-store"})
+
+
+async def auto_infracao_geojson(request: Request) -> Response:
+    """IBAMA infraction-notice points inside a viewport, proxied live per pan.
+
+    Same shape as embargos_geojson — see that docstring for why the
+    try/except is here even though auto_infracao.points_in_bbox already
+    catches everything internally.
+    """
+    west = _float_param(request, "west")
+    south = _float_param(request, "south")
+    east = _float_param(request, "east")
+    north = _float_param(request, "north")
+    if None in (west, south, east, north):
+        west, south, east, north = -180.0, -90.0, 180.0, 90.0
+
+    try:
+        payload = await _run_blocking(
+            lambda: auto_infracao.points_in_bbox(west, south, east, north)
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("IBAMA auto de infração GeoJSON could not be produced")
+        return JSONResponse(
+            {"error": "autos de infração indisponíveis", "detail": str(exc)},
+            status_code=503,
+        )
+
+    return JSONResponse(payload, headers={"Cache-Control": "no-store"})
+
+
 def register(app) -> None:
     """Attach the routes to the Reflex app's Starlette instance."""
     api = getattr(app, "_api", None)
@@ -122,5 +182,8 @@ def register(app) -> None:
         return
     api.add_route(biomes.GEOJSON_PATH, biomes_geojson, methods=["GET"])
     api.add_route(ifn.GEOJSON_PATH, ifn_points_geojson, methods=["GET"])
-    logger.info("Registered backend routes %s, %s",
-                biomes.GEOJSON_PATH, ifn.GEOJSON_PATH)
+    api.add_route(embargos.GEOJSON_PATH, embargos_geojson, methods=["GET"])
+    api.add_route(auto_infracao.GEOJSON_PATH, auto_infracao_geojson, methods=["GET"])
+    logger.info("Registered backend routes %s, %s, %s, %s",
+                biomes.GEOJSON_PATH, ifn.GEOJSON_PATH, embargos.GEOJSON_PATH,
+                auto_infracao.GEOJSON_PATH)

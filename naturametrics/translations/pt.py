@@ -16,6 +16,8 @@ TRANSLATIONS_PT: dict[str, str] = {
     "section_compare": "Comparar camadas",
     "section_change_mask": "Mudança na vegetação natural",
     "section_ifn": "Inventário Florestal Nacional",
+    "section_embargos": "Embargos IBAMA",
+    "section_auto_infracao": "Autos de infração IBAMA",
     "filters_label": "Filtros",
     "ifn_filters_title": "Filtros do IFN",
     "section_user_points": "Coordenadas enviadas",
@@ -39,9 +41,30 @@ TRANSLATIONS_PT: dict[str, str] = {
     ),
     "multi_shape_change_note": "Altere o formato antes de selecionar pontos múltiplos.",
 
+    # --- busca de localização ------------------------------------------------ #
+    "search_title": "Buscar",
+    "search_placeholder": "Coordenada, município ou nome de lugar…",
+    "search_read_as": "lido como:",
+    "search_button": "Buscar",
+    "search_button_busy": "Buscando…",
+    "search_municipios_heading": "Municípios",
+    "search_places_heading": "Lugares",
+    "search_places_attribution": "© colaboradores do OpenStreetMap (ODbL)",
+    "search_place_hint": "clique no mapa para escolher um ponto",
+    "echo_coordenada": "coordenada",
+    "echo_municipio": "município",
+    "echo_lugar": "lugar",
+    "erro_lugar_nao_encontrado": "Nenhum lugar encontrado para “{query}”.",
+
     # --- layer panel: info-icon popovers ---------------------------------- #
     # One per sidebar section — what it is and when it helps understand a
     # study area, in a couple of sentences a popover can hold comfortably.
+    "search_info": (
+        "Busque uma coordenada, um município ou um nome de lugar para "
+        "navegar pelo mapa. Um município ou lugar apenas enquadra o "
+        "mapa; uma coordenada exata também a escolhe como ponto de "
+        "estudo, o mesmo que clicar ali."
+    ),
     "point_info": (
         "Clique em qualquer lugar do Brasil para escolher um ponto de "
         "estudo. A aplicação calcula automaticamente uso do solo, idade da "
@@ -97,6 +120,21 @@ TRANSLATIONS_PT: dict[str, str] = {
         "clicado como um clique no mapa, com a vantagem de já ter "
         "identidade e localização publicadas — útil para comparar com "
         "dados de campo."
+    ),
+    "embargos_info": (
+        "Áreas embargadas pelo IBAMA por infrações ambientais, buscadas "
+        "ao vivo do próprio serviço do IBAMA para a área visível. "
+        "Atualizado no ritmo do IBAMA, fora do controle deste app — pode "
+        "ficar temporariamente esparso ou indisponível, independente "
+        "daqui."
+    ),
+    "auto_infracao_info": (
+        "Autos de infração emitidos pelo IBAMA, um a um, buscados ao "
+        "vivo para a área visível — um dado complementar aos embargos: "
+        "o auto é a autuação em si; o embargo é a restrição que pode "
+        "vir depois dela, e nem toda autuação gera um embargo. Muito "
+        "mais denso que os embargos, por isso só aparece com o zoom "
+        "mais fechado."
     ),
     "user_points_info": (
         "Substitui a grade do IFN por uma lista de pontos definida por "
@@ -203,6 +241,19 @@ TRANSLATIONS_PT: dict[str, str] = {
     ),
 
     "ifn_toggle_label": "Conglomerados",
+    "embargos_toggle_label": "Mostrar áreas embargadas",
+    "embargos_note": (
+        "Feed ao vivo do próprio serviço do IBAMA, atualizado por eles, "
+        "não por este app — não fica em cache aqui além de alguns "
+        "minutos."
+    ),
+    "auto_infracao_toggle_label": "Mostrar autos de infração",
+    "auto_infracao_note": (
+        "Só aparece com o zoom mais fechado do que os embargos — um "
+        "conjunto bem mais denso no país todo. Feed ao vivo do próprio "
+        "serviço do IBAMA, não fica em cache aqui além de alguns "
+        "minutos."
+    ),
     "filter_all": "Todos",
     "filter_region": "Região",
     "filter_biome": "Bioma",

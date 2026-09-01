@@ -425,3 +425,120 @@ IBGE_BIOME_DOMAIN = {
     "outline_alpha": "ff",
     "outline_width": 1.5,
 }
+
+# --------------------------------------------------------------------------- #
+# IBAMA — SISCOM embargos (live ArcGIS FeatureServer, not Earth Engine)
+# --------------------------------------------------------------------------- #
+#: Areas embargoed by IBAMA for environmental infractions. Unlike everything
+#: else in this file, this is not an Earth Engine asset: it is IBAMA's own
+#: live service — see services/embargos.py, which queries it per-viewport
+#: and never caches beyond a couple of minutes.
+#:
+#: ⚠️ This used to point at "01_Publicacoes_Bases/embargos_siscom_brasil"
+#: (MapServer/2), which verified live 2026-08-31 as reachable but returning
+#: **zero features nationwide** (returnCountOnly → {"count":0},
+#: returnIdsOnly → objectIds: null) — presumably a feed between refresh
+#: cycles rather than a dead endpoint, but unusable as-is. Re-pointed
+#: 2026-08-31 at "01_Publicacoes_Bases/adm_embargos_ibama_a" instead — the
+#: same publisher, a different underlying dataset (a WMS/WFS-capable
+#: service the same MapServer also exposes; this app uses its plain REST
+#: /query endpoint, the same mechanism as before, since REST bbox queries
+#: already proved reliable and WFS's BBOX filter did not return matches
+#: against a known point during verification) — confirmed live with real
+#: data: 91 120 polygons nationwide (WFS resultType=hits), a REST bbox
+#: query over a small Santa Catarina box returned 6 real embargoed
+#: properties. Field names below were re-mapped to this dataset's own
+#: (different) schema.
+IBAMA_EMBARGOS = {
+    "query_url": (
+        "https://pamgia.ibama.gov.br/server/rest/services/"
+        "01_Publicacoes_Bases/adm_embargos_ibama_a/MapServer/0/query"
+    ),
+    "attribution": "IBAMA — áreas embargadas",
+    #: Semantic name → ArcGIS field name. Nothing outside services/embargos.py
+    #: should hard-code the source field abbreviations.
+    "fields": {
+        "person": "nome_embargado",
+        "document": "cpf_cnpj_embargado",
+        "tad_number": "num_tad",
+        "tad_date": "dat_embargo",
+        "process": "num_processo",
+        "uf": "uf",
+        "municipality": "municipio",
+        #: This dataset has no embargo-status field (the old source's
+        #: sit_embarg/status_tad have no equivalent here) — sit_desmatamento
+        #: is the closest available flag, but it answers a narrower question
+        #: ("is deforestation ongoing on this property?", not "what state is
+        #: the embargo in?"), so the tooltip labels it "Desmatamento", not
+        #: "Situação", to avoid implying it says more than it does.
+        "situation": "sit_desmatamento",
+        "infraction": "des_tad",
+        "area": "qtd_area_embargada",
+        "agency": "unid_controle",
+        "registered": "dat_ult_alteracao",
+    },
+    #: Amber — reads as a legal/regulatory flag, distinct from every other
+    #: layer's palette on this map.
+    "default_color": "f9a825",
+}
+
+# --------------------------------------------------------------------------- #
+# IBAMA autos de infração (infraction notices) — live ArcGIS MapServer
+# --------------------------------------------------------------------------- #
+#: Individual infraction citations, as points — a different, complementary
+#: dataset to IBAMA_EMBARGOS above (an "auto de infração" is the citation
+#: itself; an embargo is the follow-on restriction placed on the land, and
+#: not every citation carries one). Same publisher, same REST /query
+#: mechanism, verified live 2026-08-31: 709 803 rows nationwide — far denser
+#: than embargos, hence services/auto_infracao.py's own higher min_zoom.
+#:
+#: ⚠️ This service also exposes a WFS endpoint
+#: (app_dadosabertos/adm_auto_infracao_p/MapServer/WFSServer), but its
+#: outputFormat=geojson response is malformed for any record with no
+#: recorded coordinate — literally invalid JSON (a dangling
+#: ``"geometry":{"type":"Point",}`` with no ``coordinates`` key at all).
+#: The plain REST /query endpoint used here does not have this problem
+#: (confirmed against the same bbox), so WFS was dropped rather than worked
+#: around.
+IBAMA_AUTO_INFRACAO = {
+    "query_url": (
+        "https://pamgia.ibama.gov.br/server/rest/services/"
+        "app_dadosabertos/adm_auto_infracao_p/MapServer/0/query"
+    ),
+    "attribution": "IBAMA — autos de infração",
+    #: Semantic name → ArcGIS field name. Nothing outside
+    #: services/auto_infracao.py should hard-code the source field names.
+    "fields": {
+        "infrator": "nome_infrator",
+        "document": "cpf_cnpj_infrator",
+        "auto_number": "num_auto_infracao",
+        "date": "dat_hora_auto_infracao",
+        "process": "num_processo",
+        "uf": "uf",
+        "municipality": "municipio",
+        "infraction": "des_infracao",
+        "value": "val_auto_infracao",
+        "status": "des_status_formulario",
+    },
+    #: A deep orange-red — related to embargos' amber (both IBAMA
+    #: enforcement data) but visually distinct from it, and from IFN's own
+    #: red conglomerado dots.
+    "default_color": "c1440e",
+}
+
+# --------------------------------------------------------------------------- #
+# IBGE municípios — shared with camposcope (same ee-leandromet project)
+# --------------------------------------------------------------------------- #
+#: The same asset camposcope's own IBGE_MUNICIPIOS reads
+#: (camposcope/config/datasets.py). Both apps run under the ee-leandromet GCP
+#: project, so this is a read-only reference to an asset this app does not
+#: own — see services/municipios.py. Used only to frame the map on a chosen
+#: município (fitBounds); the searchable name list is a local CSV.
+IBGE_MUNICIPIOS = {
+    "asset": os.environ.get(
+        "NM_MUNICIPIOS_ASSET",
+        "projects/ee-leandromet/assets/br_municipios_2025",
+    ),
+    "attribution": "IBGE — Malhas territoriais municipais 2025",
+    "fields": {"code": "CD_MUN"},
+}

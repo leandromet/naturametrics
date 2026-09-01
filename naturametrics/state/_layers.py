@@ -18,8 +18,10 @@ from ..config import datasets as ds
 from ..config import ibge_vegetation as ds_ibge_veg
 from ..config import mapbiomas as mb
 from ..config import settings as st
+from ..services import auto_infracao as auto_infracao_service
 from ..services import biomes as biome_service
 from ..services import change_mask as cm
+from ..services import embargos as embargos_service
 from ..services import ifn as ifn_service
 from ..services import layers as layer_service
 from ..services.biomass import AGB_YEARS
@@ -122,6 +124,18 @@ class LayersMixin(rx.State, mixin=True):
     #: (leaflet_map.js's applyLabelVisibility), so the default costs nothing
     #: until the user is already zoomed in enough for them to be legible.
     show_biome_labels: bool = True
+
+    # --- IBAMA embargos (services.embargos) --------------------------------
+    #: A live third-party feed, not Earth Engine — no minting, the browser
+    #: fetches it directly (see _build_vectors). Off by default like every
+    #: other optional overlay.
+    show_embargos: bool = False
+    embargos_opacity: float = 0.7
+
+    # --- IBAMA autos de infração (services.auto_infracao) -------------------
+    #: Same reasoning as show_embargos — a live third-party feed, no minting.
+    show_auto_infracao: bool = False
+    auto_infracao_opacity: float = 0.85
 
     #: Re-applied by the map whenever it changes — how a filter choice frames
     #: itself. Empty list leaves the viewport alone.
@@ -473,6 +487,11 @@ class LayersMixin(rx.State, mixin=True):
         if self.show_biomes:
             specs.append(biome_service.vector_spec(
                 opacity=self.biome_opacity, show_labels=self.show_biome_labels))
+        if self.show_embargos:
+            specs.append(embargos_service.vector_spec(opacity=self.embargos_opacity))
+        if self.show_auto_infracao:
+            specs.append(auto_infracao_service.vector_spec(
+                opacity=self.auto_infracao_opacity))
         if self.user_points_active:
             # Takes over the interactive layer entirely rather than sitting
             # alongside it — two hoverable point layers stacked in the same
@@ -1334,6 +1353,26 @@ class LayersMixin(rx.State, mixin=True):
         self.biome_opacity = round(float(raw) / 100.0, 2)
         self._refresh_layers()
 
+    def toggle_embargos(self, checked: bool):
+        """No Earth Engine, no minting — same reasoning as toggle_biomes."""
+        self.show_embargos = checked
+        self._refresh_layers()
+
+    def set_embargos_opacity(self, value: list[int | float]):
+        raw = value[0] if isinstance(value, (list, tuple)) else value
+        self.embargos_opacity = round(float(raw) / 100.0, 2)
+        self._refresh_layers()
+
+    def toggle_auto_infracao(self, checked: bool):
+        """No Earth Engine, no minting — same reasoning as toggle_biomes."""
+        self.show_auto_infracao = checked
+        self._refresh_layers()
+
+    def set_auto_infracao_opacity(self, value: list[int | float]):
+        raw = value[0] if isinstance(value, (list, tuple)) else value
+        self.auto_infracao_opacity = round(float(raw) / 100.0, 2)
+        self._refresh_layers()
+
     # ---------------------------------------------------------------------- #
     # Derived display values
     # ---------------------------------------------------------------------- #
@@ -1347,7 +1386,8 @@ class LayersMixin(rx.State, mixin=True):
         return (self.show_mapbiomas or self.show_change_mask
                 or self.show_hansen_treecover or self.show_hansen_change
                 or self.show_ibge_veg or self.show_biomass
-                or self.show_biomes or self.show_ifn
+                or self.show_biomes or self.show_ifn or self.show_embargos
+                or self.show_auto_infracao
                 or self.compare_mode != "off")
 
     @rx.var
@@ -1420,6 +1460,14 @@ class LayersMixin(rx.State, mixin=True):
     @rx.var
     def biome_opacity_pct(self) -> int:
         return int(round(self.biome_opacity * 100))
+
+    @rx.var
+    def embargos_opacity_pct(self) -> int:
+        return int(round(self.embargos_opacity * 100))
+
+    @rx.var
+    def auto_infracao_opacity_pct(self) -> int:
+        return int(round(self.auto_infracao_opacity * 100))
 
     @rx.var
     def biomass_opacity_pct(self) -> int:

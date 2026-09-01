@@ -16,6 +16,8 @@ TRANSLATIONS_EN: dict[str, str] = {
     "section_compare": "Compare layers",
     "section_change_mask": "Natural vegetation change",
     "section_ifn": "National Forest Inventory",
+    "section_embargos": "IBAMA embargos",
+    "section_auto_infracao": "IBAMA infraction notices",
     "filters_label": "Filters",
     "ifn_filters_title": "IFN filters",
     "section_user_points": "Submitted coordinates",
@@ -39,7 +41,28 @@ TRANSLATIONS_EN: dict[str, str] = {
     ),
     "multi_shape_change_note": "Change the shape before selecting multiple points.",
 
+    # --- location search ---------------------------------------------------- #
+    "search_title": "Search",
+    "search_placeholder": "Coordinate, município, or place name…",
+    "search_read_as": "read as:",
+    "search_button": "Search",
+    "search_button_busy": "Searching…",
+    "search_municipios_heading": "Municípios",
+    "search_places_heading": "Places",
+    "search_places_attribution": "© OpenStreetMap contributors (ODbL)",
+    "search_place_hint": "click the map to choose a point",
+    "echo_coordenada": "coordinate",
+    "echo_municipio": "município",
+    "echo_lugar": "place",
+    "erro_lugar_nao_encontrado": "No place found for “{query}”.",
+
     # --- layer panel: info-icon popovers ---------------------------------- #
+    "search_info": (
+        "Find a coordinate, a município, or a place name to navigate the "
+        "map. A município or place only frames the map; an exact "
+        "coordinate also chooses it as the study point, the same as "
+        "clicking there would."
+    ),
     "point_info": (
         "Click anywhere in Brazil to choose a study point. The app "
         "automatically computes land-use history, vegetation age, "
@@ -93,6 +116,20 @@ TRANSLATIONS_EN: dict[str, str] = {
         "just like a map click, with the advantage of already having a "
         "published identity and location — useful for comparing against "
         "field data."
+    ),
+    "embargos_info": (
+        "Areas embargoed by IBAMA for environmental infractions, fetched "
+        "live from IBAMA's own service for whatever is in view. Refreshed "
+        "on IBAMA's own schedule, outside this app's control — it can be "
+        "transiently sparse or unavailable independent of anything here."
+    ),
+    "auto_infracao_info": (
+        "Individual infraction citations (autos de infração) issued by "
+        "IBAMA, fetched live for whatever is in view — a companion "
+        "dataset to embargos: the citation is the notice itself; an "
+        "embargo is the follow-on restriction, and not every citation "
+        "carries one. Far denser than embargos, so it only appears at a "
+        "closer zoom."
     ),
     "user_points_info": (
         "Replaces the IFN grid with a list of points you define yourself "
@@ -199,6 +236,17 @@ TRANSLATIONS_EN: dict[str, str] = {
     ),
 
     "ifn_toggle_label": "Clusters",
+    "embargos_toggle_label": "Show embargoed areas",
+    "embargos_note": (
+        "Live feed from IBAMA's own service, refreshed on their end, not "
+        "this app's — not cached here beyond a couple of minutes."
+    ),
+    "auto_infracao_toggle_label": "Show infraction notices",
+    "auto_infracao_note": (
+        "Only shown at a closer zoom than embargos — a much denser "
+        "dataset nationwide. Live feed from IBAMA's own service, not "
+        "cached here beyond a couple of minutes."
+    ),
     "filter_all": "All",
     "filter_region": "Region",
     "filter_biome": "Biome",

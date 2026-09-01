@@ -139,6 +139,14 @@ class LeafletMap(rx.el.Div):
     #: polygon/rectangle. ``None`` is accepted but never sent by the hook
     #: today — see GeometryMixin.on_geometry_drawn for why.
     on_geometry_drawn: EventHandler[passthrough_event_spec(dict)]
+    #: Called with ``{id, ...FeatureCollection.properties}`` after a dynamic
+    #: vector layer whose spec sets ``emit_meta`` finishes a fetch. Describes
+    #: the fetch, not a feature: how many records matched upstream against how
+    #: many came back. Only services/gbif.py sets ``emit_meta`` — a layer that
+    #: returns everything in view has nothing to report, and a state round-trip
+    #: per pan for every dynamic layer would undo the reason they are fetched
+    #: over HTTP rather than pushed through state.
+    on_layer_meta: EventHandler[passthrough_event_spec(dict)]
 
     def _exclude_props(self) -> list[str]:
         # These drive the hook, not DOM attributes. React would warn about all
@@ -146,7 +154,8 @@ class LeafletMap(rx.el.Div):
         return [*super()._exclude_props(), "center", "zoom", "bounds", "swipe",
                 "layers", "overlays", "vectors", "fit_bounds", "area_select",
                 "draw_enabled", "on_map_click", "on_point_hover",
-                "on_point_select", "on_area_select", "on_geometry_drawn"]
+                "on_point_select", "on_area_select", "on_geometry_drawn",
+                "on_layer_meta"]
 
     def add_imports(self) -> list[dict[str, Any]]:
         """Leaflet's and leaflet-draw's stylesheets, and the React hooks the
@@ -198,6 +207,7 @@ class LeafletMap(rx.el.Div):
         select = _handler("on_point_select")
         area = _handler("on_area_select")
         draw = _handler("on_geometry_drawn")
+        layer_meta = _handler("on_layer_meta")
 
         config = (
             f"{{center: {self.center!s}, zoom: {self.zoom!s}, "
@@ -210,7 +220,7 @@ class LeafletMap(rx.el.Div):
         expr = (
             f"useNaturametricsMap({ref}, {config}, {self.layers!s}, "
             f"{self.overlays!s}, {self.vectors!s}, {handler}, {hover}, {select}, "
-            f"{area}, {draw})"
+            f"{area}, {draw}, {layer_meta})"
         )
         return [
             Var(

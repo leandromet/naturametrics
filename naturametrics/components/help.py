@@ -63,6 +63,8 @@ def como_usar_dialog() -> rx.Component:
                     _step("8", tr["help_step8_title"], tr["help_step8_body"]),
                     _step("9", tr["help_step9_title"], tr["help_step9_body"]),
                     _step("10", tr["help_step10_title"], tr["help_step10_body"]),
+                    _step("11", tr["help_step11_title"], tr["help_step11_body"]),
+                    _step("12", tr["help_step12_title"], tr["help_step12_body"]),
                     rx.callout(
                         tr["help_triage_callout"],
                         icon="triangle-alert", color_scheme="amber", size="1",
@@ -75,6 +77,8 @@ def como_usar_dialog() -> rx.Component:
                         rx.list_item(tr["help_limit_2"]),
                         rx.list_item(tr["help_limit_3"]),
                         rx.list_item(tr["help_limit_4"]),
+                        rx.list_item(tr["help_limit_5"]),
+                        rx.list_item(tr["help_limit_6"]),
                         font_size="var(--font-size-2)", color="var(--gray-11)",
                     ),
                     spacing="4", align_items="start", width="100%",

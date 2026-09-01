@@ -795,4 +795,90 @@ TRANSLATIONS_EN: dict[str, str] = {
     # --- language switcher ---------------------------------------------- #
     "go_to_canada": "Go to Canada",
     "language_label": "Language",
+
+    # --- GBIF biodiversity (components/gbif_panel.py) --------------------- #
+    "group_biodiversity": "Biodiversity (GBIF)",
+    "section_gbif": "Species occurrences",
+    "gbif_toggle_label": "GBIF — occurrence records",
+    "gbif_info": (
+        "Species occurrence records from GBIF (Global Biodiversity Information "
+        "Facility) — the same data Brazil's SiBBr node publishes. They appear "
+        "only from zoom 10 in; further out an individual point is under a pixel "
+        "wide. The layer draws at most 300 records per view, so use the search "
+        "to narrow it to what you actually want."
+    ),
+    "gbif_zoom_note": "Zoom in to level 10 or closer to see the records.",
+    "gbif_truncated_note": "records in this view — narrow the search",
+    "gbif_taxonomy_group": "Taxon",
+    "gbif_records_group": "Record type, year and state",
+    "gbif_taxonomy_title": "Browse the classification",
+    "gbif_rank_kingdom": "Kingdom",
+    "gbif_rank_phylum": "Phylum",
+    "gbif_rank_class": "Class",
+    "gbif_rank_order": "Order",
+    "gbif_rank_family": "Family",
+    "gbif_rank_genus": "Genus",
+    "gbif_rank_species": "Species",
+    "gbif_name_label": "Scientific name",
+    "gbif_name_placeholder": "e.g. Panthera onca, Araucaria…",
+    "gbif_basis_label": "Basis of record",
+    "gbif_year_label": "Event year",
+    "gbif_uf_label": "State",
+    "gbif_buffers_run": "List species",
+    "gbif_buffers_no_point": (
+        "Pick a point on the map to list the species recorded around it."
+    ),
+    "gbif_records_word": "records",
+    "gbif_species_word": "species",
+    "gbif_top_species": "Most-recorded species",
+
+    # --- help: IBAMA and GBIF layers (added with the GBIF integration) ---- #
+    "help_step11_title": "Check IBAMA embargoes and infractions",
+    "help_step11_body": (
+        "Under «IFN, IBAMA and uploaded data» switch on «Embargoed areas» and "
+        "«Infraction notices». Both are queried live against IBAMA's official "
+        "service on every map movement, from zoom 8 in, and show what is in "
+        "the current view — not the whole country. Hover a polygon or point "
+        "for the party cited, the TAD or notice number, date, municipality and "
+        "infraction. They are different things: the infraction notice is the "
+        "citation itself, the embargo is the restriction on the land, and not "
+        "every citation carries one."
+    ),
+    "help_step12_title": "See what has been recorded there (GBIF)",
+    "help_step12_body": (
+        "Under «Biodiversity (GBIF)» switch on the occurrence records and zoom "
+        "in to level 10. Each dot is a species record, coloured by kingdom. "
+        "The advanced search works two ways: type a scientific name and pick "
+        "from the list, or browse the classification from kingdom down to "
+        "species — selecting at any level already filters the map, you do not "
+        "have to walk to the bottom. You can also narrow by basis of record, "
+        "year and state. With a study point chosen, «Species in the buffers» "
+        "lists the species already recorded at each radius around it."
+    ),
+    "help_limit_5": (
+        "The IBAMA and GBIF layers are queried live against third-party "
+        "services and reflect what those publish at that moment — there is no "
+        "local copy, so an outage on their side shows up as an empty layer."
+    ),
+    "help_limit_6": (
+        "GBIF draws at most 300 records per map view. When there are more, the "
+        "panel shows «300 / total» prominently: what is on screen is an "
+        "arbitrary sample, and narrowing the search is what makes the view "
+        "representative. Records also carry their source licences, including "
+        "CC-BY-NC, which prohibits commercial use."
+    ),
+
+    # --- GBIF species analysis tab (components/gbif_panel.py) ------------- #
+    "gbif_species_tab": "Species (GBIF)",
+    "gbif_species_tab_hint": (
+        "Species already recorded in GBIF inside each buffer around the study "
+        "point. It is an aggregate query — it counts the records without "
+        "downloading them — and honours the same filters as the sidebar "
+        "search. The buffers are cumulative discs: the 10 km one includes "
+        "everything in the 5 km one."
+    ),
+    "gbif_buffers_note": "Cumulative discs · queried live from GBIF",
+    "gbif_buffers_empty": "No records at this radius with the current filters.",
+    "gbif_col_species": "Species",
+    "gbif_col_records": "Records",
 }

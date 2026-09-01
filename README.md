@@ -84,6 +84,9 @@ All settings are environment variables with working defaults; put them in `.env`
 | `NM_SPOT_ENABLED` | `false` | SPOT 2008 layers — licence-gated, see below. |
 | `NM_HANSEN_TREECOVER_THRESHOLD` | `30` | Tree-cover % defining Hansen forest. |
 | `NM_IFN_CATALOG` | `data/ifn_points.csv` | Derived IFN point catalogue. |
+| `NM_GBIF_MIN_ZOOM` | `10` | Below this the GBIF layer is removed entirely. |
+| `NM_GBIF_MAX_PAGES` | `1` | Pages of 300 occurrences fetched per viewport. |
+| `NM_GBIF_CACHE_TTL_S` | `900` | Viewport-result cache. |
 | `PORT` / `BACKEND_PORT` | `3010` / `8011` | Frontend / backend ports. |
 
 ---
@@ -165,6 +168,9 @@ Start with [`doc/README.md`](doc/README.md).
 | **Sentinel-2** | Copernicus / ESA |
 | **Landsat**, **MODIS** | USGS / NASA |
 | **SPOT — Brazil Forest Imagery 2008** | ⚠️ **Restricted** — requires accepting Google's licence agreement, granted to the service account. Disabled by default (`NM_SPOT_ENABLED=false`). |
+| **IBAMA** (áreas embargadas, autos de infração) | Open data — *IBAMA*. Queried live per map view against the PAMGIA map service. |
+| **IBGE** (biomas, vegetação 2022, malhas municipais) | Open data — *IBGE* |
+| **GBIF** occurrences | ⚠️ **Mixed** — constituent datasets are CC0, CC-BY **and CC-BY-NC**; the query does not exclude the non-commercial ones. Cite `GBIF.org (dd mmm yyyy) GBIF Occurrence Search` with the access date. |
 | Basemaps | Esri, OpenStreetMap, Google |
 
 Details and caveats in [`doc/04-data-sources.md`](doc/04-data-sources.md).

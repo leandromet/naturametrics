@@ -243,6 +243,59 @@ AUTO_INFRACAO_TIMEOUT_CONNECT = _int("NM_AUTO_INFRACAO_TIMEOUT_CONNECT", 10)
 AUTO_INFRACAO_TIMEOUT_READ = _int("NM_AUTO_INFRACAO_TIMEOUT_READ", 30)
 
 # --------------------------------------------------------------------------- #
+# GBIF occurrences layer (services.gbif)
+# --------------------------------------------------------------------------- #
+#: Deliberately higher than EMBARGOS_MIN_ZOOM / AUTO_INFRACAO_MIN_ZOOM (both 8),
+#: at the user's explicit request — "coordinates only very close (zoom 10 or
+#: closer)". The density justifies it independently: a z10 box over Manaus holds
+#: 22 400 records (verified live 2026-09-01) against 710 000 autos de infração
+#: nationwide, so this layer is denser per viewport than anything else the app
+#: draws, and one page shows 300 of them.
+GBIF_MIN_ZOOM = _int("NM_GBIF_MIN_ZOOM", 10)
+
+#: GBIF's own hard ceiling on one occurrence/search page. Not adjustable
+#: upward — the API rejects it.
+GBIF_PAGE_SIZE = _int("NM_GBIF_PAGE_SIZE", 300)
+
+#: One page by default, unlike embargos' two. Measured: 300 records is 2.2 MB
+#: off the wire and 2.19 s, against 1.60 s for 100 — the cost is superlinear in
+#: wall clock and brutal in bytes, and a second page would double both for a
+#: layer that is already showing an arbitrary 300 of a possibly five-figure
+#: count. The honest fix is not more pages, it is the taxonomy filter: the
+#: panel reports "300 de 22 400" so the truncation is visible rather than
+#: silent, which is precisely what the accordion exists to narrow.
+GBIF_MAX_PAGES = _int("NM_GBIF_MAX_PAGES", 1)
+
+#: Longer than the IBAMA layers' 120 s. Those proxy a service that is refreshed
+#: on its publisher's own schedule and can change under us; a GBIF occurrence
+#: record is immutable in practice, and the snapshot behind the API moves
+#: monthly at most, so a longer TTL costs nothing in staleness and saves real
+#: round-trips while a user pans around one study area.
+GBIF_CACHE_TTL_S = _int("NM_GBIF_CACHE_TTL_S", 900)
+
+#: The taxonomy backbone is genuinely static — it changes when GBIF publishes a
+#: new backbone, a few times a year. Cached for a day so the cascading picker
+#: never waits on the network twice for the same branch.
+GBIF_TAXA_CACHE_TTL_S = _int("NM_GBIF_TAXA_CACHE_TTL_S", 86400)
+
+#: Facet rows requested for the species-in-buffer analysis. GBIF accepts up to
+#: 1500 (verified live), which is far more species than any 10 km buffer in
+#: Brazil actually holds — the ceiling is there so a pathological buffer over a
+#: heavily-sampled reserve truncates rather than hangs.
+GBIF_FACET_LIMIT = _int("NM_GBIF_FACET_LIMIT", 1500)
+
+#: How many species rows the results tab lists per buffer before "and N more".
+GBIF_SPECIES_TABLE_LIMIT = _int("NM_GBIF_SPECIES_TABLE_LIMIT", 50)
+
+#: Vertices used to approximate a buffer disc as the WKT polygon GBIF's
+#: `geometry` filter takes. 48 keeps the chord error under 0.2 % of the radius
+#: — well inside GBIF's own coordinate precision — without bloating the URL.
+GBIF_BUFFER_VERTICES = _int("NM_GBIF_BUFFER_VERTICES", 48)
+
+GBIF_TIMEOUT_CONNECT = _int("NM_GBIF_TIMEOUT_CONNECT", 10)
+GBIF_TIMEOUT_READ = _int("NM_GBIF_TIMEOUT_READ", 45)
+
+# --------------------------------------------------------------------------- #
 # Exports
 # --------------------------------------------------------------------------- #
 #: Single-pixel export is one streamed Earth Engine download and is effectively

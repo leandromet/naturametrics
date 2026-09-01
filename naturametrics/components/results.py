@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import reflex as rx
 
+from .gbif_panel import gbif_buffer_panel
 from ..state import AppState
 
 #: Standard chart config across the app: no Plotly modebar (see the history-
@@ -616,7 +617,7 @@ def _tab_trigger_with_hint(label, value: str, hint) -> rx.Component:
     icon lives *inside* the trigger instead, right next to the label."""
     return rx.tabs.trigger(
         rx.hstack(
-            rx.text(label),
+            rx.text(label, white_space="nowrap"),
             rx.tooltip(
                 rx.icon("info", size=12, color="var(--gray-9)"),
                 content=hint,
@@ -624,6 +625,12 @@ def _tab_trigger_with_hint(label, value: str, hint) -> rx.Component:
             spacing="1", align="center",
         ),
         value=value,
+        # Both required for the list's horizontal scrolling to work at all.
+        # Without `flexShrink: 0` flex resolves the overflow by squashing every
+        # trigger instead — five labels compressed to ellipses rather than a
+        # strip you can slide — and the container never becomes scrollable
+        # because its content now "fits".
+        style={"flexShrink": 0, "whiteSpace": "nowrap"},
     )
 
 
@@ -633,7 +640,11 @@ def _forest_age_panel() -> rx.Component:
             # --- header ---------------------------------------------- #
             rx.flex(
                 rx.hstack(
-                    rx.icon("trees", size=15, color="var(--jade-11)"),
+                    # flex_shrink 0 so every pixel of shrinking lands on
+                    # tabs.list, which is the thing that can scroll — a
+                    # squashed 15px icon just looks broken.
+                    rx.icon("trees", size=15, color="var(--jade-11)",
+                            flex_shrink="0"),
                     rx.tabs.list(
                         _tab_trigger_with_hint(
                             AppState.tr["vegetation_age_title"], "age",
@@ -647,9 +658,43 @@ def _forest_age_panel() -> rx.Component:
                         _tab_trigger_with_hint(
                             AppState.tr["ibge_veg_tab"], "ibge_compare",
                             AppState.tr["ibge_veg_tab_hint"]),
+                        _tab_trigger_with_hint(
+                            AppState.tr["gbif_species_tab"], "gbif_species",
+                            AppState.tr["gbif_species_tab_hint"]),
+                        # Five tabs stopped fitting the header once "Espécies
+                        # (GBIF)" joined them, so the strip slides sideways
+                        # instead of the labels being squeezed. Scrolling has
+                        # to live on tabs.list itself rather than on a wrapper:
+                        # Reflex enforces tabs.trigger's parent to be
+                        # tabs.list at the component level (see
+                        # _tab_trigger_with_hint), so there is nowhere between
+                        # the two to put a scroll container.
+                        #
+                        # The scrollbar is hidden rather than shown. This app
+                        # is mobile-first, where the gesture is a swipe and a
+                        # horizontal bar is pure clutter under a 32px-tall tab
+                        # strip; on desktop the tabs are usually all visible
+                        # anyway, and browsers scroll a focused trigger into
+                        # view on their own for keyboard users.
+                        style={
+                            "overflowX": "auto",
+                            # `hidden`, not `visible`: a horizontal scroll
+                            # container with visible vertical overflow gets a
+                            # vertical scrollbar too in Chrome, which would
+                            # clip Radix's active-tab underline.
+                            "overflowY": "hidden",
+                            "scrollbarWidth": "none",           # Firefox
+                            "msOverflowStyle": "none",          # legacy Edge
+                            "&::-webkit-scrollbar": {"display": "none"},
+                            # Momentum scrolling on iOS Safari.
+                            "WebkitOverflowScrolling": "touch",
+                        },
                     ),
                     spacing="2", align="center",
                     flex=["1 1 100%", "1 1 100%", "1 1 auto", "1 1 auto"],
+                    # Without this the hstack refuses to size below its
+                    # content, so tabs.list is never narrower than its
+                    # triggers and never has anything to scroll.
                     min_width="0",
                 ),
                 rx.hstack(
@@ -701,6 +746,7 @@ def _forest_age_panel() -> rx.Component:
             rx.tabs.content(_landscape_metrics_panel(), value="metrics", width="100%"),
             rx.tabs.content(_biomass_panel(), value="biomass", width="100%"),
             rx.tabs.content(_ibge_comparison_panel(), value="ibge_compare", width="100%"),
+            rx.tabs.content(gbif_buffer_panel(), value="gbif_species", width="100%"),
             rx.cond(
                 AppState.selected_age_view == "age",
                 rx.text(AppState.age_provenance_line, size="1", color_scheme="gray"),

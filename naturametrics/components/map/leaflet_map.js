@@ -15,7 +15,8 @@
 // "React is not defined" at render. Use the bare hook names.
 
 function useNaturametricsMap(containerRef, config, layers, overlays, vectors, onMapClick,
-                             onPointHover, onPointSelect, onAreaSelect, onGeometryDrawn) {
+                             onPointHover, onPointSelect, onAreaSelect, onGeometryDrawn,
+                             onLayerMeta) {
   const mapRef = useRef(null);
   const layerRegistry = useRef(new Map());
   const vectorRegistry = useRef(new Map());
@@ -32,6 +33,13 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
   // without re-registering Leaflet listeners on every render.
   const hoverRef = useRef(onPointHover);
   const selectRef = useRef(onPointSelect);
+  // A dynamic layer's FeatureCollection carries `properties` describing the
+  // fetch itself, not any one feature - how many features matched upstream
+  // against how many were actually returned. The GBIF layer needs this: at its
+  // zoom a viewport routinely holds tens of thousands of occurrences and the
+  // API returns at most 300, so without reporting the real total back the
+  // panel would show an arbitrary sample as if it were everything.
+  const layerMetaRef = useRef(onLayerMeta);
   const hoverTimer = useRef(null);
   const leaveTimer = useRef(null);
   const moveTimer = useRef(null);
@@ -58,6 +66,7 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
   vectorsRef.current = vectors;
   hoverRef.current = onPointHover;
   selectRef.current = onPointSelect;
+  layerMetaRef.current = onLayerMeta;
   areaRef.current = onAreaSelect;
   areaEnabledRef.current = !!(config && config.areaSelect);
   drawRef.current = onGeometryDrawn;
@@ -758,8 +767,14 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
 
   const attachPointHandlers = (L, spec, featureLayer, feature) => {
     const props = (feature && feature.properties) || {};
-    const base = spec.point_style || {};
-    const over = spec.hover_style || base;
+    // pointStyleFor, not spec.point_style: on a layer that colours per feature
+    // (spec.color_property) the flat style is only half the answer, and using
+    // it here would repaint every dot to the fallback grey the first time the
+    // cursor left it.
+    const base = pointStyleFor(spec, feature);
+    const over = spec.hover_style
+      ? {...base, ...spec.hover_style, ...paletteFill(spec, feature)}
+      : base;
 
     featureLayer.on("mouseover", () => {
       featureLayer.setStyle(over);
@@ -815,10 +830,10 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
     const geoLayer = L.geoJSON(data, {
       pane: "nmVectors",
       style: (feature) => (spec.point_style
-        ? {...spec.point_style}
+        ? pointStyleFor(spec, feature)
         : styleFor(spec, feature)),
       pointToLayer: (feature, latlng) =>
-        L.circleMarker(latlng, {...(spec.point_style || {}), pane: "nmVectors"}),
+        L.circleMarker(latlng, {...pointStyleFor(spec, feature), pane: "nmVectors"}),
       onEachFeature: (feature, featureLayer) => {
         const html = tooltipHtml(spec, feature);
         if (html) {
@@ -969,6 +984,13 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
         const layer = buildLayer(L, spec, data);
         layer.addTo(map);
         registry.set(spec.id, {layer: layer, opacity: spec.opacity, dynamic: true});
+        // Reported only for layers that ask for it, and only after the layer is
+        // actually on the map - a state round-trip per pan for every dynamic
+        // layer would undo the whole reason these are fetched over HTTP rather
+        // than pushed through state.
+        if (spec.emit_meta && layerMetaRef.current) {
+          layerMetaRef.current({id: spec.id, ...((data && data.properties) || {})});
+        }
       } catch (err) {
         console.error(`Dynamic layer ${spec.id} failed:`, err);
         dynamicKey.current.delete(spec.id);
@@ -1310,6 +1332,34 @@ function styleFor(spec, feature) {
   };
 }
 
+// The fill colour one feature takes from its spec's palette, or {} when the
+// spec does not colour per feature.
+//
+// Split out from pointStyleFor because the hover style has to re-apply exactly
+// this and nothing else: a hover_style that carried its own fillColor would
+// override the palette, and one that did not would fall back to whatever
+// circleMarker defaults to.
+function paletteFill(spec, feature) {
+  if (!spec.color_property) return {};
+  const props = (feature && feature.properties) || {};
+  const palette = spec.palette || {};
+  const color = palette[props[spec.color_property]] || spec.default_color;
+  return color ? {fillColor: `#${color}`} : {};
+}
+
+// A point layer's per-feature style: the spec's flat point_style with the
+// palette colour merged over it.
+//
+// Until the GBIF layer every point layer here (embargos, autos de infração,
+// IFN conglomerados, pasted points) drew in one flat colour, so point_style
+// alone was the whole style and styleFor's palette handling was reachable only
+// by polygons. Colouring occurrences by kingdom needs both at once — the
+// radius/stroke from point_style, the fill from the palette — which is the one
+// combination the two branches could not previously express.
+function pointStyleFor(spec, feature) {
+  return {...(spec.point_style || {}), ...paletteFill(spec, feature)};
+}
+
 // Build the hover tooltip from the spec's label/property pairs.
 // Properties that are missing or empty are skipped rather than rendered as an
 // empty row - several IBGE polygons have no natural-region name.
@@ -1347,10 +1397,26 @@ function splitLabel(text) {
 
 function tooltipHtml(spec, feature) {
   const props = (feature && feature.properties) || {};
+  // Values already shown, so the same string is never printed twice in one
+  // tooltip. Two unrelated causes produce that, and both look like a bug to a
+  // reader:
+  //   * Legitimately, when a record is only determined to family or genus
+  //     level, GBIF sets the interpreted scientificName TO that family or
+  //     genus - so "Nome científico: Eriocaulaceae / Família: Eriocaulaceae"
+  //     is correct, and still reads as a mistake.
+  //   * Not legitimately, when a publisher's mapping to GBIF has packed the
+  //     same content into many fields at once. services/gbif.py drops the
+  //     worst of those on the way through; this catches what survives.
+  // First label wins, which is the spec's own ordering - the most specific
+  // reading of the value is listed first in every tooltip here.
+  const seen = new Set();
   const rows = (spec.tooltip || [])
     .map((entry) => {
       const value = props[entry.property];
       if (value === undefined || value === null || value === "") return null;
+      const key = String(value);
+      if (seen.has(key)) return null;
+      seen.add(key);
       const labelHtml = splitLabel(entry.label).map(escapeHtml).join("<br>");
       const valueHtml = wrapWords(value, 25).map(escapeHtml).join("<br>");
       return `<div class="nm-tip-row"><span class="nm-tip-label">${labelHtml}</span><span class="nm-tip-value">${valueHtml}</span></div>`;

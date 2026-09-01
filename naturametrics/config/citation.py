@@ -92,6 +92,32 @@ DATA_SOURCES = [
      "Usado na página Canadá.",
      "https://developers.google.com/earth-engine/datasets/catalog/"
      "LANDSAT_COMPOSITES_C02_T1_L2_ANNUAL"),
+    ("IBAMA — Áreas embargadas",
+     "Instituto Brasileiro do Meio Ambiente e dos Recursos Naturais Renováveis "
+     "— áreas embargadas por infração ambiental, serviço de mapas oficial "
+     "(PAMGIA), consultado ao vivo por vista do mapa. Dados abertos.",
+     "https://pamgia.ibama.gov.br"),
+    ("IBAMA — Autos de infração",
+     "Instituto Brasileiro do Meio Ambiente e dos Recursos Naturais Renováveis "
+     "— autos de infração ambiental, serviço de mapas oficial (PAMGIA), "
+     "consultado ao vivo por vista do mapa. Dados abertos. Um auto de infração "
+     "é a autuação em si; o embargo é a restrição sobre a área, e nem toda "
+     "autuação gera embargo.",
+     "https://pamgia.ibama.gov.br"),
+    ("IBGE — Biomas, vegetação e malhas municipais",
+     "Instituto Brasileiro de Geografia e Estatística — Biomas do Brasil; "
+     "Vegetação 2022; Malhas territoriais municipais 2025. Usados como camadas "
+     "de referência e para enquadrar o mapa.",
+     "https://www.ibge.gov.br"),
+    ("GBIF — Registros de ocorrência de espécies",
+     "GBIF.org — Global Biodiversity Information Facility. Registros "
+     "consultados ao vivo pela API de ocorrências, restritos ao Brasil. Ao "
+     "publicar resultados, cite a consulta e a data de acesso no formato "
+     "recomendado pelo GBIF («GBIF.org (dd mmm aaaa) GBIF Occurrence Search») "
+     "e credite os conjuntos de dados de origem, que têm licenças próprias "
+     "(CC0, CC-BY e CC-BY-NC). ATENÇÃO: esta consulta NÃO exclui dados "
+     "CC-BY-NC, que vedam uso comercial. O nó brasileiro do GBIF é o SiBBr.",
+     "https://www.gbif.org"),
     ("Google Earth Engine",
      "Gorelick, N. et al. (2017). Google Earth Engine: Planetary-scale geospatial "
      "analysis for everyone. Remote Sensing of Environment 202, 18–27.",
@@ -144,6 +170,32 @@ DATA_SOURCES_EN = [
      "on the Canada page.",
      "https://developers.google.com/earth-engine/datasets/catalog/"
      "LANDSAT_COMPOSITES_C02_T1_L2_ANNUAL"),
+    ("IBAMA — Embargoed areas",
+     "Brazilian Institute of Environment and Renewable Natural Resources — "
+     "areas embargoed for environmental infraction, from the official map "
+     "service (PAMGIA), queried live per map view. Open data.",
+     "https://pamgia.ibama.gov.br"),
+    ("IBAMA — Infraction notices",
+     "Brazilian Institute of Environment and Renewable Natural Resources — "
+     "environmental infraction notices, from the official map service "
+     "(PAMGIA), queried live per map view. Open data. An infraction notice is "
+     "the citation itself; an embargo is the restriction on the land, and not "
+     "every citation carries one.",
+     "https://pamgia.ibama.gov.br"),
+    ("IBGE — Biomes, vegetation and municipal boundaries",
+     "Brazilian Institute of Geography and Statistics — Biomes of Brazil; "
+     "Vegetation 2022; Municipal boundary meshes 2025. Used as reference "
+     "layers and to frame the map.",
+     "https://www.ibge.gov.br"),
+    ("GBIF — Species occurrence records",
+     "GBIF.org — Global Biodiversity Information Facility. Records queried "
+     "live through the occurrence API, restricted to Brazil. When publishing "
+     "results, cite the query and access date in GBIF's recommended form "
+     "(\u201cGBIF.org (dd mmm yyyy) GBIF Occurrence Search\u201d) and credit the "
+     "constituent datasets, which carry their own licences (CC0, CC-BY and "
+     "CC-BY-NC). NOTE: this query does NOT exclude CC-BY-NC data, which "
+     "prohibits commercial use. GBIF's Brazilian node is SiBBr.",
+     "https://www.gbif.org"),
     ("Google Earth Engine",
      "Gorelick, N. et al. (2017). Google Earth Engine: Planetary-scale geospatial "
      "analysis for everyone. Remote Sensing of Environment 202, 18–27.",

@@ -22,6 +22,7 @@ from ..services import auto_infracao as auto_infracao_service
 from ..services import biomes as biome_service
 from ..services import change_mask as cm
 from ..services import embargos as embargos_service
+from ..services import gbif as gbif_service
 from ..services import ifn as ifn_service
 from ..services import layers as layer_service
 from ..services.biomass import AGB_YEARS
@@ -492,6 +493,19 @@ class LayersMixin(rx.State, mixin=True):
         if self.show_auto_infracao:
             specs.append(auto_infracao_service.vector_spec(
                 opacity=self.auto_infracao_opacity))
+        if self.show_gbif:
+            # The only spec here built from live filter state rather than just
+            # an opacity — the accordion's whole selection rides in its
+            # `query`, and leaflet_map.js's per-layer refetch key includes
+            # those params, so changing a filter refetches exactly as a pan
+            # does. `emit_meta` asks the map to report the fetch's own counts
+            # back (GbifMixin.on_gbif_layer_meta): at zoom 10 a viewport can
+            # hold tens of thousands of occurrences against a 300-record page,
+            # and the panel has to be able to say so.
+            spec = gbif_service.vector_spec(self.gbif_filters,
+                                            opacity=self.gbif_opacity)
+            spec["emit_meta"] = True
+            specs.append(spec)
         if self.user_points_active:
             # Takes over the interactive layer entirely rather than sitting
             # alongside it — two hoverable point layers stacked in the same
@@ -1387,7 +1401,7 @@ class LayersMixin(rx.State, mixin=True):
                 or self.show_hansen_treecover or self.show_hansen_change
                 or self.show_ibge_veg or self.show_biomass
                 or self.show_biomes or self.show_ifn or self.show_embargos
-                or self.show_auto_infracao
+                or self.show_auto_infracao or self.show_gbif
                 or self.compare_mode != "off")
 
     @rx.var

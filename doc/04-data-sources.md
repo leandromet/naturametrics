@@ -1,8 +1,9 @@
 # 04 — Data Sources
 
 Every dataset the app touches, with the exact identifier, what it costs us, and what its
-licence demands. **Verification date: 2026-08-18.** Facts marked ⚠️ were not verified
-against a primary source and must be confirmed before they are relied on in code.
+licence demands. **Verification date: 2026-08-18**, except §7a (live third-party feeds), verified
+**2026-09-01**. Facts marked ⚠️ were not verified against a primary source and must be
+confirmed before they are relied on in code.
 
 ---
 
@@ -360,6 +361,95 @@ licensed for this use.
 requests / 187 kB / ~0.13 s** — they are not a meaningful share of load time. The
 cost on a hard reload is **4 MB across 34 JS module requests**, which is Vite dev
 mode serving unbundled ESM and does not exist in a production build.
+
+## 7a. Live third-party feeds — IBAMA and GBIF
+
+**Verification date: 2026-09-01.** Everything in this section was measured against the
+live services on that date.
+
+Three layers are not Earth Engine and not a local table: they are queried over HTTP, per
+viewport, on every map movement, against a service someone else operates. They share one
+pipeline — `"dynamic": True` in the vector spec, a bbox in the query string, a short TTL
+cache, and a hard rule that **the fetch function never raises**, because it is called
+silently on every pan with nowhere to surface an exception. Failures come back as
+`properties.error` on an empty FeatureCollection instead.
+
+### IBAMA — áreas embargadas and autos de infração
+
+| Field | Embargos | Autos de infração |
+|---|---|---|
+| Service | ArcGIS MapServer, `pamgia.ibama.gov.br` | same |
+| Geometry | Polygons | Points |
+| Nationwide count | 91 120 | 709 803 |
+| Min zoom | 8 | 8 |
+| Page cap | 2 × 2 000 | 2 × 2 000 |
+| Licence | Open data — IBAMA | Open data — IBAMA |
+
+They are **different things and must not be conflated**: an *auto de infração* is the
+citation itself, an *embargo* is the follow-on restriction on the land, and not every
+citation carries one. The WFS endpoint for the points is unusable — it emits
+`"geometry":{"type":"Point",}` with no `coordinates` key for any record lacking a
+coordinate, which is not valid JSON — so the plain REST `/query` endpoint is used.
+
+### GBIF — species occurrences
+
+| Field | Value |
+|---|---|
+| Endpoint | `api.gbif.org/v1/occurrence/search` (plus `/species/*` for the taxonomy) |
+| Scope | `country=BR`, `has_coordinate=true`, `has_geospatial_issue=false` |
+| Brazil records | 43 825 433 (33 790 335 with usable coordinates) |
+| Min zoom | **10** — denser per viewport than anything else the app draws |
+| Page cap | 1 × 300 (GBIF's own hard ceiling per page) |
+| Licence | ⚠️ **Mixed** — see below |
+
+**Licence caveat.** GBIF is an aggregator; its constituent datasets are CC0, CC-BY **and
+CC-BY-NC**. This app's query does *not* filter on the `license` field, so results can
+include non-commercial-only records. Anyone publishing from them must cite
+`GBIF.org (dd mmm yyyy) GBIF Occurrence Search` with the access date and credit the source
+datasets. GBIF's Brazilian node is **SiBBr**, whose ALA-hub advanced search is the model
+for this layer's own filter panel.
+
+**Why not the BigQuery public dataset.** The original plan was
+`bigquery-public-data.gbif.occurrences`. Measured, that table is **3.93 billion rows**,
+BigQuery bills *logical* bytes, and clustering is undocumented for it — so a viewport
+query needing `decimallatitude`, `decimallongitude` and 8–10 taxonomy columns is a
+full-column scan of all 3.93 B rows: **150–400 GB, about US$1–2.50 per map pan** at
+$6.25/TiB, exhausting the 1 TiB/month free tier in roughly four pans. Brazil is 1.1 % of
+that table, so the affordable BigQuery route was always a *materialised Brazil subset*
+(~5 GB, clustered by tile and taxon), not the public table. The REST API reaches the same
+1.1 % for nothing, always fresh, with no derived table to build, refresh or pay storage
+on. **BigQuery remains the upgrade path** if bulk export or unlimited point density is
+ever needed; nothing in the current design forecloses it.
+
+**Two measurements shaped the implementation:**
+
+* One page of 300 occurrences is **2.2 MB** of verbatim Darwin Core and takes 2.19 s
+  (against 1.60 s for 100). Only ~18 fields are ever drawn, so `services/gbif.py` slims
+  every record server-side — measured **199 KB instead of 2.2 MB**, an 11× reduction. That
+  is why this layer is proxied through `/_gbif.geojson` rather than fetched by Leaflet
+  directly.
+* Aggregates are free: `limit=0` with `facet=` returns counts without retrieving records,
+  and `facet=scientificName` returns readable names rather than keys. The
+  species-in-buffer tab is therefore **one ~1.1 s request per buffer** (2.0 s for all five,
+  fanned out) rather than paging thousands of records.
+
+**Known data-quality hazards, and what is done about them:**
+
+* Some publishers' records arrive with unrelated content packed into fields that should
+  hold one or two words — a mapping error between the collection and GBIF. Controlled
+  fields (`kingdom`, `family`, `basisOfRecord`, …) over 60 characters are therefore
+  **dropped, not truncated**: a 400-character "kingdom" is not a kingdom, and trimming it
+  would launder corrupt data into something that reads as real. Free-text fields are
+  truncated at 180.
+* When a record is determined only to family or genus level, GBIF legitimately sets
+  `scientificName` **to** that family or genus, so a tooltip would print the same word
+  twice. `leaflet_map.js::tooltipHtml` de-duplicates values within one tooltip.
+* GBIF rejects a clockwise WKT exterior ring outright (`HTTP 400`), so buffer polygons are
+  wound counter-clockwise.
+* The facet ceiling is 1500 rows. A well-sampled 10 km buffer (INPA, Manaus) hits it, so
+  richness is reported as `1500+` rather than as a count.
+
+---
 
 ## 8. Storage footprint and git policy
 

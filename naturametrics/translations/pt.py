@@ -809,4 +809,89 @@ TRANSLATIONS_PT: dict[str, str] = {
     # --- language switcher ---------------------------------------------- #
     "go_to_canada": "Ir para o Canadá",
     "language_label": "Idioma",
+
+    # --- GBIF biodiversity (components/gbif_panel.py) --------------------- #
+    "group_biodiversity": "Biodiversidade (GBIF)",
+    "section_gbif": "Ocorrências de espécies",
+    "gbif_toggle_label": "GBIF — registros de ocorrência",
+    "gbif_info": (
+        "Registros de ocorrência de espécies do GBIF (Global Biodiversity "
+        "Information Facility), os mesmos dados que o portal brasileiro SiBBr "
+        "publica. Só aparecem a partir do zoom 10 — mais longe que isso, um "
+        "ponto individual tem menos de um pixel. A camada mostra no máximo 300 "
+        "registros por vista; use a busca para restringir o que interessa."
+    ),
+    "gbif_zoom_note": "Aproxime até o zoom 10 ou mais para ver os registros.",
+    "gbif_truncated_note": "registros nesta vista — refine a busca",
+    "gbif_taxonomy_group": "Táxon",
+    "gbif_records_group": "Tipo de registro, ano e UF",
+    "gbif_taxonomy_title": "Navegue pela classificação",
+    "gbif_rank_kingdom": "Reino",
+    "gbif_rank_phylum": "Filo",
+    "gbif_rank_class": "Classe",
+    "gbif_rank_order": "Ordem",
+    "gbif_rank_family": "Família",
+    "gbif_rank_genus": "Gênero",
+    "gbif_rank_species": "Espécie",
+    "gbif_name_label": "Nome científico",
+    "gbif_name_placeholder": "ex.: Panthera onca, Araucaria…",
+    "gbif_basis_label": "Base do registro",
+    "gbif_year_label": "Ano do evento",
+    "gbif_uf_label": "Unidade federativa",
+    "gbif_buffers_run": "Levantar espécies",
+    "gbif_buffers_no_point": (
+        "Escolha um ponto no mapa para levantar as espécies registradas ao redor."
+    ),
+    "gbif_records_word": "registros",
+    "gbif_species_word": "espécies",
+    "gbif_top_species": "Espécies mais registradas",
+
+    # --- help: IBAMA and GBIF layers (added with the GBIF integration) ---- #
+    "help_step11_title": "Confira embargos e autuações do IBAMA",
+    "help_step11_body": (
+        "No grupo «IFN, IBAMA e dados enviados» ligue «Áreas embargadas» e "
+        "«Autos de infração». As duas camadas são consultadas ao vivo no "
+        "serviço oficial do IBAMA a cada movimento do mapa, a partir do zoom "
+        "8, e mostram o que há na vista atual — não o Brasil inteiro. Passe o "
+        "cursor sobre um polígono ou ponto para ver autuado, número do TAD ou "
+        "do auto, data, município e infração. São coisas diferentes: o auto de "
+        "infração é a autuação em si, o embargo é a restrição sobre a área, e "
+        "nem toda autuação gera embargo."
+    ),
+    "help_step12_title": "Veja o que já foi registrado ali (GBIF)",
+    "help_step12_body": (
+        "No grupo «Biodiversidade (GBIF)» ligue os registros de ocorrência e "
+        "aproxime até o zoom 10. Cada ponto é um registro de espécie, colorido "
+        "por reino. A busca avançada funciona de dois jeitos: digite um nome "
+        "científico e escolha na lista, ou navegue pela classificação de reino "
+        "até espécie — em qualquer nível já filtra o mapa, não é preciso "
+        "descer até o fim. Dá para restringir também por base do registro, ano "
+        "e UF. Com um ponto de estudo escolhido, «Espécies nos buffers» lista "
+        "as espécies já registradas em cada raio ao redor dele."
+    ),
+    "help_limit_5": (
+        "As camadas do IBAMA e do GBIF são consultadas ao vivo nos serviços de "
+        "terceiros e refletem o que eles publicam no momento — não há cópia "
+        "local, então uma indisponibilidade deles aparece como camada vazia."
+    ),
+    "help_limit_6": (
+        "O GBIF desenha no máximo 300 registros por vista do mapa. Quando há "
+        "mais, o painel mostra «300 / total» em destaque: o que está na tela é "
+        "uma amostra arbitrária, e refinar a busca é o que torna a vista "
+        "representativa. Os registros também trazem as licenças de origem, "
+        "incluindo CC-BY-NC, que veda uso comercial."
+    ),
+
+    # --- GBIF species analysis tab (components/gbif_panel.py) ------------- #
+    "gbif_species_tab": "Espécies (GBIF)",
+    "gbif_species_tab_hint": (
+        "Espécies já registradas no GBIF dentro de cada buffer do ponto de "
+        "estudo. É uma consulta agregada — conta os registros sem baixá-los — "
+        "e respeita os mesmos filtros da busca na barra lateral. Os buffers "
+        "são discos cumulativos: o de 10 km inclui tudo o que está no de 5 km."
+    ),
+    "gbif_buffers_note": "Discos cumulativos · consulta ao vivo no GBIF",
+    "gbif_buffers_empty": "Nenhum registro neste raio com os filtros atuais.",
+    "gbif_col_species": "Espécie",
+    "gbif_col_records": "Registros",
 }

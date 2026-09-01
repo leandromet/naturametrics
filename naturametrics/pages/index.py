@@ -277,6 +277,7 @@ def map_pane() -> rx.Component:
             on_area_select=AppState.select_multi_area,
             draw_enabled=AppState.draw_mode,
             on_geometry_drawn=AppState.on_geometry_drawn,
+            on_layer_meta=AppState.on_gbif_layer_meta,
             width="100%",
             height="100%",
         ),

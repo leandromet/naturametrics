@@ -21,7 +21,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
 from ..config.settings import IFN_VIEWPORT_LIMIT
-from ..services import auto_infracao, biomes, embargos, ifn
+from ..services import auto_infracao, biomes, embargos, gbif, ifn
 
 logger = logging.getLogger(__name__)
 
@@ -174,6 +174,42 @@ async def auto_infracao_geojson(request: Request) -> Response:
     return JSONResponse(payload, headers={"Cache-Control": "no-store"})
 
 
+async def gbif_geojson(request: Request) -> Response:
+    """GBIF occurrences inside a viewport, filtered by the accordion.
+
+    The one route here that carries more than a bounding box: the whole taxon /
+    basis-of-record / year / UF filter set rides in the query string and is
+    forwarded upstream, because at this layer's zoom a viewport can hold tens of
+    thousands of records and only 300 come back. Filtering client-side would be
+    filtering an arbitrary 300, not the data.
+
+    ``gbif.filters_from_query`` validates every parameter rather than trusting
+    it — this is a public route whose values end up in a third-party query
+    string, and a bad integer has to degrade to "no filter" rather than to a
+    500 on every map pan.
+    """
+    west = _float_param(request, "west")
+    south = _float_param(request, "south")
+    east = _float_param(request, "east")
+    north = _float_param(request, "north")
+    if None in (west, south, east, north):
+        west, south, east, north = -180.0, -90.0, 180.0, 90.0
+
+    filters = gbif.filters_from_query(request.query_params)
+    try:
+        payload = await _run_blocking(
+            lambda: gbif.points_in_bbox(west, south, east, north, filters)
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("GBIF GeoJSON could not be produced")
+        return JSONResponse(
+            {"error": "ocorrências GBIF indisponíveis", "detail": str(exc)},
+            status_code=503,
+        )
+
+    return JSONResponse(payload, headers={"Cache-Control": "no-store"})
+
+
 def register(app) -> None:
     """Attach the routes to the Reflex app's Starlette instance."""
     api = getattr(app, "_api", None)
@@ -184,6 +220,7 @@ def register(app) -> None:
     api.add_route(ifn.GEOJSON_PATH, ifn_points_geojson, methods=["GET"])
     api.add_route(embargos.GEOJSON_PATH, embargos_geojson, methods=["GET"])
     api.add_route(auto_infracao.GEOJSON_PATH, auto_infracao_geojson, methods=["GET"])
-    logger.info("Registered backend routes %s, %s, %s, %s",
+    api.add_route(gbif.GEOJSON_PATH, gbif_geojson, methods=["GET"])
+    logger.info("Registered backend routes %s, %s, %s, %s, %s",
                 biomes.GEOJSON_PATH, ifn.GEOJSON_PATH, embargos.GEOJSON_PATH,
-                auto_infracao.GEOJSON_PATH)
+                auto_infracao.GEOJSON_PATH, gbif.GEOJSON_PATH)

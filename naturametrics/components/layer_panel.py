@@ -1041,10 +1041,11 @@ def layer_panel(fill_height: bool = True) -> rx.Component:
     total scrollHeight — and therefore where `results_drawer()` actually
     starts — account for the whole thing.
     """
-    # Imported here, not at module level: search.py imports _section/
-    # _info_icon back from this module, and a top-level import in both
-    # directions would try to read them off a layer_panel module that has
-    # not finished defining them yet.
+    # Imported here, not at module level: search.py and gbif_panel.py both
+    # import _section/_info_icon/_filter_select back from this module, and a
+    # top-level import in either direction would try to read them off a
+    # layer_panel module that has not finished defining them yet.
+    from .gbif_panel import gbif_control
     from .search import search_panel
 
     return rx.vstack(
@@ -1061,7 +1062,7 @@ def layer_panel(fill_height: bool = True) -> rx.Component:
                     ),
                 ),
                 rx.accordion.content(
-                    _all_groups(search_panel()),
+                    _all_groups(search_panel(), gbif_control()),
                     # See `_group()`'s own comment on why this needs
                     # `padding_x="0"` — Radix's AccordionContent otherwise
                     # bakes in its own 16px on top of this panel's root
@@ -1114,14 +1115,15 @@ def layer_panel(fill_height: bool = True) -> rx.Component:
     )
 
 
-def _all_groups(search_panel: rx.Component) -> rx.Component:
+def _all_groups(search_panel: rx.Component,
+                gbif_control: rx.Component) -> rx.Component:
     """The five topic groups, each independently collapsible
     (`type="multiple"`) — nested inside `layer_panel()`'s own outer,
     single-item accordion (the "collapse everything" wrapper), so this is
     one level *below* that, not the sidebar root itself any more.
 
-    ``search_panel`` is passed in already built, rather than imported and
-    called here directly: the deferred `from .search import search_panel`
+    ``search_panel`` and ``gbif_control`` are passed in already built,
+    rather than imported and called here directly: the deferred `from .search import search_panel`
     inside `layer_panel()` exists to break a circular import (search.py
     imports `_section`/`_info_icon` back from this module), and that
     import is scoped to `layer_panel()`'s own function body — a second,
@@ -1152,6 +1154,20 @@ def _all_groups(search_panel: rx.Component) -> rx.Component:
         _group("biomass_forest", "trees",
               AppState.tr["group_biomass_forest"],
               biomass_control(), hansen_control()),
+        # Its own group rather than folded into ifn_ibama_data, at the user's
+        # request. That group's three sources are all *ground records of
+        # inventory or enforcement* — where a plot was measured, where a fine
+        # was issued — and biodiversity occurrences are a different kind of
+        # claim about a place: what was observed living there, by anyone, ever.
+        # It is also the only group carrying a search form rather than a set of
+        # toggles, and mixing that into a list of switches would bury it.
+        # Only the layer and its search. The species-in-buffer summary that
+        # started here moved to its own analysis tab (components/results.py):
+        # it is a RESULT about the study point, like the age and biomass tabs
+        # beside it, not a control over what the map draws — and it needs the
+        # width of the results area to show a species table at all.
+        _group("biodiversity", "bug", AppState.tr["group_biodiversity"],
+              gbif_control),
         type="multiple",
         collapsible=True,
         variant="surface",

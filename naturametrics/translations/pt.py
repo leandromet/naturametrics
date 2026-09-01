@@ -10,6 +10,13 @@ TRANSLATIONS_PT: dict[str, str] = {
     "drawer_close_aria": "Fechar painel",
     "sheet_handle_aria": "Redimensionar painel — arraste ou use as setas",
 
+    # --- layer panel: groups (components/layer_panel.py::_group) -------- #
+    "group_study_area": "Área de estudo",
+    "group_landcover_base": "Mapa base e cobertura do solo",
+    "group_ifn_ibama_data": "IFN, IBAMA e dados enviados",
+    "group_ibge_reference": "Camadas de referência (IBGE)",
+    "group_biomass_forest": "Biomassa e mudança florestal",
+
     # --- layer panel: sections -------------------------------------------- #
     "section_basemap": "Mapa base",
     "section_landcover": "Cobertura do solo",

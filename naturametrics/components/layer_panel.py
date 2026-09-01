@@ -52,6 +52,47 @@ def _section(title: str, *children, info: rx.Var | str | None = None) -> rx.Comp
     )
 
 
+def _group(value: str, icon: str, title, *sections: rx.Component) -> rx.Component:
+    """One collapsible cluster of related `_section()` controls — the
+    sidebar's top-level grouping (``layer_panel()``), one level up from the
+    per-control accordion `ifn_control()` already used for its own filter
+    grid. `variant="surface"` (a bordered card per group) rather than that
+    inner accordion's `"ghost"`, so the grouping itself reads as a visible
+    boundary, not just another divider in the same flat list — the whole
+    point of grouping 16 previously-flat sections was to make the sidebar
+    scannable at a glance, which a border does and a plain divider does not.
+    A divider is still placed between the sections *within* one group, same
+    as the flat list always had.
+    """
+    body = []
+    for i, section in enumerate(sections):
+        if i:
+            body.append(rx.divider())
+        body.append(section)
+    return rx.accordion.item(
+        rx.accordion.header(
+            rx.accordion.trigger(
+                rx.hstack(
+                    rx.icon(icon, size=15),
+                    rx.text(title, size="2", weight="bold"),
+                    spacing="2", align="center",
+                ),
+            ),
+        ),
+        rx.accordion.content(
+            rx.vstack(*body, spacing="3", width="100%", padding_top="0.25rem"),
+            # Radix's own AccordionContent bakes in
+            # `padding_x: var(--space-4)` (16px) on top of this panel's own
+            # root `padding="1rem"` — 32px of inset instead of 16px is a lot
+            # to give up on a ~320px sidebar, and it made every section
+            # inside a group read as squeezed relative to the group's own
+            # trigger row.
+            padding_x="0",
+        ),
+        value=value,
+    )
+
+
 def basemap_control() -> rx.Component:
     return _section(
         AppState.tr["section_basemap"],
@@ -977,7 +1018,29 @@ def geometry_control() -> rx.Component:
     )
 
 
-def layer_panel() -> rx.Component:
+def layer_panel(fill_height: bool = True) -> rx.Component:
+    """``fill_height=True`` (the desktop sidebar's own call, ``pages/
+    index.py::index()``) is correct there because this panel is the ONLY
+    child of that box, which is itself ``height="100%", overflow_y="auto"``
+    — stretching to match just lets `rx.spacer()` push `status_line()` to
+    the bottom instead of leaving a gap.
+
+    ``fill_height=False`` is required from `_mobile_sheet()`: there, this
+    panel SHARES its scrolling box with `results_drawer()` below it, both
+    inside one `overflow_y="auto"` container. `height="100%"` there claimed
+    100% of that shared box for this panel alone — every real bug report
+    of "the sidebar/results overlap on mobile" traced back to exactly this:
+    the panel's actual content (5 groups) is far taller than 100% of the
+    shared box, so with the default `overflow: visible` it spilled out
+    past its own claimed height rather than growing to fit, and
+    `results_drawer()` — sized by normal document flow, which only reserves
+    space for this panel's CLAIMED height, not its overflowing content —
+    started rendering right where this panel's box ended, landing on top of
+    whatever of its content had spilled past that point. `height="auto"`
+    (this panel's natural content height) is what lets the shared box's
+    total scrollHeight — and therefore where `results_drawer()` actually
+    starts — account for the whole thing.
+    """
     # Imported here, not at module level: search.py imports _section/
     # _info_icon back from this module, and a top-level import in both
     # directions would try to read them off a layer_panel module that has
@@ -985,35 +1048,40 @@ def layer_panel() -> rx.Component:
     from .search import search_panel
 
     return rx.vstack(
-        search_panel(),
-        rx.divider(),
-        point_control(),
-        rx.divider(),
-        geometry_control(),
-        rx.divider(),
-        basemap_control(),
-        rx.divider(),
-        mapbiomas_control(),
-        rx.divider(),
-        compare_control(),
-        rx.divider(),
-        change_mask_control(),
-        rx.divider(),
-        ifn_control(),
-        multi_select_control(),
-        rx.divider(),
-        embargos_control(),
-        auto_infracao_control(),
-        rx.divider(),
-        user_points_control(),
-        rx.divider(),
-        biome_control(),
-        rx.divider(),
-        biomass_control(),
-        rx.divider(),
-        ibge_vegetation_control(),
-        rx.divider(),
-        hansen_control(),
+        rx.accordion.root(
+            rx.accordion.item(
+                rx.accordion.header(
+                    rx.accordion.trigger(
+                        rx.hstack(
+                            rx.icon("panel-left", size=15),
+                            rx.text(AppState.tr["drawer_title"], size="2",
+                                   weight="bold"),
+                            spacing="2", align="center",
+                        ),
+                    ),
+                ),
+                rx.accordion.content(
+                    _all_groups(search_panel()),
+                    # See `_group()`'s own comment on why this needs
+                    # `padding_x="0"` — Radix's AccordionContent otherwise
+                    # bakes in its own 16px on top of this panel's root
+                    # `padding="1rem"`.
+                    padding_x="0",
+                ),
+                value="all_layers",
+            ),
+            type="single",
+            collapsible=True,
+            variant="ghost",
+            width="100%",
+            # Open by default: this wrapper only exists to let someone
+            # collapse the whole sidebar down to one line when they want
+            # maximum map space, not to hide it on a first visit — the five
+            # groups inside it already start closed on their own (see
+            # `_all_groups()`), which is where the actual first-visit
+            # decluttering happens.
+            default_value="all_layers",
+        ),
         rx.spacer(),
         rx.divider(),
         status_line(),
@@ -1030,7 +1098,7 @@ def layer_panel() -> rx.Component:
         ),
         spacing="4",
         align_items="stretch",
-        height="100%",
+        height="100%" if fill_height else "auto",
         width="100%",
         padding="1rem",
         # Every control in this panel uses text size="1"/"2" (Radix's
@@ -1043,4 +1111,57 @@ def layer_panel() -> rx.Component:
             "--font-size-1": "calc(var(--font-size-1) - 3px)",
             "--font-size-2": "calc(var(--font-size-2) - 3px)",
         },
+    )
+
+
+def _all_groups(search_panel: rx.Component) -> rx.Component:
+    """The five topic groups, each independently collapsible
+    (`type="multiple"`) — nested inside `layer_panel()`'s own outer,
+    single-item accordion (the "collapse everything" wrapper), so this is
+    one level *below* that, not the sidebar root itself any more.
+
+    ``search_panel`` is passed in already built, rather than imported and
+    called here directly: the deferred `from .search import search_panel`
+    inside `layer_panel()` exists to break a circular import (search.py
+    imports `_section`/`_info_icon` back from this module), and that
+    import is scoped to `layer_panel()`'s own function body — a second,
+    identically-named top-level import here would shadow the *component*
+    name `search_panel` with the *function* the moment this module is
+    imported, which is exactly the ordering problem the deferred import
+    was written to avoid in the first place.
+    """
+    return rx.accordion.root(
+        _group("study_area", "target", AppState.tr["group_study_area"],
+              search_panel, point_control(), geometry_control()),
+        _group("landcover_base", "layers",
+              AppState.tr["group_landcover_base"],
+              basemap_control(), mapbiomas_control(), compare_control(),
+              change_mask_control()),
+        # The user's own framing for this one: IFN, IBAMA and a pasted
+        # coordinate list are three different sources for the same
+        # thing — a set of ground points/records to check against the
+        # map — where the other four groups are each one continuous
+        # raster or reference layer.
+        _group("ifn_ibama_data", "shield-alert",
+              AppState.tr["group_ifn_ibama_data"],
+              ifn_control(), multi_select_control(), embargos_control(),
+              auto_infracao_control(), user_points_control()),
+        _group("ibge_reference", "landmark",
+              AppState.tr["group_ibge_reference"],
+              biome_control(), ibge_vegetation_control()),
+        _group("biomass_forest", "trees",
+              AppState.tr["group_biomass_forest"],
+              biomass_control(), hansen_control()),
+        type="multiple",
+        collapsible=True,
+        variant="surface",
+        width="100%",
+        # Every group starts CLOSED — with five multi-control groups, "open
+        # by default" meant the sidebar was just as tall as the old flat
+        # list until collapsed by hand, so clicking the map still meant
+        # scrolling past everything to see what that click produced. Closed
+        # by default means the sidebar is short from the start; open only
+        # whichever group is actually wanted (no `default_value` at all — a
+        # `type="multiple"` accordion with none given simply starts with
+        # nothing expanded).
     )

@@ -40,10 +40,28 @@ _SHEET_SCRIPT = """
   window._nmSheetInit = true;
 
   var dragging = false, pointerId = null, startY = 0, startHeight = 0;
-  var drawerEl = null;
+  var drawerEl = null, movedFar = false;
+  // How far a pointer has to travel before this counts as a drag rather
+  // than a tap — real device touch reported here: dragging worked fine
+  // with a mouse in a desktop mobile-emulator, but not with an actual
+  // finger on a phone (touch pointer events fire less reliable/consistent
+  // `pointermove` sequences than a mouse does on some Android browsers),
+  // so a plain tap is now the primary, reliable way to open/close this
+  // sheet — see `tapTarget()`/the `end()` handler below. Dragging still
+  // works wherever the browser's pointer events behave.
+  var TAP_SLOP_PX = 6;
 
   function snapPoints() {
     return [80, window.innerHeight * 0.45, window.innerHeight * 0.75];
+  }
+
+  // The two-state toggle a plain tap moves between: 30% / 70% of the
+  // viewport, whichever is on the other side of "roughly expanded" from
+  // where the sheet is right now (so tapping from peek — well under both —
+  // opens to 70%, and tapping again collapses back to 30%).
+  function tapTarget(height) {
+    var lo = window.innerHeight * 0.30, hi = window.innerHeight * 0.70;
+    return height > (lo + hi) / 2 ? lo : hi;
   }
 
   function nearest(height, points) {
@@ -95,6 +113,7 @@ _SHEET_SCRIPT = """
     drawerEl = document.getElementById(drawerId);
     if (!drawerEl) return;
     dragging = true;
+    movedFar = false;
     pointerId = e.pointerId;
     startY = e.clientY;
     startHeight = drawerEl.offsetHeight;
@@ -105,6 +124,7 @@ _SHEET_SCRIPT = """
   document.addEventListener('pointermove', function (e) {
     if (!dragging || e.pointerId !== pointerId || !drawerEl) return;
     var delta = startY - e.clientY;
+    if (Math.abs(delta) > TAP_SLOP_PX) movedFar = true;
     var next = Math.min(window.innerHeight * 0.75, Math.max(80, startHeight + delta));
     drawerEl.style.height = next + 'px';
     drawerEl.style.maxHeight = next + 'px';
@@ -115,7 +135,14 @@ _SHEET_SCRIPT = """
     if (!dragging || e.pointerId !== pointerId || !drawerEl) return;
     dragging = false;
     document.body.style.userSelect = '';
-    settle(drawerEl, nearest(drawerEl.offsetHeight, snapPoints()));
+    // A plain tap (no meaningful movement): jump straight to whichever of
+    // the 30%/70% targets isn't roughly where the sheet already is, rather
+    // than the drag path's "snap to whichever of the 3 points is nearest
+    // to wherever the finger let go" — there's nothing to be "nearest to"
+    // when nothing was dragged.
+    settle(drawerEl, movedFar
+      ? nearest(drawerEl.offsetHeight, snapPoints())
+      : tapTarget(startHeight));
     drawerEl = null;
   }
   document.addEventListener('pointerup', end);
@@ -190,7 +217,13 @@ def _mobile_sheet() -> rx.Component:
     return rx.vstack(
         _drag_handle(),
         rx.box(
-            layer_panel(),
+            # fill_height=False: this box's height is shared between
+            # layer_panel() and results_drawer(), not owned by either one —
+            # see layer_panel()'s own docstring for the overlap bug this
+            # fixes (its content spilling past a `height: 100%` box it
+            # shouldn't have claimed, with results_drawer() then landing on
+            # top of that overflow instead of after it).
+            layer_panel(fill_height=False),
             results_drawer(),
             overflow_y="auto", flex="1", min_height="0",
         ),

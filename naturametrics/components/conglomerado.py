@@ -72,8 +72,18 @@ def conglomerado_card() -> rx.Component:
                 spacing="1", align_items="start", width="100%",
             ),
             position="absolute",
-            top="0.6rem",
-            right="0.6rem",
+            # Top-LEFT, not top-right: `map_legend.py`'s box lives at
+            # top-right (12px/12px, z-index 900) and this card used to sit
+            # at nearly the same spot (0.6rem/0.6rem, z-index 800) — the two
+            # are shown independently (one on "a layer is active", the other
+            # on "hovering an IFN point"), so nothing stopped both being on
+            # at once, and the legend always won, fully covering the card.
+            # On mobile it was worse: this card's width goes `auto` (up to
+            # ~full screen minus padding), so it didn't just clip the
+            # legend's corner, it could bury the whole thing. Top offset
+            # clears Leaflet's own zoom control, which docks top-left.
+            top="4.75rem",
+            left="0.6rem",
             width=["auto", "auto", "290px", "290px"],
             max_width="calc(100% - 1.2rem)",
             padding="0.6rem 0.7rem",

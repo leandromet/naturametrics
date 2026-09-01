@@ -230,6 +230,21 @@ def _mobile_sheet() -> rx.Component:
         id="nm-mobile-sheet",
         display=_MOBILE_ONLY,
         flex_direction="column",
+        # align="stretch", NOT rx.vstack's own default of "start". `align:
+        # start` compiles to `align-items: flex-start`, which sizes this box
+        # above to its own *content* width rather than the sheet's — and the
+        # results content's min-content width (the chart/table rows) runs
+        # wider than a portrait phone, so that box rendered wider than the
+        # sheet and `overflow: hidden` here cut the excess off with no
+        # scrollbar and no way to reach it. Landscape only looked right
+        # because the sheet happened to be wider than that content.
+        # Measured live in camposcope, which had the same bug from the same
+        # default (its sheet is a port of this one): 390px sheet,
+        # 835px content box. `stretch` pins the box to the sheet's width,
+        # and its own `overflow_y="auto"` (which the CSS Overflow spec
+        # promotes overflow-x to `auto` alongside) then scrolls anything
+        # still too wide instead of spilling it.
+        align="stretch",
         position="fixed", bottom="0", left="0", right="0",
         height="45vh", max_height="45vh",
         background="var(--color-panel-solid)",

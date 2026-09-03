@@ -9,6 +9,12 @@ Four toggleable Earth Engine layers, each independent: the ACI classification fo
 one year, NTEMS stand age, Hansen tree cover, and the Hansen loss/gain mask —
 plus the annual Landsat composite, which behaves as an *overlay on* the chosen
 base map rather than a base map of its own (same as Brazil's SPOT mosaics).
+
+``map_vectors`` is the browser-fetched counterpart to ``map_layers`` above —
+GBIF is the first (and so far only) Canada-page layer that belongs there
+rather than in ``map_layers``, since Leaflet fetches it itself rather than the
+server minting a tile URL. See the Brazil page's ``state/_layers.py::
+_build_vectors`` for the layer this one is modelled on.
 """
 
 from __future__ import annotations
@@ -27,6 +33,7 @@ from ..config import aafc
 from ..config import datasets as ds
 from ..config import forest as fc_cfg
 from ..config import settings as ca_st
+from ..services import gbif as gbif_service
 from ..services import layers as layer_service
 
 logger = logging.getLogger(__name__)
@@ -191,6 +198,26 @@ class CanadaLayersMixin(rx.State, mixin=True):
 
     def _refresh_layers(self) -> None:
         self.map_layers = self._build_layers()
+        self.map_vectors = self._build_vectors()
+
+    def _build_vectors(self) -> list[dict[str, Any]]:
+        """Layers the browser fetches and draws itself, in stacking order.
+
+        Just GBIF for now — the Brazil page's own ``_build_vectors`` also
+        carries biomes/embargos/auto_infracao/IFN, none of which have a
+        Canada-page equivalent yet.
+        """
+        specs: list[dict[str, Any]] = []
+        if self.show_gbif:
+            # emit_meta asks the map to report the fetch's own counts back
+            # (CanadaGbifMixin.on_gbif_layer_meta) — same reasoning as the
+            # Brazil page: at zoom 10 a viewport can hold far more occurrences
+            # than the 300-record page returns, and the panel has to say so.
+            spec = gbif_service.vector_spec(self.gbif_filters,
+                                            opacity=self.gbif_opacity)
+            spec["emit_meta"] = True
+            specs.append(spec)
+        return specs
 
     # ---------------------------------------------------------------------- #
     # Initialisation

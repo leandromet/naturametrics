@@ -24,6 +24,7 @@ def map_pane() -> rx.Component:
             vectors=S.map_vectors,
             fit_bounds=S.fit_bounds,
             on_map_click=S.set_study_point,
+            on_layer_meta=S.on_gbif_layer_meta,
             width="100%",
             height="100%",
         ),

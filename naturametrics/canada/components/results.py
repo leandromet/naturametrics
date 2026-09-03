@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import reflex as rx
 
+from .gbif_panel import gbif_buffer_panel
 from ..state import CanadaState as S
 
 
@@ -297,6 +298,27 @@ def _forest_change_panel() -> rx.Component:
     )
 
 
+def _gbif_species_panel() -> rx.Component:
+    """Species already recorded (GBIF) around the study point.
+
+    Full width and below the two-column row rather than sharing either
+    column: the Brazil page gives this the same reason for being its own
+    tab rather than living in the sidebar — a species table needs the
+    results area's width, not a 320px-equivalent half-column.
+    """
+    return rx.vstack(
+        rx.hstack(
+            rx.icon("bug", size=15, color="var(--jade-11)"),
+            rx.text(S.tr["gbif_species_tab"], size="2", weight="bold",
+                    white_space="nowrap"),
+            spacing="2", align="center", width="100%",
+        ),
+        rx.text(S.tr["gbif_species_tab_hint"], size="1", color_scheme="gray"),
+        gbif_buffer_panel(),
+        width="100%", spacing="3", align_items="stretch",
+    )
+
+
 def results_drawer() -> rx.Component:
     """Two columns, matching the Brazil drawer's shape.
 
@@ -306,27 +328,38 @@ def results_drawer() -> rx.Component:
     both columns about the same height and the drawer off the rest of the screen.
 
     Below the desktop breakpoint the row becomes a column and the three panels
-    simply stack, which is the only thing that fits on a phone.
+    simply stack, which is the only thing that fits on a phone. The GBIF
+    species panel runs full-width beneath both columns rather than inside
+    either — see ``_gbif_species_panel()``.
     """
     return rx.box(
         rx.cond(
             S.has_point | S.analysis_running,
-            rx.flex(
-                rx.box(_land_cover_panel(), flex="1 1 50%", min_width="0"),
-                rx.vstack(
-                    _forest_change_panel(),
-                    rx.divider(),
-                    _forest_age_panel(),
-                    spacing="3", align_items="stretch",
-                    flex="1 1 50%", min_width="0",
-                    border_left=["none", "none", "none",
-                                 "1px solid var(--gray-5)"],
-                    padding_left=["0", "0", "0", "1rem"],
+            rx.fragment(
+                rx.flex(
+                    rx.box(_land_cover_panel(), flex="1 1 50%", min_width="0"),
+                    rx.vstack(
+                        _forest_change_panel(),
+                        rx.divider(),
+                        _forest_age_panel(),
+                        spacing="3", align_items="stretch",
+                        flex="1 1 50%", min_width="0",
+                        border_left=["none", "none", "none",
+                                     "1px solid var(--gray-5)"],
+                        padding_left=["0", "0", "0", "1rem"],
+                    ),
+                    width="100%", align="start", gap="1rem",
+                    direction=rx.breakpoints(initial="column", lg="row"),
+                    padding=["0.6rem 0.7rem", "0.6rem 0.75rem", "0.75rem 1rem",
+                             "0.75rem 1rem"],
                 ),
-                width="100%", align="start", gap="1rem",
-                direction=rx.breakpoints(initial="column", lg="row"),
-                padding=["0.6rem 0.7rem", "0.6rem 0.75rem", "0.75rem 1rem",
-                         "0.75rem 1rem"],
+                rx.divider(),
+                rx.box(
+                    _gbif_species_panel(),
+                    width="100%",
+                    padding=["0 0.7rem 0.6rem", "0 0.75rem 0.6rem",
+                             "0 1rem 0.75rem", "0 1rem 0.75rem"],
+                ),
             ),
             rx.center(
                 rx.vstack(

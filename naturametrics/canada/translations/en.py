@@ -88,6 +88,41 @@ TRANSLATIONS_EN: dict[str, str] = {
     "status_ee_connecting": "Connecting to Earth Engine…",
     "status_ee_ready": "Earth Engine ready",
 
+    # --- GBIF biodiversity (canada/components/gbif_panel.py) -------------- #
+    "section_gbif": "Species occurrences",
+    "gbif_toggle_label": "GBIF — occurrence records",
+    "gbif_info": (
+        "Species occurrence records from GBIF (Global Biodiversity Information "
+        "Facility) — the same data Canada's CBIF node publishes. They appear "
+        "only from zoom 10 in; further out an individual point is under a "
+        "pixel wide. The layer draws at most 300 records per view, so use the "
+        "search to narrow it to what you actually want."
+    ),
+    "gbif_zoom_note": "Zoom in to level 10 or closer to see the records.",
+    "gbif_truncated_note": "records in this view — narrow the search",
+    "gbif_taxonomy_group": "Taxon",
+    "gbif_records_group": "Record type, year and province/territory",
+    "gbif_taxonomy_title": "Browse the classification",
+    "gbif_rank_kingdom": "Kingdom",
+    "gbif_rank_phylum": "Phylum",
+    "gbif_rank_class": "Class",
+    "gbif_rank_order": "Order",
+    "gbif_rank_family": "Family",
+    "gbif_rank_genus": "Genus",
+    "gbif_rank_species": "Species",
+    "gbif_name_label": "Scientific name",
+    "gbif_name_placeholder": "e.g. Ursus arctos, Picea glauca…",
+    "gbif_basis_label": "Basis of record",
+    "gbif_year_label": "Event year",
+    "gbif_province_label": "Province/territory",
+    "gbif_buffers_run": "List species",
+    "gbif_buffers_no_point": (
+        "Pick a point on the map to list the species recorded around it."
+    ),
+    "gbif_records_word": "records",
+    "gbif_species_word": "species",
+    "gbif_top_species": "Most-recorded species",
+
     # --- results ------------------------------------------------------------ #
     "landuse_title": "Crop inventory history",
     "analysis_running": "Reducing 17 years over 4 buffers…",
@@ -122,6 +157,21 @@ TRANSLATIONS_EN: dict[str, str] = {
     "change_running": "Reading Hansen loss and gain…",
     "radius_label": "Radius",
 
+    # --- GBIF species analysis panel (canada/components/gbif_panel.py) ---- #
+    "gbif_species_tab": "Species (GBIF)",
+    "gbif_species_tab_hint": (
+        "Species already recorded in GBIF inside each buffer around the study "
+        "point. It is an aggregate query — it counts the records without "
+        "downloading them — and honours the same filters as the sidebar "
+        "search. The buffers are cumulative discs: the 10 km one includes "
+        "everything in the 5 km one."
+    ),
+    "gbif_buffers_note": "Cumulative discs · queried live from GBIF",
+    "gbif_buffers_empty": "No records at this radius with the current filters.",
+    "gbif_col_species": "Species",
+    "gbif_col_records": "Records",
+    "gbif_species_tab_short": "Species",
+
     # --- export ------------------------------------------------------------- #
     "download_button": "Download data",
     "export_dialog_title": "Download data",
@@ -147,6 +197,17 @@ TRANSLATIONS_EN: dict[str, str] = {
         "each table, and carries the attributions that must be cited."
     ),
     "no_point_badge": "no point",
+
+    # --- GBIF species export (canada/services/gbif_export.py) ------------- #
+    "gbif_export_ods_hint": (
+        "ODS workbook: one metadata tab (point, filters, caveats and licences) "
+        "and one tab per radius, listing species and their record counts."
+    ),
+    "gbif_export_csv_hint": (
+        "Single CSV covering every radius (radius_km, species, records, "
+        "% of radius). No metadata — the workbook's caveats still apply."
+    ),
+    "gbif_export_nothing": "List the species before exporting.",
 
     # --- errors -------------------------------------------------------------- #
     "err_coord_swapped": (

@@ -20,6 +20,7 @@ import logging
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
+from ..canada.services import gbif as gbif_ca
 from ..config.settings import IFN_VIEWPORT_LIMIT
 from ..services import auto_infracao, biomes, embargos, gbif, ifn
 
@@ -210,6 +211,33 @@ async def gbif_geojson(request: Request) -> Response:
     return JSONResponse(payload, headers={"Cache-Control": "no-store"})
 
 
+async def gbif_ca_geojson(request: Request) -> Response:
+    """GBIF occurrences inside a viewport, filtered by the accordion — the
+    Canada page's counterpart to ``gbif_geojson`` above. Same shape, same
+    filter-forwarding, same never-raises contract; the only difference is
+    which country's :mod:`services.gbif` module answers it."""
+    west = _float_param(request, "west")
+    south = _float_param(request, "south")
+    east = _float_param(request, "east")
+    north = _float_param(request, "north")
+    if None in (west, south, east, north):
+        west, south, east, north = -180.0, -90.0, 180.0, 90.0
+
+    filters = gbif_ca.filters_from_query(request.query_params)
+    try:
+        payload = await _run_blocking(
+            lambda: gbif_ca.points_in_bbox(west, south, east, north, filters)
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("GBIF CA GeoJSON could not be produced")
+        return JSONResponse(
+            {"error": "GBIF occurrences unavailable", "detail": str(exc)},
+            status_code=503,
+        )
+
+    return JSONResponse(payload, headers={"Cache-Control": "no-store"})
+
+
 def register(app) -> None:
     """Attach the routes to the Reflex app's Starlette instance."""
     api = getattr(app, "_api", None)
@@ -221,6 +249,7 @@ def register(app) -> None:
     api.add_route(embargos.GEOJSON_PATH, embargos_geojson, methods=["GET"])
     api.add_route(auto_infracao.GEOJSON_PATH, auto_infracao_geojson, methods=["GET"])
     api.add_route(gbif.GEOJSON_PATH, gbif_geojson, methods=["GET"])
-    logger.info("Registered backend routes %s, %s, %s, %s, %s",
+    api.add_route(gbif_ca.GEOJSON_PATH, gbif_ca_geojson, methods=["GET"])
+    logger.info("Registered backend routes %s, %s, %s, %s, %s, %s",
                 biomes.GEOJSON_PATH, ifn.GEOJSON_PATH, embargos.GEOJSON_PATH,
-                auto_infracao.GEOJSON_PATH, gbif.GEOJSON_PATH)
+                auto_infracao.GEOJSON_PATH, gbif.GEOJSON_PATH, gbif_ca.GEOJSON_PATH)

@@ -22,13 +22,14 @@ import reflex as rx
 
 from ._analysis import CanadaAnalysisMixin
 from ._export import CanadaExportMixin
+from ._gbif import CanadaGbifMixin
 from ._layers import CanadaLayersMixin
 from ._point import CanadaPointMixin
 from ._ui import CanadaUIMixin
 
 
-class CanadaState(CanadaAnalysisMixin, CanadaExportMixin, CanadaLayersMixin,
-                  CanadaPointMixin, CanadaUIMixin, rx.State):
+class CanadaState(CanadaAnalysisMixin, CanadaExportMixin, CanadaGbifMixin,
+                  CanadaLayersMixin, CanadaPointMixin, CanadaUIMixin, rx.State):
     """Root state for the ``/canada`` route."""
 
 

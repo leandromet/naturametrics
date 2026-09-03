@@ -28,12 +28,56 @@ def _tr_year(key: str, year: int) -> rx.Var:
     )
 
 
-def _section(title, *children) -> rx.Component:
+def _info_icon(text: rx.Var | str) -> rx.Component:
+    """A tap/click affordance, not a hover tooltip — ported from the Brazil
+    page's ``components/layer_panel.py::_info_icon`` unchanged: this app is
+    mobile-first throughout, and hover has no equivalent on touch."""
+    return rx.popover.root(
+        rx.popover.trigger(
+            rx.icon_button(
+                rx.icon("info", size=12),
+                size="1", variant="ghost", color_scheme="gray",
+                aria_label=text,
+            ),
+        ),
+        rx.popover.content(
+            rx.text(text, size="1", style={"lineHeight": "1.4"}),
+            max_width="260px",
+        ),
+    )
+
+
+def _section(title, *children, info: rx.Var | str | None = None) -> rx.Component:
+    """``info`` added for gbif_control() — the first Canada-page section that
+    needs the same tap-to-read explainer the Brazil sidebar already has on
+    several of its own sections."""
+    header = rx.text(title, size="1", weight="bold", color_scheme="gray",
+                     style={"textTransform": "uppercase", "letterSpacing": "0.06em"})
     return rx.vstack(
-        rx.text(title, size="1", weight="bold", color_scheme="gray",
-                style={"textTransform": "uppercase", "letterSpacing": "0.06em"}),
+        rx.hstack(header, _info_icon(info), spacing="1", align="center")
+        if info is not None else header,
         *children,
         spacing="2", align_items="stretch", width="100%",
+    )
+
+
+def _filter_select(label: str, options, value, on_change,
+                   disabled=False) -> rx.Component:
+    """One row of the GBIF filter accordion — ported from the Brazil page's
+    ``components/layer_panel.py::_filter_select`` unchanged."""
+    return rx.vstack(
+        rx.text(label, size="1", color_scheme="gray"),
+        rx.select(
+            options,
+            value=value,
+            on_change=on_change,
+            disabled=disabled,
+            width="100%",
+            size="2",
+        ),
+        spacing="1",
+        width="100%",
+        align_items="stretch",
     )
 
 
@@ -309,6 +353,12 @@ def status_line() -> rx.Component:
 
 
 def layer_panel() -> rx.Component:
+    # Imported here, not at module level: gbif_panel.py imports _section/
+    # _info_icon/_filter_select back from this module (same reason as the
+    # Brazil page's own layer_panel()) — a top-level import here would try to
+    # read those names off this module before it has finished defining them.
+    from .gbif_panel import gbif_control
+
     return rx.vstack(
         point_control(),
         rx.divider(),
@@ -323,6 +373,8 @@ def layer_panel() -> rx.Component:
         forest_age_control(),
         rx.divider(),
         forest_change_control(),
+        rx.divider(),
+        gbif_control(),
         rx.spacer(),
         rx.divider(),
         status_line(),

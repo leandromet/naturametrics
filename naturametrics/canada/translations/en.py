@@ -122,6 +122,7 @@ TRANSLATIONS_EN: dict[str, str] = {
     "gbif_records_word": "records",
     "gbif_species_word": "species",
     "gbif_top_species": "Most-recorded species",
+    "gbif_show_zone_hint": "Show this ring on the map",
 
     # --- results ------------------------------------------------------------ #
     "landuse_title": "Crop inventory history",

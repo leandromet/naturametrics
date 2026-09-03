@@ -46,15 +46,60 @@ if (typeof document !== "undefined" && !document.getElementById("nm-vector-tip-c
       color: #1c2024;
       max-width: 390px;
     }
-    .nm-vector-tip .nm-tip-row { display: flex; gap: 8px; justify-content: space-between; align-items: flex-start; }
-    .nm-vector-tip .nm-tip-row + .nm-tip-row {
+    .nm-vector-tip .nm-tip-row,
+    .nm-vector-popup .nm-tip-row { display: flex; gap: 8px; justify-content: space-between; align-items: flex-start; }
+    .nm-vector-tip .nm-tip-row + .nm-tip-row,
+    .nm-vector-popup .nm-tip-row + .nm-tip-row {
       margin-top: 5px;
       padding-top: 5px;
       border-top: 1px solid rgba(0,0,0,.1);
     }
-    .nm-vector-tip .nm-tip-row:first-child { font-weight: 600; }
-    .nm-vector-tip .nm-tip-label { color: #60646c; white-space: nowrap; flex-shrink: 0; }
-    .nm-vector-tip .nm-tip-value { text-align: left; }
+    .nm-vector-tip .nm-tip-row:first-child,
+    .nm-vector-popup .nm-tip-row:first-child { font-weight: 600; }
+    .nm-vector-tip .nm-tip-label,
+    .nm-vector-popup .nm-tip-label { color: #60646c; white-space: nowrap; flex-shrink: 0; }
+    .nm-vector-tip .nm-tip-value,
+    .nm-vector-popup .nm-tip-value { text-align: left; }
+    .nm-vector-popup .nm-tip-value a {
+      color: var(--accent-9, #2a6f4f);
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .nm-vector-popup .nm-tip-value a:hover { text-decoration: underline; }
+    /* Fixed-open click popup for point layers (e.g. GBIF occurrences): same
+       row styling as the hover tooltip above, but content stays selectable
+       so it can be copied — the hover tooltip is deliberately not
+       user-selectable since it disappears the moment the cursor that would
+       select it moves. */
+    .nm-vector-popup .leaflet-popup-content-wrapper {
+      border-radius: 6px;
+    }
+    .nm-vector-popup .leaflet-popup-content {
+      font: 12px/1.45 Inter, system-ui, sans-serif;
+      color: #1c2024;
+      margin: 10px 14px;
+      user-select: text;
+    }
+    /* The "new study area" action tooltipHtml prepends when spec.offer_select
+       is set — a real button rather than a styled link, since it performs an
+       action (recentre the study area) rather than navigating anywhere. */
+    .nm-vector-popup .nm-tip-select-btn {
+      display: block;
+      width: 100%;
+      margin: -10px -14px 8px;
+      padding: 7px 14px;
+      border: none;
+      border-bottom: 1px solid rgba(0,0,0,.1);
+      background: var(--accent-3, #eaf3ee);
+      color: var(--accent-11, #1b4332);
+      font: 600 12px/1.3 Inter, system-ui, sans-serif;
+      text-align: left;
+      cursor: pointer;
+      border-radius: 6px 6px 0 0;
+    }
+    .nm-vector-popup .nm-tip-select-btn:hover {
+      background: var(--accent-4, #dcece3);
+    }
     .nm-vector-label {
       font: 600 11px/1.25 Inter, system-ui, sans-serif;
       color: #ffffff;

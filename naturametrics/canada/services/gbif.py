@@ -193,6 +193,13 @@ def _slim(record: dict) -> dict | None:
 
     props["lat"] = lat
     props["lon"] = lon
+    # The canonical page for this exact record — "key" is GBIF's own
+    # occurrence id, stable across the API and the website, so this is the
+    # one link that reliably lands on the record itself rather than a search
+    # for it.
+    gbif_id = props.get("gbif_id")
+    if gbif_id is not None:
+        props["gbif_url"] = f"{gc.PORTAL_URL}/occurrence/{gbif_id}"
 
     return {
         "type": "Feature",
@@ -326,6 +333,11 @@ def vector_spec(filters: Filters, opacity: float = 0.85,
         "color_property": "kingdom",
         "palette": gc.KINGDOM_COLORS,
         "default_color": gc.DEFAULT_COLOR,
+        # See the Brazil page's own vector_spec for the full rationale: a
+        # click pins this occurrence's details open instead of recentring the
+        # study area, and offers the recentre as a deliberate in-popup action.
+        "offer_select": True,
+        "select_label": "New study area",
         "point_style": {
             "radius": 4,
             "color": "#ffffff",
@@ -349,6 +361,8 @@ def vector_spec(filters: Filters, opacity: float = 0.85,
             {"label": "Institution", "property": "institution_code"},
             {"label": "Dataset", "property": "dataset_name"},
             {"label": "Uncertainty (m)", "property": "coordinate_uncertainty_m"},
+            {"label": "Record", "property": "gbif_url", "link": True,
+             "link_text": "View on GBIF ↗"},
         ],
     }
 

@@ -275,6 +275,14 @@ def _buffer_card(row) -> rx.Component:
             rx.hstack(
                 rx.badge(row.radius_label, color_scheme="jade", variant="solid",
                          size="2"),
+                rx.tooltip(
+                    rx.icon_button(
+                        rx.icon("locate-fixed", size=14),
+                        size="1", variant="soft", color_scheme="jade",
+                        on_click=S.show_gbif_zone(row.radius_km),
+                    ),
+                    content=S.tr["gbif_show_zone_hint"],
+                ),
                 rx.spacer(),
                 rx.vstack(
                     rx.text(row.total_label, size="3", weight="bold"),

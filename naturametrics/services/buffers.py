@@ -165,6 +165,14 @@ def disc_area_ha(radius_km: float) -> float:
     return math.pi * (radius_km * 1000.0) ** 2 / 10_000.0
 
 
+def disc_bounds(p: Point, radius_km: float,
+                shape: BufferShape = "circle") -> tuple[float, float, float, float]:
+    """Public wrapper on :func:`_local_disc_bounds` — the bounds of ONE ring,
+    for framing the map on it (e.g. GbifMixin.show_gbif_zone) without paying
+    for :func:`buffer_geojson`'s full tessellated outline."""
+    return _local_disc_bounds(p, radius_km, shape)
+
+
 def _local_disc_bounds(
     p: Point, radius_km: float, shape: BufferShape,
 ) -> tuple[float, float, float, float]:

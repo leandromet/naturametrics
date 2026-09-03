@@ -264,6 +264,13 @@ def _slim(record: dict) -> dict | None:
     # that was clicked.
     props["lat"] = lat
     props["lon"] = lon
+    # The canonical page for this exact record — "key" is GBIF's own
+    # occurrence id, stable across the API and the website, so this is the
+    # one link that reliably lands on the record itself rather than a search
+    # for it.
+    gbif_id = props.get("gbif_id")
+    if gbif_id is not None:
+        props["gbif_url"] = f"{gc.PORTAL_URL}/occurrence/{gbif_id}"
 
     return {
         "type": "Feature",
@@ -405,6 +412,15 @@ def vector_spec(filters: Filters, opacity: float = 0.85,
         "color_property": "kingdom",
         "palette": gc.KINGDOM_COLORS,
         "default_color": gc.DEFAULT_COLOR,
+        # Clicking a GBIF dot pins its own details open (leaflet_map.js's
+        # click-popup) rather than recentring the study area the way a plain
+        # map click does — landing 4 km from a jaguar sighting because you
+        # tried to read its record would answer a different question. This
+        # offers the recentre as a deliberate action inside that popup
+        # instead, for the times a record's exact coordinate genuinely is the
+        # point someone wants to study next.
+        "offer_select": True,
+        "select_label": "Nova área de estudo",
         "point_style": {
             "radius": 4,
             "color": "#ffffff",
@@ -428,6 +444,8 @@ def vector_spec(filters: Filters, opacity: float = 0.85,
             {"label": "Instituição", "property": "institution_code"},
             {"label": "Conjunto de dados", "property": "dataset_name"},
             {"label": "Incerteza (m)", "property": "coordinate_uncertainty_m"},
+            {"label": "Registro", "property": "gbif_url", "link": True,
+             "link_text": "Ver no GBIF ↗"},
         ],
     }
 

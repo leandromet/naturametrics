@@ -327,6 +327,14 @@ def _buffer_card(row) -> rx.Component:
             rx.hstack(
                 rx.badge(row.radius_label, color_scheme="jade", variant="solid",
                          size="2"),
+                rx.tooltip(
+                    rx.icon_button(
+                        rx.icon("locate-fixed", size=14),
+                        size="1", variant="soft", color_scheme="jade",
+                        on_click=AppState.show_gbif_zone(row.radius_km),
+                    ),
+                    content=AppState.tr["gbif_show_zone_hint"],
+                ),
                 rx.spacer(),
                 rx.vstack(
                     rx.text(row.total_label, size="3", weight="bold"),
@@ -388,8 +396,11 @@ def gbif_buffer_panel() -> rx.Component:
 
     Run on demand rather than with the rest of the analysis: it is five
     requests to a third party, and someone who came for the land-cover history
-    should not pay for them on every map click. Independent of the map layer
-    too — the species list is worth having without 300 dots on screen.
+    should not pay for them on every map click. Turns the map layer on if it
+    was off (state/_gbif.py::run_gbif_buffers) — counting species while the
+    dots themselves stay hidden was confusing enough on its own to report as
+    a bug — but does not force it back off, so the layer can still be
+    switched off afterward for just the counts.
     """
     return rx.vstack(
         rx.cond(

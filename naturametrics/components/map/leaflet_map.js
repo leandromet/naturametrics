@@ -695,6 +695,19 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
             };
           }
           if (props.role !== "buffer") return {};
+          // A GBIF zone card's "show on map" button (state/_gbif.py's
+          // show_gbif_zone) stamps this flag onto the one ring it means,
+          // rather than this app tracking a second "which radius" value in
+          // JS that could drift from the GeoJSON actually on screen.
+          if (props.highlighted) {
+            return {
+              color: "#ffd166",
+              weight: 4,
+              opacity: 1,
+              fill: false,
+              dashArray: null,
+            };
+          }
           return {
             color: "#ffffff",
             weight: 2,
@@ -765,7 +778,7 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
     if (hoverRef.current) hoverRef.current(props || {});
   };
 
-  const attachPointHandlers = (L, spec, featureLayer, feature) => {
+  const attachPointHandlers = (L, spec, featureLayer, feature, hasPopup) => {
     const props = (feature && feature.properties) || {};
     // pointStyleFor, not spec.point_style: on a layer that colours per feature
     // (spec.color_property) the flat style is only half the answer, and using
@@ -819,6 +832,14 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
         // Python side (state/_conglomerado.py) is what interprets the shape,
         // not this hook.
         selectRef.current({...props, lat: props.lat, lon: props.lon});
+      } else if (hasPopup) {
+        // Pin this feature's own details open instead of forwarding the
+        // click to the generic map-click handler, which would otherwise
+        // recentre the whole study area on this exact dot. Reading a
+        // record's details and choosing to study its coordinate are two
+        // different intentions — offer_select's own button inside the popup
+        // is how the second one is expressed, deliberately.
+        featureLayer.openPopup();
       } else if (clickRef.current && e.latlng) {
         clickRef.current(Math.round(e.latlng.lat * 1e6) / 1e6,
                          Math.round(e.latlng.lng * 1e6) / 1e6);
@@ -849,7 +870,46 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
           });
         }
         if (spec.point_style) {
-          attachPointHandlers(L, spec, featureLayer, feature);
+          if (html) {
+            // Bound alongside the hover tooltip, not instead of it: the
+            // tooltip is the quick preview while sweeping the cursor across
+            // a cluster of dots, the popup is what a click "fixes" open for
+            // reading and copying. Leaflet's own close button and
+            // one-popup-at-a-time auto-close give a dismiss-on-elsewhere-
+            // click behaviour for free.
+            featureLayer.bindPopup(html, {
+              className: "nm-vector-popup",
+              closeButton: true,
+              autoClose: true,
+              maxWidth: 390,
+            });
+            if (spec.offer_select) {
+              // The select button is inert markup from tooltipHtml until
+              // wired here — this is the one place that still has this
+              // feature's own props in closure when the popup's DOM actually
+              // exists (Leaflet builds it lazily, on open).
+              featureLayer.on("popupopen", () => {
+                const el = featureLayer.getPopup() && featureLayer.getPopup().getElement();
+                const btn = el && el.querySelector(".nm-tip-select-btn");
+                if (!btn) return;
+                btn.onclick = () => {
+                  // clickRef (set_study_point), not selectRef: selectRef is
+                  // wired to select_conglomerado, which expects an IFN
+                  // plot's own property shape (conglomerado/uf/municipio/
+                  // bioma/ponto_id) — feeding it a GBIF record would either
+                  // do nothing or misread the wrong fields. A plain map
+                  // click recentring the study area on (lat, lon) is exactly
+                  // what this button offers, so it reuses that handler.
+                  const p = feature.properties || {};
+                  if (clickRef.current && p.lat != null && p.lon != null) {
+                    clickRef.current(p.lat, p.lon);
+                  }
+                  featureLayer.closePopup();
+                };
+              });
+            }
+          }
+          attachPointHandlers(L, spec, featureLayer, feature, !!html);
         } else {
           // An interactive polygon swallows the click that would otherwise
           // reach the map, so the study-point selection has to be forwarded
@@ -1418,11 +1478,33 @@ function tooltipHtml(spec, feature) {
       if (seen.has(key)) return null;
       seen.add(key);
       const labelHtml = splitLabel(entry.label).map(escapeHtml).join("<br>");
-      const valueHtml = wrapWords(value, 25).map(escapeHtml).join("<br>");
+      let valueHtml;
+      // https:// only: this value is server-built (see e.g. services/gbif.py's
+      // gbif_url), but it still lands in innerHTML, so a stray non-http(s)
+      // scheme (a would-be `javascript:`) falls back to plain escaped text
+      // instead of becoming a clickable anchor.
+      if (entry.link && /^https:\/\//.test(String(value))) {
+        // Inert in the hover tooltip (pointer-events: none there) and only
+        // actually clickable once a click has pinned this as a popup — see
+        // buildLayer's bindPopup.
+        const text = escapeHtml(entry.link_text || String(value));
+        valueHtml = `<a href="${escapeHtml(value)}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+      } else {
+        valueHtml = wrapWords(value, 25).map(escapeHtml).join("<br>");
+      }
       return `<div class="nm-tip-row"><span class="nm-tip-label">${labelHtml}</span><span class="nm-tip-value">${valueHtml}</span></div>`;
     })
     .filter(Boolean);
-  return rows.length ? rows.join("") : null;
+  if (!rows.length) return null;
+  if (spec.offer_select) {
+    // A plain map click recentres the study area immediately; this layer's
+    // own click instead pins the record open (see attachPointHandlers), and
+    // offers the recentre as a deliberate action inside it — the button is
+    // wired up in buildLayer's popupopen handler, which is the one place
+    // that still has this feature's own coordinates in closure.
+    rows.unshift(`<button type="button" class="nm-tip-select-btn">${escapeHtml(spec.select_label || "New study area")}</button>`);
+  }
+  return rows.join("");
 }
 
 // The tooltip is built as an HTML string, and these values come from a data

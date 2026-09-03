@@ -172,6 +172,10 @@ class GbifMixin(rx.State, mixin=True):
     gbif_buffer_busy: bool = False
     gbif_buffer_error: str = ""
     gbif_export_error: str = ""
+    #: Which zone card's "show on map" was last clicked, so its button can
+    #: render as active — the ring itself is stamped into buffer_overlays by
+    #: show_gbif_zone, not read from here.
+    gbif_highlighted_radius_km: float = 0.0
 
     # ---------------------------------------------------------------------- #
     # Layer toggle
@@ -514,6 +518,13 @@ class GbifMixin(rx.State, mixin=True):
             filters = self.gbif_filters
             self.gbif_buffer_busy = True
             self.gbif_buffer_error = ""
+            if not self.show_gbif:
+                # Counting species in the buffers while the dots themselves
+                # stay hidden is exactly the "no points at all" confusion
+                # this switch causes when left off — running the analysis
+                # is a clear enough signal to turn the layer on for them.
+                self.show_gbif = True
+                self._refresh_layers()
 
         try:
             rows = gbif_buffers.species_by_buffer(lat, lon, BUFFER_RADII_KM,
@@ -554,6 +565,40 @@ class GbifMixin(rx.State, mixin=True):
                 )
                 for r in rows
             ]
+
+    def show_gbif_zone(self, radius_km: float):
+        """Highlight one buffer ring on the map and fit the view to it — the
+        "show these points" action next to a GBIF zone's result card.
+
+        Stamps the ring already sitting in ``buffer_overlays`` rather than
+        recomputing it: the geometry hasn't changed since ``run_analysis``
+        drew it, only which one to draw brighter. A no-op if the rings
+        themselves are not there (no study point, or drawn in "square" mode
+        under the multi-select bbox shape rather than per-point rings).
+        """
+        features = (self.buffer_overlays or {}).get("features") or []
+        matched = False
+        stamped = []
+        for f in features:
+            props = dict(f.get("properties") or {})
+            if props.get("role") == "buffer":
+                is_target = props.get("radius_km") == radius_km
+                props["highlighted"] = is_target
+                matched = matched or is_target
+            stamped.append({**f, "properties": props})
+        if not matched:
+            return
+        self.buffer_overlays = {**self.buffer_overlays, "features": stamped}
+        self.gbif_highlighted_radius_km = radius_km
+
+        if not self.has_point:
+            return
+        from ..services.buffers import disc_bounds
+        from ..services.geo import point as make_point
+        shape = getattr(self, "buffer_shape", "circle")
+        p = make_point(lat=self.study_lat, lon=self.study_lon)
+        west, south, east, north = disc_bounds(p, radius_km, shape)
+        self.fit_bounds = [[south, west], [north, east]]
 
     # ---------------------------------------------------------------------- #
     # Export

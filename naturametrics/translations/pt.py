@@ -845,6 +845,7 @@ TRANSLATIONS_PT: dict[str, str] = {
     "gbif_records_word": "registros",
     "gbif_species_word": "espécies",
     "gbif_top_species": "Espécies mais registradas",
+    "gbif_show_zone_hint": "Mostrar este anel no mapa",
 
     # --- help: IBAMA and GBIF layers (added with the GBIF integration) ---- #
     "help_step11_title": "Confira embargos e autuações do IBAMA",

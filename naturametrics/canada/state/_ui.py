@@ -35,6 +35,22 @@ class CanadaUIMixin(rx.State, mixin=True):
     help_open: bool = False
     cite_open: bool = False
 
+    #: The desktop results-drawer's height — see the Brazil page's own
+    #: ``state/_ui.py::UIMixin`` for the full rationale (a desktop
+    #: counterpart to the mobile sheet's tap-to-toggle height, which desktop
+    #: never had).
+    results_panel_size: str = "half"
+
+    def cycle_results_panel_size(self):
+        order = ["compact", "half", "expanded"]
+        idx = order.index(self.results_panel_size) if self.results_panel_size in order else 1
+        self.results_panel_size = order[(idx + 1) % len(order)]
+
+    @rx.var
+    def results_panel_height(self) -> str:
+        return {"compact": "22vh", "half": "42vh", "expanded": "68vh"}.get(
+            self.results_panel_size, "42vh")
+
     def set_language(self, lang: str | list[str]):
         raw = lang[0] if isinstance(lang, (list, tuple)) and lang else lang
         if raw in SUPPORTED_LANGUAGES:

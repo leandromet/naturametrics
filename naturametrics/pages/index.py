@@ -106,6 +106,22 @@ _SHEET_SCRIPT = """
     settle(el, target);
   };
 
+  // set_study_point (state/_point.py) calls this on every single study-point
+  // selection, not just the first — so a user who deliberately dragged the
+  // sheet down to peek to see more map, then picked a second or third point,
+  // had it forced back open to "half" every time, with no way to keep the
+  // map-heavy view they had just chosen. Nudging the sheet open only makes
+  // sense the first time, before anyone knows there is something to see down
+  // there; past that it should stay out of the way of whatever height the
+  // user has since chosen. `nudged` deliberately does not persist across a
+  // reload — a fresh page load is a fresh "first time".
+  var nudged = false;
+  window.__nmSheetNudgeOpen = function () {
+    if (nudged) return;
+    nudged = true;
+    window.__nmSheetSnapTo('half');
+  };
+
   document.addEventListener('pointerdown', function (e) {
     var handle = e.target.closest && e.target.closest('[data-drawer-handle]');
     if (!handle) return;

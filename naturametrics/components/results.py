@@ -794,8 +794,29 @@ def _forest_age_panel() -> rx.Component:
     )
 
 
+def _resize_button() -> rx.Component:
+    """Desktop-only: cycles the drawer between compact/half/expanded — the
+    desktop counterpart to the mobile sheet's own tap-to-toggle height,
+    since dragging the page edge was never a thing here to begin with."""
+    return rx.box(
+        rx.tooltip(
+            rx.button(
+                rx.icon("unfold-vertical", size=14),
+                rx.text(AppState.tr["results_resize_label"], size="1"),
+                on_click=AppState.cycle_results_panel_size,
+                size="1", variant="solid", color_scheme="gray",
+                aria_label=AppState.tr["results_resize_aria"],
+            ),
+            content=AppState.tr["results_resize_hint"],
+        ),
+        position="absolute", top="0.4rem", right="0.6rem", z_index="1",
+        display=["none", "none", "none", "block"],
+    )
+
+
 def results_drawer() -> rx.Component:
     return rx.box(
+        _resize_button(),
         rx.cond(
             AppState.has_subject | AppState.analysis_running | AppState.multi_active,
             rx.flex(
@@ -842,9 +863,12 @@ def results_drawer() -> rx.Component:
         width="100%",
         border_top="1px solid var(--gray-5)",
         background="var(--color-panel-solid)",
-        # Only the desktop drawer is height-capped and independently scrollable;
-        # below that it is just the bottom of the page's single scroll column.
-        max_height=["none", "none", "none", "50vh"],
+        position="relative",
+        # Only the desktop drawer is height-capped and independently
+        # scrollable; below that it is just the bottom of the page's single
+        # scroll column. The desktop cap is driven by state (_resize_button
+        # above) rather than a fixed 50vh.
+        max_height=["none", "none", "none", AppState.results_panel_height],
         overflow_y=["visible", "visible", "visible", "auto"],
         flex_shrink="0",
     )

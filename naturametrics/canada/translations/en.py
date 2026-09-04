@@ -9,6 +9,9 @@ TRANSLATIONS_EN: dict[str, str] = {
     "nav_title_suffix": "Canada",
     "drawer_title": "Layers and analysis",
     "drawer_close_aria": "Close panel",
+    "results_resize_aria": "Resize the results panel",
+    "results_resize_label": "Resize",
+    "results_resize_hint": "Cycles the panel's height between compact, half, and expanded.",
 
     # --- on-map legend (canada/components/map_legend.py) ------------------ #
     "legend_title": "Legend",

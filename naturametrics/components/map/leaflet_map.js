@@ -107,6 +107,52 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
 
       L.control.scale({ imperial: false, position: "bottomleft" }).addTo(map);
 
+      // Fullscreen toggle — the native Fullscreen API on the map's own
+      // container, not a third-party Leaflet plugin: this app already
+      // writes its own Leaflet controls (the scale control above), and
+      // pulling in leaflet.fullscreen (its own JS + CSS) for one button
+      // would be a new dependency for something a dozen lines cover.
+      const FullscreenControl = L.Control.extend({
+        options: { position: "topleft" },
+        onAdd: function () {
+          const container = L.DomUtil.create("div", "leaflet-bar leaflet-control");
+          L.DomEvent.disableClickPropagation(container);
+          const link = L.DomUtil.create("a", "", container);
+          link.href = "#";
+          link.setAttribute("role", "button");
+          link.style.display = "flex";
+          link.style.alignItems = "center";
+          link.style.justifyContent = "center";
+          const ICON_EXPAND = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>';
+          const ICON_COMPRESS = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/></svg>';
+          const el = map.getContainer();
+          const sync = () => {
+            const isFull = document.fullscreenElement === el;
+            link.innerHTML = isFull ? ICON_COMPRESS : ICON_EXPAND;
+            link.title = isFull ? "Exit fullscreen" : "Fullscreen";
+          };
+          sync();
+          document.addEventListener("fullscreenchange", () => {
+            sync();
+            // The container's own pixel size changes on the fullscreen
+            // transition; Leaflet caches its last known size and does not
+            // notice on its own, so tiles render for the old size until the
+            // next pan/zoom without this.
+            setTimeout(() => map.invalidateSize(), 50);
+          });
+          L.DomEvent.on(link, "click", (e) => {
+            L.DomEvent.stop(e);
+            if (document.fullscreenElement === el) {
+              document.exitFullscreen();
+            } else if (el.requestFullscreen) {
+              el.requestFullscreen();
+            }
+          });
+          return container;
+        },
+      });
+      map.addControl(new FullscreenControl());
+
       map.on("click", (e) => {
         // A click that landed on a conglomerado has already been handled, with
         // that conglomerado's own coordinates. Without this the map would then

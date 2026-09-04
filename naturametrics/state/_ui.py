@@ -103,6 +103,24 @@ class UIMixin(rx.State, mixin=True):
     def set_ai_disclaimer_open(self, value: bool):
         self.ai_disclaimer_open = value
 
+    #: The desktop results-drawer's height, one of "compact"/"half"/
+    #: "expanded" — the desktop counterpart to the mobile sheet's own
+    #: tap-to-toggle height, since desktop never had an equivalent (see
+    #: `cycle_results_panel_size` and `results_panel_height`). Meaningless
+    #: below desktop, where `results_drawer()`'s own max_height is
+    #: unconstrained and the mobile sheet governs height instead.
+    results_panel_size: str = "half"
+
+    def cycle_results_panel_size(self):
+        order = ["compact", "half", "expanded"]
+        idx = order.index(self.results_panel_size) if self.results_panel_size in order else 1
+        self.results_panel_size = order[(idx + 1) % len(order)]
+
+    @rx.var
+    def results_panel_height(self) -> str:
+        return {"compact": "22vh", "half": "42vh", "expanded": "68vh"}.get(
+            self.results_panel_size, "42vh")
+
     def set_open_groups(self, value: str | list[str]):
         """The accordion's own `on_value_change` — every manual open/close
         of any group passes back through here as the whole new array

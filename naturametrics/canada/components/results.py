@@ -319,6 +319,25 @@ def _gbif_species_panel() -> rx.Component:
     )
 
 
+def _resize_button() -> rx.Component:
+    """Desktop-only: see the Brazil page's own ``components/results.py::
+    _resize_button`` for the full rationale."""
+    return rx.box(
+        rx.tooltip(
+            rx.button(
+                rx.icon("unfold-vertical", size=14),
+                rx.text(S.tr["results_resize_label"], size="1"),
+                on_click=S.cycle_results_panel_size,
+                size="1", variant="solid", color_scheme="gray",
+                aria_label=S.tr["results_resize_aria"],
+            ),
+            content=S.tr["results_resize_hint"],
+        ),
+        position="absolute", top="0.4rem", right="0.6rem", z_index="1",
+        display=["none", "none", "none", "flex"],
+    )
+
+
 def results_drawer() -> rx.Component:
     """Two columns, matching the Brazil drawer's shape.
 
@@ -333,6 +352,7 @@ def results_drawer() -> rx.Component:
     either — see ``_gbif_species_panel()``.
     """
     return rx.box(
+        _resize_button(),
         rx.cond(
             S.has_point | S.analysis_running,
             rx.fragment(
@@ -377,7 +397,8 @@ def results_drawer() -> rx.Component:
         width="100%",
         border_top="1px solid var(--gray-5)",
         background="var(--color-panel-solid)",
-        max_height=["none", "none", "none", "55vh"],
+        position="relative",
+        max_height=["none", "none", "none", S.results_panel_height],
         overflow_y=["visible", "visible", "visible", "auto"],
         flex_shrink="0",
     )

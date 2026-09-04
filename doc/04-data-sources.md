@@ -351,11 +351,12 @@ against this project's service account on 2026-08-19; if an account has not acce
 dataset licence the selection reverts and the panel says why, rather than showing a dead
 map.
 
-⚠️ **The `mt1.google.com` endpoints are not a licensed public Google API.** They are
-the same undocumented tile servers Yvynation uses; they are fast and they work, and
-they are the chosen default. Before a public Cloud Run deployment (D10) this should
-become a proper Google Maps Platform key, or fall back to Esri/OSM, which are
-licensed for this use.
+**The `mt1.google.com` endpoints are not a documented Google Maps Platform API in
+their own right** — the same undocumented tile servers Yvynation uses. As of 2026-09,
+the GCP project backing this app's Cloud Run deployment has the Google Maps API
+activated, which is the account-level cover D10 called for; `google_hybrid` is now
+the production default (cloudbuild.yaml). Esri/OSM remain available as fallback
+options in `BASEMAPS`.
 
 **Measured** (cache-disabled load, 1440×900, 2026-08-18): basemap tiles are **20
 requests / 187 kB / ~0.13 s** — they are not a meaningful share of load time. The

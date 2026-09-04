@@ -14,11 +14,13 @@ from .settings import SPOT_ENABLED
 # --------------------------------------------------------------------------- #
 # Basemaps (plain XYZ, no Earth Engine involved)
 # --------------------------------------------------------------------------- #
-# ⚠️ The `mt1.google.com` endpoints are not a licensed public Google API — they are
-# the same undocumented tile servers Yvynation uses. They are fast and they work,
-# and they are the chosen default; but before a public deployment this should
-# become a proper Google Maps Platform key, or fall back to Esri/OSM, which are
-# licensed for this use. Tracked in doc/04-data-sources.md §7.
+# The `mt1.google.com` endpoints are the same undocumented tile servers
+# Yvynation uses — not a documented Google Maps Platform API in their own
+# right. Cloud Run now deploys under a GCP project with the Google Maps API
+# activated (2026-09), which is the account-level cover this needed before it
+# went to production as the default (`google_hybrid`, cloudbuild.yaml); Esri/
+# OSM remain the fallback options in BASEMAPS below either way. Tracked in
+# doc/04-data-sources.md §7.
 BASEMAPS: Dict[str, Dict[str, Any]] = {
     "google_maps": {
         "label_pt": "Google Maps",

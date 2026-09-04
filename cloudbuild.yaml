@@ -92,4 +92,12 @@ steps:
       # wired up). Not a secret — GA4 Measurement IDs are public by design,
       # shipped in every page's HTML — so a literal here is fine, same as the
       # other config values on this line.
-      - --set-env-vars=GCP_PROJECT_ID=${PROJECT_ID},NM_EE_TIER=partner,NM_EE_CONCURRENCY=64,NM_BASEMAP=esri_imagery,NM_SPOT_ENABLED=false,NM_GA_MEASUREMENT_ID=G-HKS5YTT9DP
+      #
+      # NM_BASEMAP=google_hybrid (2026-09): previously pinned to esri_imagery
+      # because the mt1.google.com tile endpoints this app's `google_*`
+      # basemaps use are undocumented, not a licensed Maps Platform API in
+      # their own right (config/datasets.py). This project now has the Google
+      # Maps API activated on Cloud Run, which was the missing cover — a
+      # manual edit to this value in the Cloud Run console will NOT stick,
+      # since this line replaces it on every push; change it here instead.
+      - --set-env-vars=GCP_PROJECT_ID=${PROJECT_ID},NM_EE_TIER=partner,NM_EE_CONCURRENCY=64,NM_BASEMAP=google_hybrid,NM_SPOT_ENABLED=false,NM_GA_MEASUREMENT_ID=G-HKS5YTT9DP

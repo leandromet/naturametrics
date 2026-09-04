@@ -95,6 +95,7 @@ class PointMixin(rx.State, mixin=True):
         self.point_label = str(p)
         self.point_error = ""
         self.has_point = True
+        self._open_study_area()
         logger.info("Study point set: %s", p)
 
         # Draw the rings immediately, from local geometry. Waiting on Earth

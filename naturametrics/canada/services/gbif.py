@@ -335,9 +335,9 @@ def vector_spec(filters: Filters, opacity: float = 0.85,
         "default_color": gc.DEFAULT_COLOR,
         # See the Brazil page's own vector_spec for the full rationale: a
         # click pins this occurrence's details open instead of recentring the
-        # study area, and offers the recentre as a deliberate in-popup action.
-        "offer_select": True,
-        "select_label": "New study area",
+        # study area — click the map beside the dot to recentre there instead.
+        # A dedicated in-popup "select this point" button was tried and
+        # dropped there; see that file's comment for why.
         "point_style": {
             "radius": 4,
             "color": "#ffffff",

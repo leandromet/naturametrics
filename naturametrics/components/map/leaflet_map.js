@@ -837,8 +837,8 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
         // click to the generic map-click handler, which would otherwise
         // recentre the whole study area on this exact dot. Reading a
         // record's details and choosing to study its coordinate are two
-        // different intentions — offer_select's own button inside the popup
-        // is how the second one is expressed, deliberately.
+        // different intentions — click the map beside the dot for the
+        // second one.
         featureLayer.openPopup();
       } else if (clickRef.current && e.latlng) {
         clickRef.current(Math.round(e.latlng.lat * 1e6) / 1e6,
@@ -883,31 +883,6 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
               autoClose: true,
               maxWidth: 390,
             });
-            if (spec.offer_select) {
-              // The select button is inert markup from tooltipHtml until
-              // wired here — this is the one place that still has this
-              // feature's own props in closure when the popup's DOM actually
-              // exists (Leaflet builds it lazily, on open).
-              featureLayer.on("popupopen", () => {
-                const el = featureLayer.getPopup() && featureLayer.getPopup().getElement();
-                const btn = el && el.querySelector(".nm-tip-select-btn");
-                if (!btn) return;
-                btn.onclick = () => {
-                  // clickRef (set_study_point), not selectRef: selectRef is
-                  // wired to select_conglomerado, which expects an IFN
-                  // plot's own property shape (conglomerado/uf/municipio/
-                  // bioma/ponto_id) — feeding it a GBIF record would either
-                  // do nothing or misread the wrong fields. A plain map
-                  // click recentring the study area on (lat, lon) is exactly
-                  // what this button offers, so it reuses that handler.
-                  const p = feature.properties || {};
-                  if (clickRef.current && p.lat != null && p.lon != null) {
-                    clickRef.current(p.lat, p.lon);
-                  }
-                  featureLayer.closePopup();
-                };
-              });
-            }
           }
           attachPointHandlers(L, spec, featureLayer, feature, !!html);
         } else {
@@ -1496,14 +1471,6 @@ function tooltipHtml(spec, feature) {
     })
     .filter(Boolean);
   if (!rows.length) return null;
-  if (spec.offer_select) {
-    // A plain map click recentres the study area immediately; this layer's
-    // own click instead pins the record open (see attachPointHandlers), and
-    // offers the recentre as a deliberate action inside it — the button is
-    // wired up in buildLayer's popupopen handler, which is the one place
-    // that still has this feature's own coordinates in closure.
-    rows.unshift(`<button type="button" class="nm-tip-select-btn">${escapeHtml(spec.select_label || "New study area")}</button>`);
-  }
   return rows.join("");
 }
 

@@ -97,6 +97,7 @@ class GeometryMixin(rx.State, mixin=True):
         self._clear_other_subjects()
         self.geometry_error = ""
         self.has_geometry = True
+        self._open_study_area()
         self.geometry_area_ha = geometry_area_ha(geom)
         self.point_label = f"{label} — {self.geometry_extent_label}"
         self.point_source = source

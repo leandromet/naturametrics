@@ -415,12 +415,15 @@ def vector_spec(filters: Filters, opacity: float = 0.85,
         # Clicking a GBIF dot pins its own details open (leaflet_map.js's
         # click-popup) rather than recentring the study area the way a plain
         # map click does — landing 4 km from a jaguar sighting because you
-        # tried to read its record would answer a different question. This
-        # offers the recentre as a deliberate action inside that popup
-        # instead, for the times a record's exact coordinate genuinely is the
-        # point someone wants to study next.
-        "offer_select": True,
-        "select_label": "Nova área de estudo",
+        # tried to read its record would answer a different question.
+        # Recentring on a record's own coordinate is still possible — click
+        # the map right beside the dot rather than the dot itself — a
+        # dedicated "select this point" button inside the popup was tried
+        # and dropped: the popup sits on a viewport-refetched dynamic layer,
+        # and closing the gap between "click lands on the dot" and "the
+        # button in its popup is still there to click" turned out to need
+        # more surgery on the shared dynamic-layer refresh machinery than
+        # the feature was worth.
         "point_style": {
             "radius": 4,
             "color": "#ffffff",
@@ -434,16 +437,16 @@ def vector_spec(filters: Filters, opacity: float = 0.85,
             "fillOpacity": 1.0,
         },
         "tooltip": [
-            {"label": "Nome científico", "property": "scientific_name"},
+            {"label": "Nome cient.", "property": "scientific_name"},
             {"label": "Reino", "property": "kingdom"},
             {"label": "Classe", "property": "class_name"},
             {"label": "Família", "property": "family"},
             {"label": "Data", "property": "event_date"},
-            {"label": "Base do registro", "property": "basis_of_record"},
-            {"label": "Registrado por", "property": "recorded_by"},
+            {"label": "Base do reg.", "property": "basis_of_record"},
+            {"label": "Regist. por", "property": "recorded_by"},
             {"label": "Instituição", "property": "institution_code"},
-            {"label": "Conjunto de dados", "property": "dataset_name"},
-            {"label": "Incerteza (m)", "property": "coordinate_uncertainty_m"},
+            {"label": "Conj. dados", "property": "dataset_name"},
+            {"label": "Incerteza(m)", "property": "coordinate_uncertainty_m"},
             {"label": "Registro", "property": "gbif_url", "link": True,
              "link_text": "Ver no GBIF ↗"},
         ],

@@ -1177,7 +1177,13 @@ def _all_groups(search_panel: rx.Component,
         # list until collapsed by hand, so clicking the map still meant
         # scrolling past everything to see what that click produced. Closed
         # by default means the sidebar is short from the start; open only
-        # whichever group is actually wanted (no `default_value` at all — a
-        # `type="multiple"` accordion with none given simply starts with
-        # nothing expanded).
+        # whichever group is actually wanted.
+        #
+        # Controlled, not left to Radix's own uncontrolled state, so the
+        # backend can force "study_area" open the first time an analysis
+        # area is set (state/_ui.py::_open_study_area) while every ordinary
+        # open/close a user does themselves still flows straight through
+        # set_open_groups unchanged.
+        value=AppState.open_groups,
+        on_value_change=AppState.set_open_groups,
     )

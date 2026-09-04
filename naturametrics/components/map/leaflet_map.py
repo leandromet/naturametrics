@@ -80,26 +80,6 @@ if (typeof document !== "undefined" && !document.getElementById("nm-vector-tip-c
       margin: 10px 14px;
       user-select: text;
     }
-    /* The "new study area" action tooltipHtml prepends when spec.offer_select
-       is set — a real button rather than a styled link, since it performs an
-       action (recentre the study area) rather than navigating anywhere. */
-    .nm-vector-popup .nm-tip-select-btn {
-      display: block;
-      width: 100%;
-      margin: -10px -14px 8px;
-      padding: 7px 14px;
-      border: none;
-      border-bottom: 1px solid rgba(0,0,0,.1);
-      background: var(--accent-3, #eaf3ee);
-      color: var(--accent-11, #1b4332);
-      font: 600 12px/1.3 Inter, system-ui, sans-serif;
-      text-align: left;
-      cursor: pointer;
-      border-radius: 6px 6px 0 0;
-    }
-    .nm-vector-popup .nm-tip-select-btn:hover {
-      background: var(--accent-4, #dcece3);
-    }
     .nm-vector-label {
       font: 600 11px/1.25 Inter, system-ui, sans-serif;
       color: #ffffff;

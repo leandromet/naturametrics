@@ -39,6 +39,16 @@ class UIMixin(rx.State, mixin=True):
     como_citar_open: bool = False
     ai_disclaimer_open: bool = False
 
+    #: Which of `_all_groups()`'s accordion groups are open (components/
+    #: layer_panel.py) — controlled so the backend can force one open, not
+    #: just so the user can toggle them; see `_open_study_area`.
+    open_groups: list[str] = []
+    #: Whether `_open_study_area` has already fired this session — same
+    #: one-shot guard as `_viewport_adopted` above, and for the same reason:
+    #: only the FIRST analysis area should force the group open, so a user
+    #: who deliberately collapses it afterward stays collapsed.
+    _study_area_opened: bool = False
+
     def set_language(self, lang: str | list[str]):
         raw = lang[0] if isinstance(lang, (list, tuple)) and lang else lang
         if raw in st.SUPPORTED_LANGUAGES:
@@ -92,6 +102,34 @@ class UIMixin(rx.State, mixin=True):
 
     def set_ai_disclaimer_open(self, value: bool):
         self.ai_disclaimer_open = value
+
+    def set_open_groups(self, value: str | list[str]):
+        """The accordion's own `on_value_change` — every manual open/close
+        of any group passes back through here as the whole new array
+        (`type="multiple"`), same as any other controlled Radix component.
+        Typed ``str | list[str]`` because Reflex's accordion event spec is
+        shared with `type="single"`, which reports a bare string; this
+        accordion is always `type="multiple"`, so `value` is a list in
+        practice, but the signature has to accept both to pass Reflex's own
+        event-handler type check."""
+        self.open_groups = [value] if isinstance(value, str) else value
+
+    def _open_study_area(self) -> None:
+        """Expand the "Área de estudo" group the first time an analysis area
+        is set — a first-time user has no reason to know controls like
+        `buffer_preview_toggle_label` are buried inside a closed accordion
+        group until something puts it in front of them. Called from every
+        path that establishes a first subject (state/_point.py::
+        set_study_point covers a plain click and a conglomerado click, which
+        reuses it; state/_geometry.py::_apply_geometry covers a drawn/pasted/
+        uploaded region) rather than threaded through each one's own return
+        value, so a new entry point gets this for free by calling either.
+        """
+        if self._study_area_opened:
+            return
+        self._study_area_opened = True
+        if "study_area" not in self.open_groups:
+            self.open_groups = [*self.open_groups, "study_area"]
 
     @rx.var
     def tr(self) -> dict[str, str]:

@@ -21,7 +21,13 @@ export or unlimited point density is ever needed; nothing here forecloses it.
   verbatim Darwin Core (measured), against ~200 bytes per record of what is
   actually drawn. ``services/gbif.py`` therefore slims every record server-side
   before it reaches the browser — the reason this layer is proxied through
-  ``/_gbif.geojson`` rather than fetched by Leaflet directly.
+  ``/_gbif.geojson`` rather than fetched by Leaflet directly. There is no
+  cheaper way to ask for the 2.2 MB in the first place: ``/occurrence/search``
+  has no field-projection parameter (verified live — a ``fields=`` param is
+  silently ignored, every record still comes back with its full ~82 keys) and
+  the response is not gzip-compressed. Paging is the only lever GBIF gives us,
+  which is what ``GBIF_MAX_PAGES`` (config/settings.py) and the fetch-in-
+  parallel adaptive paging in ``services/gbif.py``'s ``_fetch()`` are for.
 * Aggregates are free: ``limit=0`` with ``facet=`` returns counts without
   retrieving records at all, and ``facet=scientificName`` returns readable names
   rather than keys. That is what makes the species-in-buffer analysis

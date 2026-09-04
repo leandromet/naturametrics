@@ -18,6 +18,7 @@ from __future__ import annotations
 import reflex as rx
 
 from ..config import datasets as ds
+from ..config import gbif as gc
 from ..services import change_mask as cm
 from ..services.biomass import AGB_YEARS
 from ..state import AppState
@@ -315,6 +316,28 @@ def _ifn_section() -> rx.Component:
     )
 
 
+def _gbif_section() -> rx.Component:
+    """Kingdom swatches for the GBIF occurrence layer — the same
+    ``config.gbif.KINGDOM_COLORS`` palette ``services/gbif.py`` hands to
+    leaflet_map.js's ``styleFor()`` to colour each dot, so this list is
+    static (every kingdom, not just the ones currently in view) the same
+    way ``_biomes_section`` lists the whole biome domain rather than
+    whatever a viewport happens to show."""
+    return rx.cond(
+        AppState.show_gbif,
+        rx.vstack(
+            _row_header(AppState.tr["section_gbif"], AppState.show_gbif,
+                       AppState.toggle_gbif),
+            *[
+                _swatch_row(f"#{color}", name)
+                for name, color in gc.KINGDOM_COLORS.items()
+            ],
+            spacing="1", width="100%",
+        ),
+        rx.fragment(),
+    )
+
+
 def _embargos_section() -> rx.Component:
     return rx.cond(
         AppState.show_embargos,
@@ -402,6 +425,7 @@ def map_legend() -> rx.Component:
                     _ibge_veg_section(),
                     _biomes_section(),
                     _ifn_section(),
+                    _gbif_section(),
                     _embargos_section(),
                     _auto_infracao_section(),
                     spacing="3", width="100%", padding_top="6px",

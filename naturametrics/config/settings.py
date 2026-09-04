@@ -257,14 +257,17 @@ GBIF_MIN_ZOOM = _int("NM_GBIF_MIN_ZOOM", 10)
 #: upward — the API rejects it.
 GBIF_PAGE_SIZE = _int("NM_GBIF_PAGE_SIZE", 300)
 
-#: One page by default, unlike embargos' two. Measured: 300 records is 2.2 MB
-#: off the wire and 2.19 s, against 1.60 s for 100 — the cost is superlinear in
-#: wall clock and brutal in bytes, and a second page would double both for a
-#: layer that is already showing an arbitrary 300 of a possibly five-figure
-#: count. The honest fix is not more pages, it is the taxonomy filter: the
-#: panel reports "300 de 22 400" so the truncation is visible rather than
-#: silent, which is precisely what the accordion exists to narrow.
-GBIF_MAX_PAGES = _int("NM_GBIF_MAX_PAGES", 1)
+#: Adaptive, not flat: services/gbif.py's _fetch() only ever requests as many
+#: pages as the viewport's true count actually needs, capped here, and fires
+#: any pages beyond the first CONCURRENTLY — so a 250-record view still costs
+#: one request, and a 1500+ one costs roughly one page's wall-clock time
+#: rather than five sequential ones. 5 pages = 1500 records, matching
+#: GBIF_FACET_LIMIT below (that number already stood in for "more than a
+#: dense viewport plausibly holds" once in this file). The taxonomy filter is
+#: still the real fix for the five-figure counts this cap does not reach —
+#: the panel reports "300 de 22 400" so that truncation stays visible rather
+#: than silent.
+GBIF_MAX_PAGES = _int("NM_GBIF_MAX_PAGES", 5)
 
 #: Longer than the IBAMA layers' 120 s. Those proxy a service that is refreshed
 #: on its publisher's own schedule and can change under us; a GBIF occurrence

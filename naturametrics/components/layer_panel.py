@@ -1,9 +1,10 @@
 """Sidebar controls for the map layers.
 
 Basemap, the MapBiomas year/opacity controls, the change mask, the IFN
-conglomerado grid with its four filters, and the IBGE biome overlay. The year
-slider is the acceptance test for decision D1 — moving it must repaint the layer
-without the map viewport shifting.
+conglomerado grid with its four filters, the IBGE biome overlay and the
+FUNAI/CNUC territory overlays. The year slider is the acceptance test for
+decision D1 — moving it must repaint the layer without the map viewport
+shifting.
 """
 
 from __future__ import annotations
@@ -703,6 +704,83 @@ def biome_control() -> rx.Component:
     )
 
 
+def _territorio_legend() -> rx.Component:
+    """One swatch per territory type, in the hues the map draws — the same
+    device `_biome_legend()` uses, and the only thing that says which of the
+    two overlays is the gold one without reading the labels above."""
+    rows = (
+        ("indigena", AppState.tr["territorios_ti_toggle_label"]),
+        ("conservacao", AppState.tr["territorios_uc_toggle_label"]),
+    )
+    return rx.vstack(
+        *[
+            rx.hstack(
+                rx.box(width="10px", height="10px", border_radius="2px",
+                       background=f"#{ds.TERRITORIOS[tipo]['color']}"),
+                rx.text(label, size="1"),
+                spacing="2", align="center", width="100%",
+            )
+            for tipo, label in rows
+        ],
+        spacing="1", width="100%",
+    )
+
+
+def territorios_control() -> rx.Component:
+    """Terras indígenas (FUNAI) and unidades de conservação (CNUC/ICMBio).
+
+    One section for both, not two: they answer the same question — what
+    protected areas surround this study point — and share the one label
+    switch and the one opacity slider. Same shape as `biome_control()` above,
+    which is the other browser-drawn reference vector in this group.
+    """
+    return _section(
+        AppState.tr["section_territorios"],
+        rx.hstack(
+            rx.switch(checked=AppState.show_terras_indigenas,
+                      on_change=AppState.toggle_terras_indigenas),
+            rx.text(AppState.tr["territorios_ti_toggle_label"], size="2"),
+            width="100%", align="center", spacing="2",
+        ),
+        rx.hstack(
+            rx.switch(checked=AppState.show_unidades_conservacao,
+                      on_change=AppState.toggle_unidades_conservacao),
+            rx.text(AppState.tr["territorios_uc_toggle_label"], size="2"),
+            width="100%", align="center", spacing="2",
+        ),
+        # The label switch, the opacity and the legend appear only while at
+        # least one of the two is drawn — controls governing nothing currently
+        # on screen are noise in a sidebar this long.
+        rx.cond(
+            AppState.show_terras_indigenas | AppState.show_unidades_conservacao,
+            rx.vstack(
+                rx.hstack(
+                    rx.switch(checked=AppState.show_territorio_labels,
+                              on_change=AppState.toggle_territorio_labels),
+                    rx.text(AppState.tr["territorios_labels_toggle_label"], size="2"),
+                    width="100%", align="center", spacing="2",
+                ),
+                rx.hstack(
+                    rx.text(AppState.tr["opacity_label"], size="1", color_scheme="gray"),
+                    rx.spacer(),
+                    rx.text(AppState.territorio_opacity_pct.to_string() + "%", size="1"),
+                    width="100%",
+                ),
+                rx.slider(
+                    min=0, max=80, step=5,
+                    default_value=[35],
+                    on_change=AppState.set_territorio_opacity,
+                    width="100%",
+                ),
+                _territorio_legend(),
+                spacing="2", width="100%", padding_top="0.25rem",
+            ),
+            rx.fragment(),
+        ),
+        info=AppState.tr["territorios_info"],
+    )
+
+
 def biomass_control() -> rx.Component:
     """ESA CCI Biomass_cci above-ground biomass — a discrete set of ten
     years (2007, 2010, 2015-2022), not the continuous range MapBiomas'
@@ -1150,7 +1228,8 @@ def _all_groups(search_panel: rx.Component,
               auto_infracao_control(), user_points_control()),
         _group("ibge_reference", "landmark",
               AppState.tr["group_ibge_reference"],
-              biome_control(), ibge_vegetation_control()),
+              biome_control(), territorios_control(),
+              ibge_vegetation_control()),
         _group("biomass_forest", "trees",
               AppState.tr["group_biomass_forest"],
               biomass_control(), hansen_control()),

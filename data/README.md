@@ -17,6 +17,9 @@ data/
 ├─ ifn_points.meta.json   ← COMMITTED — its provenance (source, licence, generated_at)
 ├─ ifn_filter_index.csv   ← COMMITTED — counted (região, UF, município, bioma) groups
 ├─ ifn_points_biome.csv   ← COMMITTED — one row per conglomerado, with its biome
+├─ territorios.csv        ← COMMITTED — FUNAI + CNUC catalogue (name, UF, area, bbox)
+├─ terras_indigenas.geojson.gz       ← COMMITTED — simplified FUNAI polygons
+├─ unidades_conservacao.geojson.gz   ← COMMITTED — simplified CNUC polygons
 ├─ raw/                   ← GITIGNORED — downloaded originals, byte-for-byte
 │  └─ ifn/
 │     ├─ unidades-amostrais-por-uf-ifn/
@@ -35,10 +38,36 @@ data/
 | Deduplicated IFN point catalogue | `ifn_points.csv` + `ifn_points.meta.json` | **yes** |
 | IFN filter index (counts + bboxes per group) | `ifn_filter_index.csv` | **yes** |
 | IFN per-point table with biome | `ifn_points_biome.csv` | **yes** |
+| FUNAI/CNUC territory catalogue (search + bbox) | `territorios.csv` | **yes** |
+| Simplified FUNAI / CNUC polygons served to the browser | `terras_indigenas.geojson.gz`, `unidades_conservacao.geojson.gz` | **yes** |
+| FUNAI / CNUC GeoPackages, as downloaded | `raw/` (or outside the repo) | no |
 | Simplified biome polygons served to the browser | `cache/ibge_biomes_250k.json.gz` | no |
 | GeoJSON copy of the catalogue | `cache/ifn_points.geojson` | no |
 | Any GeoTIFF, EE export, tile dump | `cache/` | no |
 | Lookup tables, class dictionaries | `naturametrics/config/*.py` (code, not data) | **yes** |
+
+## `territorios.csv` and the two territory overlays
+
+Built by `scripts/fetch_territorios.py` from two GeoPackages — FUNAI's terras
+indígenas (657) and the CNUC unidades de conservação (3 247). Together they are
+**775 KiB of CSV plus 1.4 MB of pre-gzipped GeoJSON**, which is over the usual
+bar for a committed artefact; three things carry it:
+
+* **A deploy cannot rebuild them.** The Dockerfile builds from the git
+  checkout, and reading a GeoPackage needs `geopandas`/`fiona`, which are not
+  runtime dependencies. Leaving these ignored means the image ships without
+  them and the territory search raises `FileNotFoundError` in production —
+  exactly the failure `municipios.csv` was allowlisted to prevent.
+* **The `.gz` files are committed in the form they are served.** `api/__init__
+  .py` hands the bytes to the browser untouched, so there is no "compressed
+  copy of a larger committed file" duplication here.
+* **They are static.** FUNAI and CNUC publish new snapshots occasionally; when
+  one lands, re-run the script and commit the diff.
+
+The overlays are simplified to ~200 m and rounded to ~110 m. They are
+**orientation, not determination** — they must never be used to decide whether
+a point falls inside a terra indígena or a unidade de conservação, and nothing
+in the app asks them to.
 
 ## Size guard
 

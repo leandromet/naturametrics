@@ -314,6 +314,53 @@ the join above.
 
 ---
 
+## 6b. FUNAI terras indígenas and CNUC unidades de conservação — local, committed
+
+657 terras indígenas (FUNAI) and 3 247 unidades de conservação (CNUC/ICMBio), 2026-05
+snapshot. **Reference layers and a search resolver, nothing else** — they are not an input
+to any number this app reports.
+
+| | |
+|---|---|
+| Sources | FUNAI — Terras Indígenas (poligonais e portarias); MMA/ICMBio — Cadastro Nacional de Unidades de Conservação (CNUC) |
+| Built by | `scripts/fetch_territorios.py`, offline, from two GeoPackages |
+| Committed | `data/territorios.csv` (775 KiB), `data/terras_indigenas.geojson.gz` (0.34 MB), `data/unidades_conservacao.geojson.gz` (1.06 MB) |
+| Licence | Public data with attribution |
+
+### 6b.1 Why they are committed rather than fetched
+
+Reading a GeoPackage needs geopandas/fiona, which are deliberately absent from
+`requirements.txt` ([08-dev-environment.md](08-dev-environment.md) §3), and the source
+files are not in this repo — so unlike the biome layer there is nothing a deploy could
+rebuild them from. The script needs neither: a GeoPackage *is* a SQLite database and its
+geometry column is WKB behind a small documented header, so `sqlite3` + `shapely` read it
+directly. Same argument as `data/ifn_points.csv` under the policy in
+[data/README.md](../data/README.md): small, static, derived, unrebuildable at deploy time.
+
+### 6b.2 How each is drawn
+
+Same delivery as the IBGE biome layer above — **browser vector layers**, fetched from the
+backend at `/_terras_indigenas.geojson` and `/_unidades_conservacao.geojson`, because each
+polygon has to name itself on hover and carry a permanent on-map label, and a tile is
+pixels. Unlike the biome route these serve a *committed* pre-gzipped file rather than an
+Earth Engine build, so even a cold start's first request is a file read.
+
+One hue per layer, not a palette: **gold** (`d4af37`) for terras indígenas, **dark purple**
+(`4b0082`) for unidades de conservação, ~35% fill, full-strength outline, so the two are
+told apart without a legend lookup. Labels are the *short* name (`rotulo`, written by the
+build script) rather than the official one — "RESERVA PARTICULAR DO PATRIMÔNIO NATURAL TOCA
+FURADA" wraps to eight lines in a 92 px label block; the tooltip and the search list keep
+the full name. Hidden below zoom 8 regardless of the toggle.
+
+⚠️ **The served polygons are simplified to ~200 m and rounded to ~110 m.** They are for
+display, hover and framing only. They must never be used to decide whether a study point
+falls inside a terra indígena or a unidade de conservação, and nothing in the app asks them
+to. The bbox in `territorios.csv` is the exception that proves it: it is computed from the
+*original* geometry, so framing the map on a search hit is exact even though the drawn
+outline is not.
+
+---
+
 ## 7. Basemaps
 
 Plain XYZ tiles, no Earth Engine involved. **Esri World Imagery is the default** —
@@ -460,6 +507,9 @@ ever needed; nothing in the current design forecloses it.
 | IFN metadata PDFs | `data/raw/ifn/` | **No** |
 | Derived deduplicated point catalogue | `data/ifn_points.csv` + `.meta.json` | **Yes** — CSV chosen over GeoJSON (~99 B/point vs ~281 B/point), **D9** |
 | GeoJSON copy of the catalogue | `data/cache/ifn_points.geojson` | **No** — QGIS convenience only |
+| FUNAI/CNUC GeoPackages, as downloaded | outside the repo (or `data/raw/`) | **No** |
+| Territory catalogue (search + bbox) | `data/territorios.csv` | **Yes** — §6b, a deploy cannot rebuild it |
+| Simplified territory overlays, pre-gzipped | `data/terras_indigenas.geojson.gz`, `data/unidades_conservacao.geojson.gz` | **Yes** — same reason, and served byte-for-byte |
 | MapBiomas class/colour tables + natural-class groups | `naturametrics/config/mapbiomas.py` | **Yes** (code) |
 | Hansen palettes / stratum tables | `naturametrics/config/datasets.py` | **Yes** (code) |
 | EE tile-URL cache | in-memory only | n/a |

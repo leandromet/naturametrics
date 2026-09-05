@@ -30,8 +30,9 @@ credentials.json
 reflex.db
 node_modules
 
-# Bulk data — the derived catalogue IS needed, its raw inputs are not.
-# data/ifn_points.csv and data/ifn_points.meta.json must stay in the image.
+# Bulk data — the derived catalogues ARE needed, their raw inputs are not.
+# data/ifn_points.csv, data/ifn_points.meta.json, data/territorios.csv and the
+# two data/*.geojson.gz territory overlays must stay in the image.
 data/raw
 data/cache
 

@@ -22,7 +22,7 @@ TRANSLATIONS_PT: dict[str, str] = {
     "group_study_area": "Área de estudo",
     "group_landcover_base": "Mapa base e cobertura do solo",
     "group_ifn_ibama_data": "IFN, IBAMA e dados enviados",
-    "group_ibge_reference": "Camadas de referência (IBGE)",
+    "group_ibge_reference": "Camadas de referência (IBGE, ICMBio, Funai)",
     "group_biomass_forest": "Biomassa e mudança florestal",
 
     # --- layer panel: sections -------------------------------------------- #
@@ -38,6 +38,7 @@ TRANSLATIONS_PT: dict[str, str] = {
     "section_user_points": "Coordenadas enviadas",
     "section_multi_select": "Seleção múltipla",
     "section_biomes": "Biomas (IBGE)",
+    "section_territorios": "Territórios protegidos (ICMBio, Funai)",
     "section_biomass": "Biomassa (ESA CCI)",
     "section_ibge_veg": "Vegetação (IBGE 2022)",
     "section_forest_change": "Mudança florestal (Hansen)",
@@ -58,16 +59,22 @@ TRANSLATIONS_PT: dict[str, str] = {
 
     # --- busca de localização ------------------------------------------------ #
     "search_title": "Buscar",
-    "search_placeholder": "Coordenada, município ou nome de lugar…",
+    "search_placeholder": "Coordenada, município, território ou lugar…",
     "search_read_as": "lido como:",
     "search_button": "Buscar",
     "search_button_busy": "Buscando…",
     "search_municipios_heading": "Municípios",
+    "search_territorios_heading": "Terras indígenas e unidades de conservação",
+    "search_territorios_note": (
+        "Um território apenas enquadra o mapa e liga a camada "
+        "correspondente; nenhum ponto de estudo é escolhido."
+    ),
     "search_places_heading": "Lugares",
     "search_places_attribution": "© colaboradores do OpenStreetMap (ODbL)",
     "search_place_hint": "clique no mapa para escolher um ponto",
     "echo_coordenada": "coordenada",
     "echo_municipio": "município",
+    "echo_territorio": "território",
     "echo_lugar": "lugar",
     "erro_lugar_nao_encontrado": "Nenhum lugar encontrado para “{query}”.",
 
@@ -169,6 +176,15 @@ TRANSLATIONS_PT: dict[str, str] = {
         "Os limites estão simplificados (~1 km) para desenho no navegador. "
         "Ajuda a situar a área de estudo no contexto biogeográfico mais "
         "amplo do país."
+    ),
+    "territorios_info": (
+        "Terras indígenas (Funai, 657) em amarelo-ouro e unidades de "
+        "conservação (CNUC/ICMBio, 3.247) em roxo-escuro — passe o cursor "
+        "sobre um polígono para ver nome, categoria, esfera e área. Os nomes "
+        "aparecem sobre o mapa a partir do zoom 8. Os limites estão "
+        "simplificados (~200 m) para desenho no navegador: servem para "
+        "situar a área de estudo, não para decidir se um ponto está dentro "
+        "de um território. Busque um território pelo nome no campo de busca."
     ),
     "biomass_info": (
         "Biomassa acima do solo (toneladas por hectare) do produto ESA CCI "
@@ -301,6 +317,10 @@ TRANSLATIONS_PT: dict[str, str] = {
 
     "biomes_labels_toggle_label": "Mostrar rótulos",
     "biomes_toggle_label": "Biomas e domínios",
+
+    "territorios_ti_toggle_label": "Terras indígenas (Funai)",
+    "territorios_uc_toggle_label": "Unidades de conservação (ICMBio)",
+    "territorios_labels_toggle_label": "Mostrar nomes",
 
     "point_click_other": "Clique no mapa para escolher outro ponto.",
     "point_click_choose": (

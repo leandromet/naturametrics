@@ -1,15 +1,17 @@
 """The location search box (ported from camposcope's, trimmed).
 
-One field resolves a coordinate, a município, or a place name — no CAR-code
-resolver here, since this app has no property registry. Two result lists
-below it, both purely for framing the map (never selecting a point): a
-município is exact and local, a place is geocoded and approximate.
+One field resolves a coordinate, a município, a território (terra indígena or
+unidade de conservação), or a place name — no CAR-code resolver here, since
+this app has no property registry. Three result lists below it, all purely for
+framing the map (never selecting a point): a município and a território are
+exact and local, a place is geocoded and approximate.
 """
 
 from __future__ import annotations
 
 import reflex as rx
 
+from ..config import datasets as ds
 from ..state import AppState
 from .layer_panel import _section
 
@@ -17,6 +19,7 @@ from .layer_panel import _section
 _ECHO_COLOR = {
     "coordenada": "blue",
     "municipio": "amber",
+    "territorio": "purple",
     "lugar": "gray",
     "erro": "red",
 }
@@ -126,6 +129,53 @@ def _municipio_hits() -> rx.Component:
     )
 
 
+def _territorio_hits() -> rx.Component:
+    """Terras indígenas and unidades de conservação. Framing only — no study
+    point is selected from here, exactly as with a município or a place.
+
+    Each row carries the hue its layer draws in, so the list and the map are
+    the same two colours; the second line is the demarcation phase and ethnic
+    group for a terra indígena, or the category and administrative sphere for
+    a unidade de conservação, whichever the row is.
+    """
+    return rx.cond(
+        AppState.territorio_hits,
+        rx.vstack(
+            rx.text(AppState.tr["search_territorios_heading"], size="1",
+                    weight="medium", color_scheme="gray"),
+            rx.foreach(
+                AppState.territorio_hits,
+                lambda t: _result_row(
+                    rx.hstack(
+                        rx.box(
+                            width="8px", height="8px", border_radius="2px",
+                            flex_shrink="0",
+                            background=rx.cond(
+                                t["tipo"] == "indigena",
+                                f"#{ds.TERRITORIOS['indigena']['color']}",
+                                f"#{ds.TERRITORIOS['conservacao']['color']}",
+                            ),
+                        ),
+                        rx.text(t["nome"], size="1", weight="medium"),
+                        spacing="2", align="center", wrap="wrap",
+                    ),
+                    rx.hstack(
+                        rx.text(t["uf"], size="1", color_scheme="gray"),
+                        rx.text(t["detalhe"], size="1", color_scheme="gray"),
+                        spacing="2", wrap="wrap",
+                    ),
+                    on_click=AppState.choose_territorio(t["tipo"], t["codigo"]),
+                ),
+            ),
+            rx.text(AppState.tr["search_territorios_note"], size="1",
+                    color_scheme="gray"),
+            spacing="1",
+            width="100%",
+        ),
+        rx.fragment(),
+    )
+
+
 def _place_hits() -> rx.Component:
     """Geocoded places. Framing only — no point is selected from here."""
     return rx.cond(
@@ -160,6 +210,7 @@ def search_panel() -> rx.Component:
             rx.fragment(),
         ),
         _municipio_hits(),
+        _territorio_hits(),
         _place_hits(),
         info=AppState.tr["search_info"],
     )

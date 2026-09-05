@@ -544,3 +544,79 @@ IBGE_MUNICIPIOS = {
     "attribution": "IBGE — Malhas territoriais municipais 2025",
     "fields": {"code": "CD_MUN"},
 }
+
+# --------------------------------------------------------------------------- #
+# Territórios protegidos — terras indígenas (FUNAI) e unidades de conservação
+# (CNUC/ICMBio)
+# --------------------------------------------------------------------------- #
+#: Both layers work exactly like IBGE_BIOME_DOMAIN above — browser-side vectors
+#: rather than Earth Engine tiles, because each polygon has to name itself on
+#: hover and carry a permanent on-map label, which a tile cannot do.
+#:
+#: They differ in where the geometry comes from. The biome layer is built from
+#: an Earth Engine asset on first request and cached; these two are built
+#: offline by ``scripts/fetch_territorios.py`` from the FUNAI and CNUC
+#: GeoPackages and **committed** — reading a GeoPackage needs geopandas/fiona,
+#: which are deliberately not runtime dependencies (doc/08-dev-environment.md
+#: §3), and the source files are not in this repo for a deploy to rebuild from.
+#:
+#: Orientation only, exactly as the biome layer is: simplified to ~200 m and
+#: rounded to ~110 m, so a boundary drawn here must never decide whether a
+#: study point falls inside a protected area. Nothing in this app asks it to.
+#:
+#: The two colours are fixed rather than per-feature palettes: one layer, one
+#: hue, so a reader can tell the two apart at a glance without consulting a
+#: legend. Gold for terras indígenas, dark purple for unidades de conservação.
+FUNAI_TERRAS_INDIGENAS = {
+    "data_file": "terras_indigenas.geojson.gz",
+    "attribution": "FUNAI — Terras Indígenas (poligonais e portarias)",
+    "color": "d4af37",          # gold
+    "fill_alpha": "59",         # ~35% — a wash, not a mask
+    "outline_width": 1.6,
+    # `rotulo`, not `nome`: the on-map label is a ~92 px wrapped block, and
+    # the official CNUC name leads with its category ("RESERVA PARTICULAR DO
+    # PATRIMÔNIO NATURAL TOCA FURADA") — eight wrapped lines of which seven
+    # repeat what the swatch and the tooltip already say.
+    # `scripts/fetch_territorios.py` writes the short form alongside the full
+    # one; the tooltip, the search list and territorios.csv all keep `nome`.
+    "label_property": "rotulo",
+    "tooltip": [
+        {"label": "Terra indígena", "property": "nome"},
+        {"label": "Etnia", "property": "etnia"},
+        {"label": "Fase", "property": "fase"},
+        {"label": "UF", "property": "uf"},
+        {"label": "Municípios", "property": "municipios"},
+        {"label": "Área (ha)", "property": "area_ha"},
+    ],
+}
+
+ICMBIO_UNIDADES_CONSERVACAO = {
+    "data_file": "unidades_conservacao.geojson.gz",
+    "attribution": "MMA/ICMBio — Cadastro Nacional de Unidades de Conservação (CNUC)",
+    "color": "4b0082",          # dark purple
+    "fill_alpha": "59",
+    "outline_width": 1.6,
+    # `rotulo`, not `nome`: the on-map label is a ~92 px wrapped block, and
+    # the official CNUC name leads with its category ("RESERVA PARTICULAR DO
+    # PATRIMÔNIO NATURAL TOCA FURADA") — eight wrapped lines of which seven
+    # repeat what the swatch and the tooltip already say.
+    # `scripts/fetch_territorios.py` writes the short form alongside the full
+    # one; the tooltip, the search list and territorios.csv all keep `nome`.
+    "label_property": "rotulo",
+    "tooltip": [
+        {"label": "Unidade de conservação", "property": "nome"},
+        {"label": "Categoria", "property": "categoria"},
+        {"label": "Grupo", "property": "grupo"},
+        {"label": "Esfera", "property": "esfera"},
+        {"label": "Órgão gestor", "property": "gestor"},
+        {"label": "UF", "property": "uf"},
+        {"label": "Área (ha)", "property": "area_ha"},
+    ],
+}
+
+#: ``tipo`` in ``data/territorios.csv`` → its layer config. One dict, so the
+#: service, the state and the search all agree on the two type keys.
+TERRITORIOS = {
+    "indigena": FUNAI_TERRAS_INDIGENAS,
+    "conservacao": ICMBIO_UNIDADES_CONSERVACAO,
+}

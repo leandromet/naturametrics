@@ -1,15 +1,25 @@
 """Resolving what the user typed into the location search box.
 
 Ported from camposcope's module of the same name, trimmed: naturametrics has
-no property registry, so there is no CAR-code resolver here. Three resolvers,
+no property registry, so there is no CAR-code resolver here. Four resolvers,
 tried in a fixed order and stopping at the first match: a coordinate, a
-município, a place name. The first two are exact and local; only the third
-reaches a third-party service (Nominatim), which is what keeps geocoder usage
-defensible — most searches never reach it at all.
+município, a protected territory (terra indígena or unidade de conservação), a
+place name. The first three are exact and local; only the fourth reaches a
+third-party service (Nominatim), which is what keeps geocoder usage defensible
+— most searches never reach it at all.
 
-**A place-name result frames the map and selects nothing; a município result
-does too.** Only an exact coordinate selects a study point (the search box's
-equivalent of clicking the map there) — see state/_search.py.
+The território resolver is the one that does not *only* stop at the first
+match. A município and a territory can share a name — "Jaú" is both a município
+in São Paulo and a national park in Amazonas — and picking one silently would
+be a coin flip. So a query that matches a município still carries its territory
+hits alongside (``Resolution.territorios``): the echo line still says
+"município", because that is what the input reads as first, and the territory
+matches are offered rather than assumed.
+
+**A place-name result frames the map and selects nothing; a município or
+território result does too.** Only an exact coordinate selects a study point
+(the search box's equivalent of clicking the map there) — see
+state/_search.py.
 """
 
 from __future__ import annotations
@@ -18,7 +28,7 @@ import logging
 import re
 import threading
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -282,9 +292,14 @@ class Resolution:
     resolving somewhere plausible and wrong.
     """
 
-    kind: str            # "coordenada" | "municipio" | "lugar" | "vazio"
+    kind: str            # "coordenada" | "municipio" | "territorio" | "lugar" | "vazio"
     echo: str            # human-readable "read as …"
     payload: Any = None
+    #: Territory matches carried ALONGSIDE a município hit, not instead of it —
+    #: see this module's docstring for why. Always empty for every other kind:
+    #: a coordinate is unambiguous, and a query that reached the geocoder
+    #: matched no territory by definition.
+    territorios: List[Dict[str, Any]] = field(default_factory=list)
 
 
 def resolve(text: str) -> Resolution:
@@ -308,18 +323,32 @@ def resolve(text: str) -> Resolution:
         )
 
     # 2 — município. Exact and local.
-    from . import municipios
+    from . import municipios, territorios
 
     matches = municipios.search(raw, limit=5)
+    # 3 — território. Exact and local too, so it costs the same nothing to run
+    # it even when a município already matched — which is exactly what lets a
+    # name shared by both be offered rather than silently decided.
+    territory_hits = territorios.search(raw, limit=8)
+
     if matches:
         first = matches[0]
         return Resolution(
             "municipio",
             f"município {first['nome']}/{first['uf']}",
             matches,
+            territory_hits,
         )
 
-    # 3 — place name. The only resolver that touches a third party.
+    if territory_hits:
+        first = territory_hits[0]
+        return Resolution(
+            "territorio",
+            f"território {first['nome']}",
+            territory_hits,
+        )
+
+    # 4 — place name. The only resolver that touches a third party.
     return Resolution("lugar", f"lugar “{raw}”", raw)
 
 

@@ -22,7 +22,7 @@ from starlette.responses import JSONResponse, Response
 
 from ..canada.services import gbif as gbif_ca
 from ..config.settings import IFN_VIEWPORT_LIMIT
-from ..services import auto_infracao, biomes, embargos, gbif, ifn
+from ..services import auto_infracao, biomes, embargos, gbif, ifn, territorios
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +68,44 @@ async def _run_blocking(fn):
     import asyncio
 
     return await asyncio.get_running_loop().run_in_executor(None, fn)
+
+
+async def _territorios_geojson(request: Request, tipo: str) -> Response:
+    """The simplified FUNAI / CNUC polygons, pre-gzipped.
+
+    Same shape as :func:`biomes_geojson`, and cheaper still: the payload is not
+    merely cached gzipped, it is *committed* gzipped
+    (``scripts/fetch_territorios.py``), so even the first request after a cold
+    start is a file read rather than an Earth Engine round trip. One handler
+    per type rather than a single ``?tipo=`` route, so each stays a plain,
+    cacheable static GET the browser can key on its URL alone.
+    """
+    try:
+        payload = await _run_blocking(lambda: territorios.geojson_gzipped(tipo))
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("%s GeoJSON could not be produced", tipo)
+        return JSONResponse(
+            {"error": "territórios indisponíveis", "detail": str(exc)},
+            status_code=503,
+        )
+
+    headers = {"Cache-Control": _CACHE_CONTROL}
+    if "gzip" in request.headers.get("accept-encoding", ""):
+        headers["Content-Encoding"] = "gzip"
+    else:
+        payload = await _run_blocking(lambda: gzip.decompress(payload))
+
+    headers["Content-Length"] = str(len(payload))
+    return Response(content=payload, media_type="application/geo+json",
+                    headers=headers)
+
+
+async def terras_indigenas_geojson(request: Request) -> Response:
+    return await _territorios_geojson(request, "indigena")
+
+
+async def unidades_conservacao_geojson(request: Request) -> Response:
+    return await _territorios_geojson(request, "conservacao")
 
 
 def _float_param(request: Request, name: str) -> float | None:
@@ -245,11 +283,18 @@ def register(app) -> None:
         logger.warning("Reflex app exposes no Starlette instance — routes skipped")
         return
     api.add_route(biomes.GEOJSON_PATH, biomes_geojson, methods=["GET"])
+    api.add_route(territorios.GEOJSON_PATHS["indigena"],
+                 terras_indigenas_geojson, methods=["GET"])
+    api.add_route(territorios.GEOJSON_PATHS["conservacao"],
+                 unidades_conservacao_geojson, methods=["GET"])
     api.add_route(ifn.GEOJSON_PATH, ifn_points_geojson, methods=["GET"])
     api.add_route(embargos.GEOJSON_PATH, embargos_geojson, methods=["GET"])
     api.add_route(auto_infracao.GEOJSON_PATH, auto_infracao_geojson, methods=["GET"])
     api.add_route(gbif.GEOJSON_PATH, gbif_geojson, methods=["GET"])
     api.add_route(gbif_ca.GEOJSON_PATH, gbif_ca_geojson, methods=["GET"])
-    logger.info("Registered backend routes %s, %s, %s, %s, %s, %s",
-                biomes.GEOJSON_PATH, ifn.GEOJSON_PATH, embargos.GEOJSON_PATH,
+    logger.info("Registered backend routes %s, %s, %s, %s, %s, %s, %s, %s",
+                biomes.GEOJSON_PATH,
+                territorios.GEOJSON_PATHS["indigena"],
+                territorios.GEOJSON_PATHS["conservacao"],
+                ifn.GEOJSON_PATH, embargos.GEOJSON_PATH,
                 auto_infracao.GEOJSON_PATH, gbif.GEOJSON_PATH, gbif_ca.GEOJSON_PATH)

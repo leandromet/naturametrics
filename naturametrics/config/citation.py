@@ -109,6 +109,18 @@ DATA_SOURCES = [
      "Vegetação 2022; Malhas territoriais municipais 2025. Usados como camadas "
      "de referência e para enquadrar o mapa.",
      "https://www.ibge.gov.br"),
+    ("Funai — Terras Indígenas",
+     "Fundação Nacional dos Povos Indígenas — poligonais e portarias das "
+     "terras indígenas. Camada de referência e busca; limites simplificados "
+     "(~200 m), não determinam se um ponto está dentro de uma terra "
+     "indígena.",
+     "https://www.gov.br/funai"),
+    ("ICMBio/MMA — Cadastro Nacional de Unidades de Conservação (CNUC)",
+     "Ministério do Meio Ambiente e ICMBio — CNUC, unidades de conservação "
+     "federais, estaduais e municipais. Camada de referência e busca; limites "
+     "simplificados (~200 m), não determinam se um ponto está dentro de uma "
+     "unidade de conservação.",
+     "https://www.gov.br/icmbio"),
     ("GBIF — Registros de ocorrência de espécies",
      "GBIF.org — Global Biodiversity Information Facility. Registros "
      "consultados ao vivo pela API de ocorrências, restritos ao Brasil. Ao "
@@ -187,6 +199,18 @@ DATA_SOURCES_EN = [
      "Vegetation 2022; Municipal boundary meshes 2025. Used as reference "
      "layers and to frame the map.",
      "https://www.ibge.gov.br"),
+    ("Funai — Indigenous lands",
+     "Fundação Nacional dos Povos Indígenas — indigenous land polygons and "
+     "the ordinances behind them. Reference and search layer; boundaries "
+     "simplified (~200 m) and do not determine whether a point falls inside "
+     "an indigenous land.",
+     "https://www.gov.br/funai"),
+    ("ICMBio/MMA — National Registry of Conservation Units (CNUC)",
+     "Ministry of the Environment and ICMBio — CNUC, federal, state and "
+     "municipal conservation units. Reference and search layer; boundaries "
+     "simplified (~200 m) and do not determine whether a point falls inside "
+     "a conservation unit.",
+     "https://www.gov.br/icmbio"),
     ("GBIF — Species occurrence records",
      "GBIF.org — Global Biodiversity Information Facility. Records queried "
      "live through the occurrence API, restricted to Brazil. When publishing "

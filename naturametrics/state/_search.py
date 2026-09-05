@@ -2,16 +2,21 @@
 
 Ported from camposcope's SearchMixin, trimmed: naturametrics has no property
 registry, so there is no CAR-code resolver and no candidate-chooser/
-município-registration-browser UI — just navigation. Two resolvers a search
-can land on (município, place name) tried in order after a coordinate check,
-stopping at the first match; the box echoes how it read the input before
-acting on it (services.geocode.resolve is the classifier, pure and
-network-free).
+município-registration-browser UI — just navigation. Three resolvers a search
+can land on (município, território, place name) tried in order after a
+coordinate check, stopping at the first match; the box echoes how it read the
+input before acting on it (services.geocode.resolve is the classifier, pure
+and network-free).
 
-**Only a coordinate selects a study point** — a município or a place-name hit
-only frames the map (state._layers.fit_bounds, already re-applied by the map
-whenever it changes). Finding a place and picking an analysis point are
-different acts.
+Território covers terras indígenas (FUNAI) and unidades de conservação
+(CNUC/ICMBio). Because a município and a territory can share a name, that one
+resolver is offered alongside a município hit rather than only after it — see
+``services/geocode.py``'s own docstring.
+
+**Only a coordinate selects a study point** — a município, território or
+place-name hit only frames the map (state._layers.fit_bounds, already
+re-applied by the map whenever it changes). Finding a place and picking an
+analysis point are different acts.
 """
 
 from __future__ import annotations
@@ -21,7 +26,7 @@ from typing import Any, Dict, List
 
 import reflex as rx
 
-from ..services import geocode, municipios
+from ..services import geocode, municipios, territorios
 from ._proxy import state_class
 from ..services.geocode import GeocodeError
 
@@ -43,21 +48,25 @@ class SearchMixin(rx.State, mixin=True):
     search_error: str = ""
     searching_place: bool = False
 
-    #: Município candidates (local, instant) and place candidates (geocoded).
+    #: Município and território candidates (local, instant) and place
+    #: candidates (geocoded).
     municipio_hits: List[Dict[str, Any]] = []
+    territorio_hits: List[Dict[str, Any]] = []
     place_hits: List[Dict[str, Any]] = []
 
     @rx.var
     def has_search_results(self) -> bool:
-        return bool(self.municipio_hits or self.place_hits)
+        return bool(self.municipio_hits or self.territorio_hits
+                    or self.place_hits)
 
     def _echo_text(self, resolution) -> str:
         """Rebuild the echo line in the current language.
 
         ``geocode.resolve`` is PT-only by design (a pure classifier, not a
         UI-facing service) and returns its own ``.echo`` pre-formatted in
-        Portuguese. Only the noun ("coordenada"/"município"/"lugar") needs a
-        language, so it is rebuilt here from ``kind`` + ``payload``.
+        Portuguese. Only the noun ("coordenada"/"município"/"território"/
+        "lugar") needs a language, so it is rebuilt here from ``kind`` +
+        ``payload``.
         """
         kind, payload = resolution.kind, resolution.payload
         if kind == "coordenada":
@@ -65,6 +74,9 @@ class SearchMixin(rx.State, mixin=True):
         if kind == "municipio":
             first = payload[0]
             return f"{self.tr['echo_municipio']} {first['nome']}/{first['uf']}"
+        if kind == "territorio":
+            first = payload[0]
+            return f"{self.tr['echo_territorio']} {first['nome']}"
         if kind == "lugar":
             return f"{self.tr['echo_lugar']} “{payload}”"
         return resolution.echo
@@ -104,6 +116,7 @@ class SearchMixin(rx.State, mixin=True):
             raw = self.query.strip()
             self.search_error = ""
             self.municipio_hits = []
+            self.territorio_hits = []
             self.place_hits = []
             if not raw:
                 return
@@ -126,10 +139,25 @@ class SearchMixin(rx.State, mixin=True):
         if kind == "municipio":
             async with self:
                 self.municipio_hits = resolution.payload
-            # A single unambiguous hit goes straight there; several are offered.
-            if len(resolution.payload) == 1:
+                self.territorio_hits = list(resolution.territorios)
+            # A single unambiguous hit goes straight there; several are
+            # offered. A territory sharing the name makes it ambiguous too,
+            # even when only one município matched — jumping to Jaú/SP while a
+            # Parque Nacional do Jaú sits unmentioned in the list below would
+            # be exactly the silent coin flip carrying both lists is meant to
+            # avoid.
+            if len(resolution.payload) == 1 and not resolution.territorios:
                 return state_class(self).choose_municipio(
                     resolution.payload[0]["cod_municipio_ibge"]
+                )
+            return
+
+        if kind == "territorio":
+            async with self:
+                self.territorio_hits = resolution.payload
+            if len(resolution.payload) == 1:
+                return state_class(self).choose_territorio(
+                    resolution.payload[0]["tipo"], resolution.payload[0]["codigo"]
                 )
             return
 
@@ -185,6 +213,46 @@ class SearchMixin(rx.State, mixin=True):
                 self.fit_bounds = box
 
     @rx.event
+    def choose_territorio(self, tipo: str, codigo: str) -> None:
+        """Frame the map on a terra indígena or unidade de conservação, and
+        draw the layer it belongs to. **Selects no study point.**
+
+        Turning the layer on is the point of the gesture: framing a territory
+        and then not drawing it would leave the user looking at an unmarked
+        rectangle of map and wondering whether the search worked.
+
+        No round trip, unlike ``choose_municipio``: the bbox is a committed
+        column in ``data/territorios.csv``, computed from the full geometry,
+        so framing is both instant and exact even though the drawn overlay is
+        simplified to ~200 m.
+        """
+        key = f"{tipo}:{codigo}"
+        row = territorios.by_key(key)
+        if row is None:
+            return
+
+        self.territorio_hits = []
+        self.municipio_hits = []
+        self.place_hits = []
+        if tipo == "indigena":
+            self.show_terras_indigenas = True
+        else:
+            self.show_unidades_conservacao = True
+        # Straight to the layer builder, not through the toggle handlers: they
+        # take a checkbox's `checked` and each ends in its own
+        # `_refresh_layers()`, so calling both would rebuild the spec list
+        # twice for one gesture.
+        self._refresh_layers()
+
+        box = territorios.bounds(key)
+        if box:
+            self.fit_bounds = box
+
+        self.query = row["nome"]
+        self.echo = f"{self.tr['echo_territorio']} {row['nome']}"
+        self.echo_kind = "territorio"
+
+    @rx.event
     def choose_place(self, index: int) -> None:
         """Frame the map on a geocoded place. **Selects no point.**"""
         try:
@@ -209,4 +277,5 @@ class SearchMixin(rx.State, mixin=True):
         self.echo_kind = ""
         self.search_error = ""
         self.municipio_hits = []
+        self.territorio_hits = []
         self.place_hits = []

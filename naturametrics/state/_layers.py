@@ -25,6 +25,7 @@ from ..services import embargos as embargos_service
 from ..services import gbif as gbif_service
 from ..services import ifn as ifn_service
 from ..services import layers as layer_service
+from ..services import territorios as territorio_service
 from ..services.biomass import AGB_YEARS
 
 logger = logging.getLogger(__name__)
@@ -125,6 +126,20 @@ class LayersMixin(rx.State, mixin=True):
     #: (leaflet_map.js's applyLabelVisibility), so the default costs nothing
     #: until the user is already zoomed in enough for them to be legible.
     show_biome_labels: bool = True
+
+    # --- Terras indígenas (FUNAI) e unidades de conservação (CNUC/ICMBio) ---
+    #: The same kind of layer as the biome overlay above, and for the same
+    #: reason: drawn in the browser rather than by Earth Engine so each polygon
+    #: can name itself on hover and carry a permanent on-map label. Nothing is
+    #: minted for either and nothing here can fail.
+    #:
+    #: Two toggles sharing one label switch and one opacity. They are read
+    #: together — "what protected areas are around this point" is one question,
+    #: not two — and four controls where two will do is a worse panel.
+    show_terras_indigenas: bool = False
+    show_unidades_conservacao: bool = False
+    show_territorio_labels: bool = True
+    territorio_opacity: float = 0.35
 
     # --- IBAMA embargos (services.embargos) --------------------------------
     #: A live third-party feed, not Earth Engine — no minting, the browser
@@ -488,6 +503,23 @@ class LayersMixin(rx.State, mixin=True):
         if self.show_biomes:
             specs.append(biome_service.vector_spec(
                 opacity=self.biome_opacity, show_labels=self.show_biome_labels))
+        # Terras indígenas are appended SECOND, and that is what puts them
+        # above unidades de conservação where the two overlap, which they do
+        # in several hundred places. Every vector shares one Leaflet pane
+        # (`nmVectors`, leaflet_map.js) and they are added in the order this
+        # list gives them, so stacking is list order; a vector spec's
+        # `z_index` is carried for symmetry with the tile specs and orders
+        # nothing here. Not arbitrary: there are five times as many unidades
+        # de conservação, so the smaller set on top stays findable, and gold
+        # on dark purple reads better than the reverse.
+        if self.show_unidades_conservacao:
+            specs.append(territorio_service.vector_spec(
+                "conservacao", opacity=self.territorio_opacity, z_index=6,
+                show_labels=self.show_territorio_labels))
+        if self.show_terras_indigenas:
+            specs.append(territorio_service.vector_spec(
+                "indigena", opacity=self.territorio_opacity, z_index=7,
+                show_labels=self.show_territorio_labels))
         if self.show_embargos:
             specs.append(embargos_service.vector_spec(opacity=self.embargos_opacity))
         if self.show_auto_infracao:
@@ -1367,6 +1399,27 @@ class LayersMixin(rx.State, mixin=True):
         self.biome_opacity = round(float(raw) / 100.0, 2)
         self._refresh_layers()
 
+    def toggle_terras_indigenas(self, checked: bool):
+        """No Earth Engine, no minting — same reasoning as toggle_biomes."""
+        self.show_terras_indigenas = checked
+        self._refresh_layers()
+
+    def toggle_unidades_conservacao(self, checked: bool):
+        """No Earth Engine, no minting — same reasoning as toggle_biomes."""
+        self.show_unidades_conservacao = checked
+        self._refresh_layers()
+
+    def toggle_territorio_labels(self, checked: bool):
+        """No layer rebuild either — the browser flips a CSS display per
+        marker (leaflet_map.js's applyLabelVisibility)."""
+        self.show_territorio_labels = checked
+        self._refresh_layers()
+
+    def set_territorio_opacity(self, value: list[int | float]):
+        raw = value[0] if isinstance(value, (list, tuple)) else value
+        self.territorio_opacity = round(float(raw) / 100.0, 2)
+        self._refresh_layers()
+
     def toggle_embargos(self, checked: bool):
         """No Earth Engine, no minting — same reasoning as toggle_biomes."""
         self.show_embargos = checked
@@ -1402,6 +1455,7 @@ class LayersMixin(rx.State, mixin=True):
                 or self.show_ibge_veg or self.show_biomass
                 or self.show_biomes or self.show_ifn or self.show_embargos
                 or self.show_auto_infracao or self.show_gbif
+                or self.show_terras_indigenas or self.show_unidades_conservacao
                 or self.compare_mode != "off")
 
     @rx.var
@@ -1474,6 +1528,10 @@ class LayersMixin(rx.State, mixin=True):
     @rx.var
     def biome_opacity_pct(self) -> int:
         return int(round(self.biome_opacity * 100))
+
+    @rx.var
+    def territorio_opacity_pct(self) -> int:
+        return int(round(self.territorio_opacity * 100))
 
     @rx.var
     def embargos_opacity_pct(self) -> int:

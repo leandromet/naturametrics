@@ -22,7 +22,7 @@ TRANSLATIONS_EN: dict[str, str] = {
     "group_study_area": "Study area",
     "group_landcover_base": "Basemap & land cover",
     "group_ifn_ibama_data": "IFN, IBAMA & submitted data",
-    "group_ibge_reference": "Reference layers (IBGE)",
+    "group_ibge_reference": "Reference layers (IBGE, ICMBio, Funai)",
     "group_biomass_forest": "Biomass & forest change",
 
     # --- layer panel: sections -------------------------------------------- #
@@ -38,6 +38,7 @@ TRANSLATIONS_EN: dict[str, str] = {
     "section_user_points": "Submitted coordinates",
     "section_multi_select": "Multiple selection",
     "section_biomes": "Biomes (IBGE)",
+    "section_territorios": "Protected territories (ICMBio, Funai)",
     "section_biomass": "Biomass (ESA CCI)",
     "section_ibge_veg": "Vegetation (IBGE 2022)",
     "section_forest_change": "Forest change (Hansen)",
@@ -58,16 +59,22 @@ TRANSLATIONS_EN: dict[str, str] = {
 
     # --- location search ---------------------------------------------------- #
     "search_title": "Search",
-    "search_placeholder": "Coordinate, município, or place name…",
+    "search_placeholder": "Coordinate, município, territory or place…",
     "search_read_as": "read as:",
     "search_button": "Search",
     "search_button_busy": "Searching…",
     "search_municipios_heading": "Municípios",
+    "search_territorios_heading": "Indigenous lands and conservation units",
+    "search_territorios_note": (
+        "A territory only frames the map and switches its layer on; no "
+        "study point is chosen."
+    ),
     "search_places_heading": "Places",
     "search_places_attribution": "© OpenStreetMap contributors (ODbL)",
     "search_place_hint": "click the map to choose a point",
     "echo_coordenada": "coordinate",
     "echo_municipio": "município",
+    "echo_territorio": "territory",
     "echo_lugar": "place",
     "erro_lugar_nao_encontrado": "No place found for “{query}”.",
 
@@ -163,6 +170,15 @@ TRANSLATIONS_EN: dict[str, str] = {
         "biome, phytogeographic domain and natural region. Boundaries are "
         "simplified (~1 km) for browser rendering. Helps place the study "
         "area within the country's broader biogeographic context."
+    ),
+    "territorios_info": (
+        "Indigenous lands (Funai, 657) in gold and conservation units "
+        "(CNUC/ICMBio, 3,247) in dark purple — hover over a polygon to see "
+        "its name, category, sphere and area. Names appear on the map from "
+        "zoom 8 onward. Boundaries are simplified (~200 m) for browser "
+        "rendering: they place the study area in context, they do not decide "
+        "whether a point falls inside a territory. Search a territory by name "
+        "in the search box."
     ),
     "biomass_info": (
         "Above-ground biomass (tonnes per hectare) from the ESA CCI "
@@ -293,6 +309,10 @@ TRANSLATIONS_EN: dict[str, str] = {
 
     "biomes_labels_toggle_label": "Show labels",
     "biomes_toggle_label": "Biomes and domains",
+
+    "territorios_ti_toggle_label": "Indigenous lands (Funai)",
+    "territorios_uc_toggle_label": "Conservation units (ICMBio)",
+    "territorios_labels_toggle_label": "Show names",
 
     "point_click_other": "Click the map to choose another point.",
     "point_click_choose": (

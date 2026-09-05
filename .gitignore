@@ -187,6 +187,17 @@ data/*
 # leaving it ignored means the image ships without it and the município search
 # raises FileNotFoundError in production exactly as it did locally.
 !data/municipios.csv
+# 775 KiB, 3 904 rows: the whole FUNAI + CNUC territory catalogue the search
+# type-ahead reads, plus the bbox that frames the map on a hit. Same argument
+# as the three above — small, static, derived, and a deploy cannot rebuild it:
+# scripts/fetch_territorios.py reads two GeoPackages that are not in this repo.
+!data/territorios.csv
+# 0.34 MB + 1.06 MB of pre-gzipped simplified polygons — the two map overlays,
+# served byte-for-byte by naturametrics/api. Built by the same script from the
+# same absent sources, so the same argument applies; they are committed
+# already compressed because that is exactly the form the route serves.
+!data/terras_indigenas.geojson.gz
+!data/unidades_conservacao.geojson.gz
 
 # Explicit belt-and-braces for the bulk trees
 data/raw/

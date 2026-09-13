@@ -219,4 +219,11 @@ them in the component's `add_imports`.
 
 ## Licence
 
-See [LICENSE](LICENSE).
+**Code: GNU GPL v3** — see [LICENSE](LICENSE). The same licence covers Camposcope and
+Yvynation, the two sibling apps this codebase shares engineering with.
+
+**Outputs: CC BY 4.0** — the land-cover analyses, figures, and exported files (ODS
+workbooks, HTML reports, CSVs) this application generates are public, open and free to use
+with attribution, independent of the upstream licence on each input dataset (see
+[Data sources & licences](#data-sources--licences) above, which those inputs keep — GBIF's
+mixed CC0/CC-BY/CC-BY-NC status in particular).

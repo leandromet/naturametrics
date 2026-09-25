@@ -29,6 +29,8 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+# ...but the report kit's hash list is source (doc: report_kit/__init__.py)
+!**/report_kit/MANIFEST
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

@@ -281,6 +281,23 @@ Full specification in [11-exports.md](11-exports.md).
 **Done when:** a user can download one ZIP, hand it to a colleague, and that colleague can
 tell exactly which datasets and parameters produced every number in it.
 
+### Laid-out report: PDF + HTML 🗓 **planned 2026-09-24**
+
+Full specification in [14-pdf-report.md](14-pdf-report.md); decision **D11**.
+
+- [ ] Fix first: gate the report on the view mode (multi mode currently reports the previous
+      point), take radii from the data, draw rings from `buffer_overlays`.
+- [ ] `report_kit/` (canonical copy): content model, reportlab PDF renderer, HTML renderer,
+      EE thumbnail maps with vector outlines, locator map, 150 dpi slot-sized images, JobStore
+      and browser-capture script, sha256 `MANIFEST` + `scripts/sync_report_kit.py`.
+- [ ] `services/report.py` rebuilt as model builders (study point and manual multi-selection)
+      + `services/report_text.py` (pt/en explanatory templates).
+- [ ] `mapbiomas_image()` split out of `mapbiomas_spec` so report and screen share pixels.
+- [ ] "Relatório / Report" export block: maps / figures / tables / appendix / GBIF, PDF + HTML.
+
+**Done when:** the done test in [14](14-pdf-report.md) §11 passes for a conglomerado click and
+a 5-point multi-selection, in pt and en, each PDF ≤ 3 MB.
+
 ---
 
 ## Phase 7 — Polish and beyond

@@ -290,6 +290,11 @@ light or dark background, and title/caption on or off. Filenames are determinist
 > Yvynation's `utils/ee_concurrency.py` kaleido docstring **first** — it documents both
 > kaleido major-version concurrency models and why the obvious approaches deadlock.
 
+**The laid-out PDF report keeps this rule** ([14-pdf-report.md](14-pdf-report.md), D11). The
+PDF is assembled on the server with reportlab, but its chart images are still rasterised in the
+browser: the server sends each figure's JSON and `Plotly.toImage` returns a PNG. No chart is
+rasterised on the server.
+
 ---
 
 ## 5. Interaction

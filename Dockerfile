@@ -33,6 +33,10 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
 # ── Application code ─────────────────────────────────────────────────────────
 COPY . .
 
+# The PDF report sends each chart back from the browser as its own socket
+# message (report_kit.browser_capture, doc/14 §2.7). Reflex drops an incoming
+# message over this size silently; R9-sized charts are 50-200 KB, 4 MB is headroom.
+ENV REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE=4000000
 ENV REFLEX_ENV=prod \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1

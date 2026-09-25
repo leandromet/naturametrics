@@ -455,22 +455,36 @@ TRANSLATIONS_EN: dict[str, str] = {
     ),
     "download_point_button": "Download point spreadsheet (.ods)",
     "download_point_hint": "Click a point or a cluster on the map to enable this.",
-    "report_section_title": "HTML report (paper-friendly layout)",
+    "report_section_title": "Report · PDF or HTML",
     "report_section_desc": (
-        "One self-contained HTML file with the figures and/or tables already "
-        "computed, laid out for reading or printing to PDF — complements "
-        "the spreadsheet above, not a replacement for it."
+        "A document to read, not to reprocess: identification, maps, charts "
+        "and tables with short explanations, of what is on screen. In the "
+        "interface's language."
     ),
-    "check_report_figures_label": "Figures",
-    "check_report_figures_detail": (
-        "Land use, vegetation age and biomass, one chart per buffer radius."
-    ),
-    "check_report_tables_label": "Tables",
-    "check_report_tables_detail": (
-        "Area change by class, landscape metrics, connectivity (if already "
-        "computed) and the provenance of every query."
-    ),
-    "download_report_button": "Download report (HTML)",
+    "report_check_maps_label": "Maps",
+    "report_check_maps_detail": "Satellite image, MapBiomas and change since 2008, with the buffers.",
+    "report_check_figures_label": "Charts",
+    "report_check_figures_detail": "The same charts as on screen, at the selected buffer.",
+    "report_check_tables_label": "Summary tables",
+    "report_check_tables_detail": "One per-buffer summary in each section.",
+    "report_check_appendix_label": "Appendix",
+    "report_check_appendix_detail": "Full tables by class and by age, every buffer.",
+    "report_check_gbif_label": "GBIF",
+    "report_check_gbif_detail": "Species per buffer, if the survey has been run.",
+    "report_button_pdf": "PDF",
+    "report_button_html": "HTML",
+    "report_reason_no_result": "Analyse a point or measure a selection to enable the report.",
+    "report_reason_busy": "Building the report…",
+    "report_stage_waiting": "Waiting for results still in progress…",
+    "report_stage_starting": "Preparing…",
+    "report_stage_charts": "Charts {got}/{n}",
+    "report_stage_maps": "Maps {got}/{n}",
+    "report_stage_building": "Building the {fmt}",
+    "report_failed": "Report failed: {exc}",
+    "report_expired": "The report request expired. Please try again.",
+    "report_region_unsupported": 'Report not yet available for drawn/KML regions.',
+    "report_subject_selection": 'Selection · {n} conglomerado(s), sum of buffers',
+    "report_subject_full_area": 'Selection · {n} conglomerado(s), full area',
     "selection_title_submitted": "Submitted list",
     "selection_title_default": "Cluster selection",
     "selection_note": (

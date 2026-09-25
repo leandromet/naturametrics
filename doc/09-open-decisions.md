@@ -16,6 +16,7 @@ rationale is unreviewable later.
 | D8 | Age bins | `0–5 \| 6–10 \| 11–20 \| 21–30 \| 31–40 \| ≥40`, user-configurable | Phase 3 |
 | D9 | Catalogue format | **A** — commit the flat CSV, not GeoJSON | **applied** |
 | D10 | Deployment | **Cloud Run service `naturametrics`, 2 vCPU / 4 GiB** | **artifacts built & verified** |
+| D11 | Laid-out report | **PDF + HTML from one model, shared `report_kit` (reportlab), charts rasterised in the browser, EE-only maps** (2026-09-24) | [14](14-pdf-report.md) |
 
 D6 still carries three sub-questions that need the official legend document in hand — they
 are marked in place. Everything else is settled.
@@ -226,3 +227,28 @@ staging revision with traffic migration. Neither blocks Phase 0.
 
 ⚠️ **Nothing is pushed or deployed without being asked.**
 
+---
+
+## D11 — Laid-out report: PDF and HTML from one content model
+**DECIDED (2026-09-24): a shared, vendored `report_kit` built on reportlab. One content model
+feeds two renderers, and the HTML report is rebuilt on it. Charts are rasterised in the
+browser (`Plotly.toImage`), maps are Earth Engine thumbnails only, and images are screen
+quality: 150 dpi at the size of their slot on the page.**
+
+Recorded as its own decision because it touches two earlier ones:
+
+- It keeps [11-exports.md](11-exports.md) §4, "rendering is client-side", **intact**. The PDF
+  is assembled on the server, but no chart is rasterised there, and the image still carries no
+  Chromium, kaleido or matplotlib.
+- It makes Naturametrics the **canonical home** of a package that Camposcope and Yvynation vendor
+  byte for byte (sha256 manifest test).
+
+**Rejected alternatives:**
+
+- kaleido + Chromium: about 300 MB, and the most fragile part of Yvynation's deploy.
+- matplotlib re-draws: duplicate chart code, and the charts no longer match the screen.
+- Printing to PDF in Chromium, or WeasyPrint: system packages, and no batch path for Yvynation.
+- Google or Esri basemap tiles in the PDF: redistribution terms.
+
+The full argument, the shared contract and the Naturametrics plan are in
+[14-pdf-report.md](14-pdf-report.md).

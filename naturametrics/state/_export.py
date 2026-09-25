@@ -25,13 +25,20 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import threading
+import time
+from concurrent.futures import Future, ThreadPoolExecutor
+from dataclasses import dataclass, field
+from typing import Any, Optional
 
 import reflex as rx
+from reflex.utils.format import format_queue_events
 
 from ..config.settings import BUFFER_RADII_KM, EXPORT_MAX_BUFFER_POINTS
 from ..services import abuse_control, exports, ifn
+from ..report_kit.browser_capture import STORE
 from ..services.ods import MIMETYPE
-from ._proxy import plain
+from ._proxy import plain, state_class
 
 logger = logging.getLogger(__name__)
 
@@ -47,14 +54,22 @@ class ExportMixin(rx.State, mixin=True):
     #: export contains.
     export_source: str = "filtros"
 
-    # --- the study-point "paper-friendly" HTML report (services.report) --
-    # A third export path alongside the ODS above and the per-chart/per-
-    # table icons in components/results.py — see services/report.py's own
-    # docstring for why these are complementary, not redundant. Both default
-    # off: the ODS button above stays the one-click default action, and nothing
-    # about it changes just because these two exist.
-    exp_report_figures: bool = False
-    exp_report_tables: bool = False
+    # --- the laid-out report, PDF or HTML (services.report, doc/14) -------
+    # A third export path alongside the ODS and the per-chart/per-table icons
+    # in components/results.py — see services/report.py's own docstring for
+    # why these are complementary, not redundant. Common names across the
+    # umaterra apps (doc/14 §2.9).
+    exp_report_maps: bool = True
+    exp_report_figures: bool = True
+    exp_report_tables: bool = True
+    exp_report_appendix: bool = False
+    #: GBIF has no export toggle of its own (its CSV lives in state/_gbif.py);
+    #: off by default because the survey is a separate, optional step.
+    exp_report_gbif: bool = False
+    report_busy: bool = False
+    report_stage: str = ""
+    report_error: str = ""
+    report_result: str = ""
 
     # --- what to include in the selection export --------------------------
     exp_points: bool = True
@@ -104,11 +119,20 @@ class ExportMixin(rx.State, mixin=True):
         self.export_source = "manual" if str(raw).startswith(prefix) else "filtros"
         self.export_confirm_pending = False
 
+    def toggle_exp_report_maps(self, checked: bool):
+        self.exp_report_maps = checked
+
     def toggle_exp_report_figures(self, checked: bool):
         self.exp_report_figures = checked
 
     def toggle_exp_report_tables(self, checked: bool):
         self.exp_report_tables = checked
+
+    def toggle_exp_report_appendix(self, checked: bool):
+        self.exp_report_appendix = checked
+
+    def toggle_exp_report_gbif(self, checked: bool):
+        self.exp_report_gbif = checked
 
     def toggle_exp_points(self, checked: bool):
         self.exp_points = checked
@@ -365,88 +389,340 @@ class ExportMixin(rx.State, mixin=True):
             self.export_result = f"{name} ({len(data) // 1024} KiB)"
         return rx.download(data=data, filename=name, mime_type=MIMETYPE)
 
-    @rx.var
-    def export_report_any(self) -> bool:
-        return self.exp_report_figures or self.exp_report_tables
+    def _report_is_selection(self) -> bool:
+        """The report describes what the charts show: the multi-selection's
+        aggregate once one has been measured, the study point otherwise. Same
+        condition as _chart_records — deciding it anywhere else is how the
+        report once described the *previous single point* while a selection
+        was on screen."""
+        return bool(self.multi_mode and self._multi_history)
 
-    @rx.event(background=True)
-    async def download_study_point_report(self):
-        """The "paper-friendly" HTML report (services.report) — a separate
-        download from the ODS above, not a second file the same click
-        produces: two near-simultaneous rx.download calls risk a browser's
-        own multiple-download prompt, and the two files answer different
-        questions anyway (read this vs. reprocess that)."""
-        async with self:
-            if not self.has_result:
-                self.export_error = self.tr["export_choose_point_first"]
-                return
-            if not self.export_report_any:
-                return
-            self.export_busy = True
-            self.export_stage = self.tr["export_stage_building_point"]
-            self.export_error = ""
-            self.export_result = ""
+    @rx.var(cache=True, deps=["geometry_active", "has_result", "multi_mode",
+                              "_multi_history", "multi_points",
+                              "multi_view_mode", "point_label", "language"],
+            auto_deps=False)
+    def report_available(self) -> bool:
+        """Drawn/KML regions are deferred (doc/14 §1, R8) — their one radius-0
+        zone needs its own layout, and until then the report refuses them
+        rather than coming out empty."""
+        if self.geometry_active:
+            return False
+        return self.has_result or self._report_is_selection()
 
-        # Same wait as download_study_point above — the report reads whatever
-        # has landed in state, and a click right after the chart appears must
-        # not ship a report with blank figures/tables for fetches still in
-        # flight (doc/11 §5, same reasoning, same bound).
-        waited = 0.0
-        while waited < 20.0:
-            async with self:
-                running = (self.age_running or self.landscape_metrics_running
-                          or self.biomass_running)
-            if not running:
-                break
-            async with self:
-                self.export_stage = self.tr["export_stage_waiting_age"]
-            await asyncio.sleep(0.4)
-            waited += 0.4
+    @rx.var(cache=True, deps=["geometry_active", "has_result", "multi_mode",
+                              "_multi_history", "multi_points",
+                              "multi_view_mode", "point_label", "language"],
+            auto_deps=False)
+    def report_subject_label(self) -> str:
+        if self.geometry_active:
+            return self.tr["report_region_unsupported"]
+        if self._report_is_selection():
+            n = len(self.multi_points)
+            key = ("report_subject_full_area" if self.multi_view_mode == "full_area"
+                   else "report_subject_selection")
+            return self.tr[key].format(n=n)
+        return self.point_label if self.has_result else ""
 
-        async with self:
-            self.export_stage = self.tr["export_stage_building_point"]
-            history, prov = plain(self._history), plain(self._provenance)
-            age_buffers = plain(self._age_buffers)
-            age_buffers_prov = plain(self._age_buffers_provenance)
-            change = plain(self._change_stats)
-            landscape_metrics = plain(self._landscape_metrics)
-            landscape_metrics_prov = plain(self._landscape_metrics_provenance)
-            connectivity = plain(self._connectivity)
-            connectivity_prov = plain(self._connectivity_provenance)
-            biomass = plain(self._biomass)
-            biomass_prov = plain(self._biomass_provenance)
-            lat, lon, shape = self.study_lat, self.study_lon, self.buffer_shape
-            include_figures, include_tables = (self.exp_report_figures,
-                                               self.exp_report_tables)
-            lang = self.language
-            identity = {
+    def _mode_pick(self, bbox_rows, bbox_prov, multi_rows, multi_prov, rows, prov):
+        """One dataset's rows + provenance under the same three-way switch as
+        _chart_records/_age_buffer_records/_biomass_records, so every table in
+        the report and its provenance row describe the same selection."""
+        if self.multi_mode and self.multi_view_mode == "full_area" and bbox_rows:
+            return bbox_rows, bbox_prov
+        if self.multi_mode and multi_rows:
+            return multi_rows, multi_prov
+        return rows, prov
+
+    # --- the laid-out report (doc/14 §2.7, §5) --------------------------- #
+
+    @rx.var(cache=True, deps=["geometry_active", "has_result", "multi_mode",
+                              "_multi_history", "report_busy", "language"],
+            auto_deps=False)
+    def report_disabled_reason(self) -> str:
+        """Why the PDF/HTML buttons are off, or "" when they are on."""
+        if self.geometry_active:
+            return self.tr["report_region_unsupported"]
+        if self.report_busy:
+            return self.tr["report_reason_busy"]
+        if not (self.has_result or self._report_is_selection()):
+            return self.tr["report_reason_no_result"]
+        return ""
+
+    def _report_inputs_running(self) -> bool:
+        """Whether a fetch the report would read is still in flight — the
+        same wait download_study_point does (doc/11 §5, doc/14 §9)."""
+        if self._report_is_selection():
+            if self.multi_view_mode == "full_area":
+                return bool(self.multi_bbox_busy or self.multi_bbox_landscape_busy
+                            or self.multi_bbox_biomass_busy
+                            or self.multi_bbox_veg_compare_busy)
+            return bool(self.multi_busy)
+        return bool(self.age_running or self.landscape_metrics_running
+                    or self.biomass_running or self.veg_compare_running)
+
+    def _report_snapshot(self) -> dict[str, Any]:
+        """Everything the report reads, as plain Python, picked with the same
+        three-way switch as the charts (_mode_pick) — in multi mode these are
+        the selection's aggregates, never the stale single-point frames still
+        sitting in _history & co."""
+        selection = self._report_is_selection()
+        history, history_prov = self._mode_pick(
+            self._multi_bbox_history, self._multi_bbox_provenance,
+            self._multi_history, self._multi_provenance,
+            self._history, self._provenance)
+        age_buffers, age_buffers_prov = self._mode_pick(
+            self._multi_bbox_age_history, self._multi_bbox_age_provenance,
+            self._multi_age_history, self._multi_age_provenance,
+            self._age_buffers, self._age_buffers_provenance)
+        metrics, metrics_prov = self._mode_pick(
+            self._multi_bbox_landscape_metrics, self._multi_bbox_landscape_provenance,
+            self._multi_landscape_metrics, self._multi_landscape_provenance,
+            self._landscape_metrics, self._landscape_metrics_provenance)
+        biomass, biomass_prov = self._mode_pick(
+            self._multi_bbox_biomass, self._multi_bbox_biomass_provenance,
+            self._multi_biomass, self._multi_biomass_provenance,
+            self._biomass, self._biomass_provenance)
+        veg, veg_prov = self._mode_pick(
+            self._multi_bbox_veg_compare, self._multi_bbox_veg_compare_provenance,
+            self._multi_veg_compare, self._multi_veg_compare_provenance,
+            self._veg_compare, self._veg_compare_provenance)
+        snap: dict[str, Any] = {
+            "kind": "selection" if selection else "point",
+            "lat": float(self.study_lat), "lon": float(self.study_lon),
+            "identity": {
                 "source": self.point_source,
                 "conglomerado": self.point_conglomerado,
                 "uf": self.point_uf,
                 "municipio": self.point_municipio,
                 "bioma": self.point_bioma,
-            }
+            },
+            "buffer_shape": self.buffer_shape,
+            "active_radius": float(self._chart_radius),
+            "age_radius": float(self.age_effective_radius),
+            "history": plain(history), "history_prov": plain(history_prov),
+            "age_buffers": plain(age_buffers), "age_buffers_prov": plain(age_buffers_prov),
+            "landscape_metrics": plain(metrics), "landscape_metrics_prov": plain(metrics_prov),
+            "biomass": plain(biomass), "biomass_prov": plain(biomass_prov),
+            "veg_compare": plain(veg), "veg_compare_prov": plain(veg_prov),
+            "overlays": plain(self.buffer_overlays),
+            "errors": {
+                "analysis": self.multi_error if selection else self.analysis_error,
+                "age": self.age_error, "landscape": self.landscape_metrics_error,
+                "biomass": self.biomass_error, "veg_compare": self.veg_compare_error,
+                "connectivity": self.connectivity_error,
+                "gbif": self.gbif_buffer_error,
+            },
+        }
+        if selection:
+            coords = plain(self._multi_coords)
+            snap["selection_mode"] = self.multi_view_mode
+            snap["points"] = []
+            for key, meta in plain(self._multi_meta).items():
+                lat, lon = (coords.get(key) or [None, None])[:2]
+                snap["points"].append({**meta, "key": key, "lat": lat, "lon": lon})
+            snap["point_frames"] = plain(self._multi_frames)
+        else:
+            # Change-since-2008, the point's pixel and age, connectivity and
+            # GBIF exist for the study point only (doc/14 §3b).
+            snap.update({
+                "pixel": plain(self._pixel), "pixel_prov": plain(self._pixel_provenance),
+                "age_point": plain(self._age_point),
+                "age_point_prov": plain(self._age_point_provenance),
+                "change": plain(self._change_stats),
+                "change_prov": plain(self._change_provenance),
+                "connectivity": plain(self._connectivity),
+                "connectivity_prov": plain(self._connectivity_provenance),
+            })
+            here = [float(self.study_lat), float(self.study_lon)]
+            if [float(x) for x in plain(self._gbif_buffer_point)] == here:
+                snap["gbif_rows"] = [_dump_model(r) for r in self.gbif_buffer_rows]
+        return snap
 
+    def start_report(self, fmt: str):
+        """The PDF / HTML buttons. Gates, then waits (bounded) for in-flight
+        fetches, then begins the report (doc/14 §2.7)."""
+        fmt = "html" if fmt == "html" else "pdf"
+        if self.report_busy:
+            return None
+        self.report_error = ""
+        self.report_result = ""
+        reason = self.report_disabled_reason
+        if reason:
+            self.report_error = reason
+            return None
+        self.report_busy = True
+        if self._report_inputs_running():
+            self.report_stage = self.tr["report_stage_waiting"]
+            return state_class(self).wait_for_report_inputs(fmt)
+        return self._begin_report(fmt)
+
+    @rx.event(background=True)
+    async def wait_for_report_inputs(self, fmt: str):
+        """Up to 20 s for the age/landscape/biomass/IBGE fetches that trail the
+        land-cover history — a click right after the chart appears must not
+        ship a report with those sections missing (same bound as
+        download_study_point). Past the bound the report proceeds with
+        whatever landed, and says so in its contents list."""
+        waited = 0.0
+        while waited < 20.0:
+            async with self:
+                running = self._report_inputs_running()
+            if not running:
+                break
+            await asyncio.sleep(0.4)
+            waited += 0.4
+        return state_class(self).begin_report(fmt)
+
+    def begin_report(self, fmt: str):
+        if not self.report_busy:       # only ever reached through start_report
+            return None
+        return self._begin_report("html" if fmt == "html" else "pdf")
+
+    def _begin_report(self, fmt: str):
+        """Snapshot, build the figure dicts, open the capture job and start the
+        maps; returns [capture script (PDF only), build_report]."""
+        from ..report_kit import images as rk_images
+        from ..report_kit.browser_capture import build_capture_script
+        from ..services.report import (ReportData, ReportOptions, fetch_report_maps,
+                                       figure_specs)
+
+        lang = self.language
+        try:
+            data = ReportData.from_snapshot(self._report_snapshot())
+            opts = ReportOptions(maps=self.exp_report_maps, figures=self.exp_report_figures,
+                                 tables=self.exp_report_tables,
+                                 appendix=self.exp_report_appendix, gbif=self.exp_report_gbif)
+            specs = figure_specs(data, lang) if opts.figures else []
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("Report snapshot failed")
+            self.report_busy = False
+            self.report_stage = ""
+            self.report_error = self.tr["report_failed"].format(exc=exc)
+            return None
+
+        token = self.router.session.client_token
+        capture = fmt == "pdf" and bool(specs)
+        job_id = STORE.create(token, [s.key for s in specs] if capture else [])
+        map_progress = {"done": 0, "total": 0}
+        future = None
+        if opts.maps:
+            def progress(done: int, total: int) -> None:
+                map_progress["done"], map_progress["total"] = done, total
+            # Started now, on a worker thread, so the Earth Engine thumbnails
+            # overlap the browser's chart rendering (doc/14 §2.7).
+            future = _MAP_POOL.submit(fetch_report_maps, data, lang, progress)
+        _PENDING.put(job_id, token, _PendingReport(
+            data=data, opts=opts, lang=lang, specs=specs, fmt=fmt, maps=future,
+            map_progress=map_progress))
+        self.report_stage = self.tr["report_stage_starting"]
+
+        cls = state_class(self)
+        events: list[Any] = []
+        if capture:
+            figs = {s.key: rk_images.prepare_figure(s.fig_json, s.slot, s.aspect)
+                    for s in specs}
+            sizes = {s.key: rk_images.chart_opts(s.slot, s.aspect) for s in specs}
+            callbacks = {
+                s.key: str(format_queue_events(
+                    cls.receive_report_chart(job_id, s.key), args_spec=lambda d: [d]))
+                for s in specs
+            }
+            events.append(rx.call_script(build_capture_script(figs, callbacks, sizes)))
+        events.append(cls.build_report(job_id, fmt))
+        return events
+
+    def receive_report_chart(self, job_id: str, key: str, data: str):
+        """One chart PNG from the browser (a data URL, or "" on failure). A
+        public RPC: JobStore.put validates the token, the prefix, the size and
+        the dimensions before keeping anything. No state change."""
+        ok = STORE.put(job_id, key, data if isinstance(data, str) else "",
+                       self.router.session.client_token)
+        if not ok:
+            logger.warning("Report chart %r refused for job %s", key, job_id)
+
+    @rx.event(background=True)
+    async def build_report(self, job_id: str, fmt: str):
+        """Wait for the charts (bounded), then the maps, then build and render
+        the report off the event loop and hand it to the browser."""
+        from ..report_kit.browser_capture import wait_deadline_s
+        from ..services import report_text as rt
+
+        async with self:
+            token = self.router.session.client_token
+            tr = dict(self.tr)
+        pending = _PENDING.take(job_id, token)
+        if pending is None:
+            async with self:
+                self.report_busy = False
+                self.report_stage = ""
+                self.report_error = tr["report_expired"]
+            return None
+
+        fmt_label = "PDF" if fmt == "pdf" else "HTML"
+        last_stage = ""
+
+        async def stage(building: bool = False) -> None:
+            nonlocal last_stage
+            parts = []
+            got, total = STORE.progress(job_id)
+            if total:
+                parts.append(tr["report_stage_charts"].format(got=got, n=total))
+            if pending.maps is not None:
+                mp = pending.map_progress
+                parts.append(tr["report_stage_maps"].format(
+                    got=mp["done"], n=mp["total"] or "…"))
+            if building:
+                parts.append(tr["report_stage_building"].format(fmt=fmt_label))
+            text = " · ".join(parts) or tr["report_stage_building"].format(fmt=fmt_label)
+            if text != last_stage:
+                last_stage = text
+                async with self:
+                    self.report_stage = text
+
+        deadline = time.monotonic() + wait_deadline_s(len(pending.specs))
+        while not STORE.done(job_id) and time.monotonic() < deadline:
+            await stage()
+            await asyncio.sleep(0.25)
+        pngs, errors = STORE.take(job_id)
+
+        maps = None
+        if pending.maps is not None:
+            map_deadline = time.monotonic() + MAP_WAIT_S
+            while not pending.maps.done() and time.monotonic() < map_deadline:
+                await stage()
+                await asyncio.sleep(0.25)
+            L = rt.text_lang(pending.lang)
+            if pending.maps.done():
+                try:
+                    maps = pending.maps.result()
+                except Exception as exc:  # noqa: BLE001
+                    logger.exception("Report maps failed")
+                    maps = {"mapbiomas": rt.tx("map_unavailable", L, error=str(exc))}
+            else:
+                pending.maps.cancel()
+                maps = {"mapbiomas": rt.tx("map_unavailable", L, error="timeout")}
+
+        await stage(building=True)
         loop = asyncio.get_running_loop()
         try:
             data, name = await loop.run_in_executor(
-                None, _build_study_point_report, lat, lon, history, prov,
-                identity, age_buffers, age_buffers_prov, change,
-                landscape_metrics, landscape_metrics_prov, connectivity,
-                connectivity_prov, biomass, biomass_prov, shape,
-                include_figures, include_tables, lang)
+                None, _render_pending, pending, pngs, errors, maps)
         except Exception as exc:  # noqa: BLE001
-            logger.exception("Study-point report failed")
+            logger.exception("Report build failed")
             async with self:
-                self.export_busy = False
-                self.export_error = f"Falha ao gerar o relatório: {exc}"
-            return
+                self.report_busy = False
+                self.report_stage = ""
+                self.report_error = tr["report_failed"].format(exc=exc)
+            return None
 
         async with self:
-            self.export_busy = False
-            self.export_stage = ""
-            self.export_result = f"{name} ({len(data) // 1024} KiB)"
-        return rx.download(data=data, filename=name, mime_type="text/html")
+            self.report_busy = False
+            self.report_stage = ""
+            self.report_result = f"{name} ({len(data) // 1024} KiB)"
+        logger.info("Report %s: %s KiB, %s/%s charts from the browser", name,
+                    len(data) // 1024, sum(1 for v in pngs.values() if v), len(pngs))
+        mime = "text/html" if fmt == "html" else "application/pdf"
+        return rx.download(data=data, filename=name, mime_type=mime)
 
     # ---------------------------------------------------------------------- #
     # Conglomerado selection
@@ -675,41 +951,93 @@ def _build_study_point(lat, lon, history, prov, pixel, pixel_prov, identity,
     )
 
 
-def _build_study_point_report(lat, lon, history, prov, identity, age_buffers,
-                              age_buffers_prov, change, landscape_metrics,
-                              landscape_metrics_prov, connectivity,
-                              connectivity_prov, biomass, biomass_prov,
-                              buffer_shape, include_figures, include_tables, lang):
-    """Rebuild the frames and write the report, off the event loop — same
-    revive-from-dict shape as _build_study_point above, minus the pixel
-    series the report does not carry (it is a single-pixel caveat table, not
-    a figure or a headline number)."""
-    import pandas as pd
+# --------------------------------------------------------------------------- #
+# The report's in-flight jobs (doc/14 §2.7)
+# --------------------------------------------------------------------------- #
 
-    from ..services.geo import point
-    from ..services.provenance import Provenance
-    from ..services.report import study_point_report_html
+#: How long build_report waits for the Earth Engine thumbnails, which started
+#: when the job did (in parallel with the browser's chart capture).
+MAP_WAIT_S = 90.0
 
-    def revive(d: dict | None) -> Provenance | None:
-        return Provenance(**d) if d else None
+#: Map thumbnails run here: blocking HTTP, never on the event loop.
+_MAP_POOL = ThreadPoolExecutor(max_workers=4, thread_name_prefix="nm-report-maps")
 
-    change = {float(k): v for k, v in (change or {}).items()}
 
-    return study_point_report_html(
-        point(lat=lat, lon=lon),
-        pd.DataFrame(history), revive(prov) or Provenance(
-            name="landuse_history", dataset_id=""),
-        identity=identity,
-        age_buffers=pd.DataFrame(age_buffers) if age_buffers else None,
-        age_buffers_prov=revive(age_buffers_prov),
-        change=change,
-        landscape_metrics=pd.DataFrame(landscape_metrics) if landscape_metrics else None,
-        landscape_metrics_prov=revive(landscape_metrics_prov),
-        connectivity=pd.DataFrame(connectivity) if connectivity else None,
-        connectivity_prov=revive(connectivity_prov),
-        biomass=pd.DataFrame(biomass) if biomass else None,
-        biomass_prov=revive(biomass_prov),
-        buffer_shape=buffer_shape,
-        include_figures=include_figures, include_tables=include_tables,
-        lang=lang,
-    )
+@dataclass
+class _PendingReport:
+    data: Any
+    opts: Any
+    lang: str
+    specs: list
+    fmt: str
+    maps: Optional[Future] = None
+    map_progress: dict = field(default_factory=dict)
+    created: float = field(default_factory=time.monotonic)
+
+
+class _PendingStore:
+    """The snapshot between begin_report (normal handler) and build_report
+    (background task). Outside Reflex state for the same reason as the kit's
+    JobStore: backend vars are pickled on every event, and a snapshot holds
+    every frame of the analysis. Keyed by job id, bound to the client token,
+    pruned after ten minutes."""
+
+    def __init__(self, ttl_s: float = 600.0, max_jobs: int = 32):
+        self.ttl_s, self.max_jobs = ttl_s, max_jobs
+        self._jobs: dict[str, tuple[str, _PendingReport]] = {}
+        self._lock = threading.Lock()
+
+    def _prune(self) -> None:
+        now = time.monotonic()
+        for jid in [j for j, (_, p) in self._jobs.items() if now - p.created > self.ttl_s]:
+            self._drop(jid)
+        while len(self._jobs) > self.max_jobs:
+            self._drop(next(iter(self._jobs)))
+
+    def _drop(self, job_id: str) -> None:
+        _, p = self._jobs.pop(job_id)
+        if p.maps is not None:
+            p.maps.cancel()
+
+    def put(self, job_id: str, token: str, pending: _PendingReport) -> None:
+        with self._lock:
+            self._prune()
+            self._jobs[job_id] = (str(token), pending)
+
+    def take(self, job_id: str, token: str) -> Optional[_PendingReport]:
+        with self._lock:
+            self._prune()
+            entry = self._jobs.get(job_id)
+            if entry is None or entry[0] != str(token):
+                return None
+            del self._jobs[job_id]
+            return entry[1]
+
+
+_PENDING = _PendingStore()
+
+
+def _dump_model(row: Any) -> dict:
+    """A GbifBufferRow (pydantic) as a plain dict, nested rows included."""
+    for attr in ("model_dump", "dict"):
+        fn = getattr(row, attr, None)
+        if callable(fn):
+            try:
+                return plain(fn())
+            except Exception:  # noqa: BLE001 - fall through to the next form
+                continue
+    return plain(dict(row)) if isinstance(row, dict) else {}
+
+
+def _render_pending(pending: _PendingReport, pngs: dict, errors: dict,
+                    maps: Optional[dict]) -> tuple[bytes, str]:
+    """Build the model and render it — off the event loop."""
+    from ..services.report import (build_report, render_report, report_filename,
+                                   resolve_figures)
+
+    figures = (resolve_figures(pending.specs, pending.fmt, pngs, errors, pending.lang)
+               if pending.opts.figures else {})
+    report = build_report(pending.data, pending.opts, pending.lang,
+                          figures=figures, maps=maps)
+    data = render_report(report, pending.fmt)
+    return data, report_filename(pending.data, pending.fmt, report.meta.generated_at)

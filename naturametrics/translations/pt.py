@@ -465,23 +465,36 @@ TRANSLATIONS_PT: dict[str, str] = {
     ),
     "download_point_button": "Baixar planilha do ponto (.ods)",
     "download_point_hint": "Clique num ponto ou num conglomerado do mapa para habilitar.",
-    "report_section_title": "Relatório em HTML (formato de artigo)",
+    "report_section_title": "Relatório · PDF ou HTML",
     "report_section_desc": (
-        "Um único arquivo HTML autocontido com os gráficos e/ou tabelas já "
-        "calculados, formatado para leitura ou impressão em PDF — "
-        "complementa a planilha acima, não a substitui."
+        "Um documento para ler, não para reprocessar: identificação, mapas, "
+        "gráficos e tabelas com explicações curtas, do que está na tela. "
+        "No idioma da interface."
     ),
-    "check_report_figures_label": "Gráficos",
-    "check_report_figures_detail": (
-        "Uso da terra, idade da vegetação e biomassa, um gráfico por raio de "
-        "buffer."
-    ),
-    "check_report_tables_label": "Tabelas",
-    "check_report_tables_detail": (
-        "Variação de área por classe, métricas de paisagem, conectividade "
-        "(se já calculada) e a proveniência de cada consulta."
-    ),
-    "download_report_button": "Baixar relatório (HTML)",
+    "report_check_maps_label": "Mapas",
+    "report_check_maps_detail": "Imagem de satélite, MapBiomas e mudança desde 2008, com os buffers.",
+    "report_check_figures_label": "Gráficos",
+    "report_check_figures_detail": "Os mesmos gráficos da tela, no buffer selecionado.",
+    "report_check_tables_label": "Tabelas-resumo",
+    "report_check_tables_detail": "Um resumo por buffer em cada seção.",
+    "report_check_appendix_label": "Apêndice",
+    "report_check_appendix_detail": "Tabelas completas por classe e por idade, todos os buffers.",
+    "report_check_gbif_label": "GBIF",
+    "report_check_gbif_detail": "Espécies por buffer, se o levantamento já foi feito.",
+    "report_button_pdf": "PDF",
+    "report_button_html": "HTML",
+    "report_reason_no_result": "Analise um ponto ou meça uma seleção para habilitar o relatório.",
+    "report_reason_busy": "Gerando o relatório…",
+    "report_stage_waiting": "Aguardando os resultados em andamento…",
+    "report_stage_starting": "Preparando…",
+    "report_stage_charts": "Gráficos {got}/{n}",
+    "report_stage_maps": "Mapas {got}/{n}",
+    "report_stage_building": "Montando {fmt}",
+    "report_failed": "Falha ao gerar o relatório: {exc}",
+    "report_expired": "O pedido de relatório expirou. Tente de novo.",
+    "report_region_unsupported": 'Relatório ainda não disponível para regiões desenhadas/KML.',
+    "report_subject_selection": 'Seleção · {n} conglomerado(s), soma dos buffers',
+    "report_subject_full_area": 'Seleção · {n} conglomerado(s), área total',
     "selection_title_submitted": "Lista enviada",
     "selection_title_default": "Seleção de conglomerados",
     "selection_note": (

@@ -12,6 +12,7 @@ See ``services/exports.py`` for why one spreadsheet and not a ZIP of CSVs.
 
 from __future__ import annotations
 
+import plotly.graph_objects as go
 import reflex as rx
 
 from ..config.settings import BUFFER_RADII_KM
@@ -87,29 +88,113 @@ def _study_point_section() -> rx.Component:
             rx.text(AppState.tr["download_point_hint"],
                     size="1", color_scheme="gray"),
         ),
-        rx.divider(),
-        rx.text(AppState.tr["report_section_title"], size="2", weight="medium"),
+        spacing="2", align_items="start", width="100%",
+    )
+
+
+#: An empty figure for the hidden 1×1 chart below: its only job is to make the
+#: Plotly bundle load (it loads lazily with the first ``rx.plotly``), so the
+#: report's capture script finds ``window.Plotly`` (doc/14 §2.7).
+_PLOTLY_PRELOAD = go.Figure(layout={"width": 10, "height": 10,
+                                    "margin": {"l": 0, "r": 0, "t": 0, "b": 0}})
+
+
+def _report_section() -> rx.Component:
+    """The "Relatório / Report" block — same anatomy in the three umaterra
+    apps (doc/14 §2.9). It reports what is on screen: the badge names the
+    point or the selection, and the buttons are off, with the reason, when
+    there is nothing to report, while one is being built, or in region mode.
+    """
+    return rx.vstack(
+        rx.hstack(
+            rx.text(AppState.tr["report_section_title"], size="2", weight="bold"),
+            rx.spacer(),
+            rx.cond(
+                AppState.report_subject_label != "",
+                rx.badge(AppState.report_subject_label, size="1", variant="soft",
+                         color_scheme=rx.cond(AppState.report_available, "jade", "amber")),
+                rx.fragment(),
+            ),
+            width="100%", align="center",
+        ),
         rx.text(AppState.tr["report_section_desc"], size="1", color_scheme="gray",
                 style={"lineHeight": "1.4"}),
-        _check(
-            AppState.tr["check_report_figures_label"],
-            AppState.tr["check_report_figures_detail"],
-            AppState.exp_report_figures, AppState.toggle_exp_report_figures,
+        rx.grid(
+            _check(AppState.tr["report_check_maps_label"],
+                   AppState.tr["report_check_maps_detail"],
+                   AppState.exp_report_maps, AppState.toggle_exp_report_maps),
+            _check(AppState.tr["report_check_figures_label"],
+                   AppState.tr["report_check_figures_detail"],
+                   AppState.exp_report_figures, AppState.toggle_exp_report_figures),
+            _check(AppState.tr["report_check_tables_label"],
+                   AppState.tr["report_check_tables_detail"],
+                   AppState.exp_report_tables, AppState.toggle_exp_report_tables),
+            _check(AppState.tr["report_check_appendix_label"],
+                   AppState.tr["report_check_appendix_detail"],
+                   AppState.exp_report_appendix, AppState.toggle_exp_report_appendix),
+            _check(AppState.tr["report_check_gbif_label"],
+                   AppState.tr["report_check_gbif_detail"],
+                   AppState.exp_report_gbif, AppState.toggle_exp_report_gbif),
+            columns=rx.breakpoints(initial="1", sm="2"),
+            spacing="2", width="100%",
         ),
-        _check(
-            AppState.tr["check_report_tables_label"],
-            AppState.tr["check_report_tables_detail"],
-            AppState.exp_report_tables, AppState.toggle_exp_report_tables,
+        rx.hstack(
+            rx.button(
+                rx.icon("file-down", size=14),
+                AppState.tr["report_button_pdf"],
+                on_click=AppState.start_report("pdf"),
+                disabled=AppState.report_disabled_reason != "",
+                loading=AppState.report_busy,
+                size="2", color_scheme="jade", flex="1",
+            ),
+            rx.button(
+                rx.icon("file-code", size=14),
+                AppState.tr["report_button_html"],
+                on_click=AppState.start_report("html"),
+                disabled=AppState.report_disabled_reason != "",
+                size="2", variant="soft", color_scheme="jade", flex="1",
+            ),
+            spacing="2", width="100%",
         ),
-        rx.button(
-            rx.icon("file-text", size=14),
-            AppState.tr["download_report_button"],
-            on_click=AppState.download_study_point_report,
-            disabled=(~AppState.has_result | AppState.export_busy
-                     | ~AppState.export_report_any),
-            size="2", variant="soft", color_scheme="jade", width="100%",
+        rx.cond(
+            AppState.report_busy & (AppState.report_stage != ""),
+            rx.hstack(
+                rx.spinner(size="1"),
+                rx.text(AppState.report_stage, size="1"),
+                spacing="2", align="center", width="100%",
+            ),
+            rx.fragment(),
         ),
-        spacing="2", align_items="start", width="100%",
+        rx.cond(
+            ~AppState.report_busy & (AppState.report_disabled_reason != ""),
+            rx.hstack(
+                rx.icon("info", size=13, color=rx.color("gray", 10)),
+                rx.text(AppState.report_disabled_reason, size="1", color_scheme="gray"),
+                spacing="2", align="center", width="100%",
+            ),
+            rx.fragment(),
+        ),
+        rx.cond(
+            AppState.report_error != "",
+            rx.callout(AppState.report_error, icon="triangle-alert",
+                       color_scheme="red", size="1", width="100%"),
+            rx.fragment(),
+        ),
+        rx.cond(
+            AppState.report_result != "",
+            rx.callout(AppState.report_result, icon="circle-check",
+                       color_scheme="jade", size="1", width="100%"),
+            rx.fragment(),
+        ),
+        rx.box(
+            rx.plotly(data=_PLOTLY_PRELOAD, config={"staticPlot": True,
+                                                    "displayModeBar": False}),
+            aria_hidden="true",
+            style={"position": "absolute", "width": "1px", "height": "1px",
+                   "overflow": "hidden", "opacity": 0, "pointerEvents": "none",
+                   "left": "-10px", "top": "0"},
+        ),
+        spacing="2", align_items="start", width="100%", position="relative",
     )
 
 
@@ -307,6 +392,8 @@ def exportar_dialog() -> rx.Component:
             rx.scroll_area(
                 rx.vstack(
                     _study_point_section(),
+                    rx.divider(),
+                    _report_section(),
                     rx.divider(),
                     _selection_section(),
                     rx.divider(),

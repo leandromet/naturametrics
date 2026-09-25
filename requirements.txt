@@ -26,6 +26,13 @@ numpy>=2.0.0
 # Viz
 plotly>=6.1.1
 
+# Laid-out PDF report (naturametrics/report_kit, doc/14). Pure wheels, no
+# system packages: reportlab draws the PDF; Pillow re-encodes images to their
+# 150 dpi slot size (R9). Charts are still rasterised in the browser, so this
+# adds no Chromium/kaleido (doc/11 §4 stands).
+reportlab>=4.2,<5
+pillow>=10
+
 # Geospatial (runtime)
 shapely>=2.0.2
 pyproj>=3.6.0

@@ -169,6 +169,7 @@ class GbifMixin(rx.State, mixin=True):
     #: rather than plain dicts because the component ``foreach``es over them
     #: and over their nested species lists.
     gbif_buffer_rows: list[GbifBufferRow] = []
+    _gbif_buffer_point: list[float] = []
     gbif_buffer_busy: bool = False
     gbif_buffer_error: str = ""
     gbif_export_error: str = ""
@@ -541,6 +542,10 @@ class GbifMixin(rx.State, mixin=True):
             # The first non-empty error is reported rather than all five: they
             # share one upstream, so five failures are one failure.
             self.gbif_buffer_error = next((r.error for r in rows if r.error), "")
+            # Where these rows were measured — the report (state/_export.py)
+            # includes them only while the study point is still this one, since
+            # a new click does not clear them.
+            self._gbif_buffer_point = [lat, lon]
             self.gbif_buffer_rows = [
                 GbifBufferRow(
                     radius_km=r.radius_km,

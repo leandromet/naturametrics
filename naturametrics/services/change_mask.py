@@ -93,6 +93,14 @@ def change_mask_image(
     return out.selfMask().rename("change")
 
 
+def change_mask_vis(include_stable: bool = False) -> dict[str, Any]:
+    """Visualisation of :func:`change_mask_image` — shared by the map tiles
+    and the report maps (doc/14 §6), so both draw the same colours."""
+    max_code = CHANGE_STABLE if include_stable else CHANGE_GAIN
+    palette = [CHANGE_COLORS[c].lstrip("#") for c in range(1, max_code + 1)]
+    return {"min": 1, "max": max_code, "palette": palette}
+
+
 def change_mask_spec(
     year_from: int = FOREST_CODE_BASELINE_YEAR,
     year_to: int = mb.MAPBIOMAS_YEAR_END,
@@ -102,10 +110,7 @@ def change_mask_spec(
     z_index: int = 20,
 ) -> dict[str, Any] | None:
     """Tile-layer spec for the change mask."""
-    max_code = CHANGE_STABLE if include_stable else CHANGE_GAIN
-    palette = [CHANGE_COLORS[c].lstrip("#")
-               for c in range(1, max_code + 1)]
-    vis = {"min": 1, "max": max_code, "palette": palette}
+    vis = change_mask_vis(include_stable)
 
     key = (f"change:{collection}:{year_from}-{year_to}"
            f":{'stable' if include_stable else 'nostable'}")

@@ -81,6 +81,19 @@ def ee_basemap_spec(key: str, z_index: int = 0) -> LayerSpec | None:
     }
 
 
+def mapbiomas_image(year: int,
+                    collection: str = mb.MAPBIOMAS_DEFAULT_COLLECTION):
+    """The MapBiomas class band for ``year`` — raw class codes, not visualised.
+
+    The one image builder behind both the map tiles (:func:`mapbiomas_spec`,
+    which visualises it with ``MAPBIOMAS_VIS``) and the report maps
+    (services.report, which visualises it the same way for a thumbnail), so
+    the PDF and the screen share their pixels and their palette (doc/14 §6).
+    """
+    import ee
+    return ee.Image(mb.MAPBIOMAS_COLLECTIONS[collection]).select(mb.band_for_year(year))
+
+
 def mapbiomas_spec(
     year: int,
     opacity: float = 0.75,
@@ -97,14 +110,9 @@ def mapbiomas_spec(
                        year, mb.MAPBIOMAS_YEAR_START, mb.MAPBIOMAS_YEAR_END)
         return None
 
-    asset = mb.MAPBIOMAS_COLLECTIONS[collection]
     cache_key = f"mapbiomas:{collection}:{year}"
-
-    def build():
-        import ee
-        return ee.Image(asset).select(mb.band_for_year(year))
-
-    url = get_tile_url(cache_key, build, mb.MAPBIOMAS_VIS)
+    url = get_tile_url(cache_key, lambda: mapbiomas_image(year, collection),
+                       mb.MAPBIOMAS_VIS)
     if url is None:
         return None
 

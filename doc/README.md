@@ -28,6 +28,8 @@ reuse and what we deliberately change.
 | 10 | [forest-age.md](10-forest-age.md) | Vegetation-age estimation from MapBiomas + Hansen — method, fusion, caveats |
 | 11 | [exports.md](11-exports.md) | CSV/chart export layout, grouping per buffer, provenance |
 | 12 | [deployment.md](12-deployment.md) | Cloud Run: image, service config, credentials, rollback |
+| 13 | [abuse-control.md](13-abuse-control.md) | Rate limits and caps on the public event handlers |
+| 14 | [pdf-report.md](14-pdf-report.md) | The laid-out PDF/HTML report and the shared `report_kit` (canonical copy) |
 
 ## Language
 

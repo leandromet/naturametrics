@@ -171,12 +171,18 @@ class _Html:
         width_cls = ' class="rk-half"' if b.slot == "half" else ""
         if b.fig_json:
             import plotly.io as pio   # lazy: only reports with interactive charts need it
-            body = pio.to_html(images.prepare_figure(b.fig_json, b.slot, b.aspect),
+            page_fig = images.prepare_figure(b.fig_json, b.slot, b.aspect)
+            # On screen the chart fills its column: keep the decided height,
+            # drop the fixed width (a widened figure would overflow the page).
+            page_fig["layout"].pop("width", None)
+            page_fig["layout"]["autosize"] = True
+            body = pio.to_html(page_fig,
                                include_plotlyjs=False, full_html=False,
                                config={"displayModeBar": False, "responsive": True},
                                default_width="100%")
         elif b.png:
-            data = images.fit_image(b.png, style.SLOT_MM[b.slot], "flat")
+            data = images.fit_image(b.png, style.SLOT_MM[b.slot], "flat",
+                                    dpi=style.CHART_DPI)
             body = f'<img class="rk-img" alt="{_e(b.caption)}" src="{_data_uri(data)}">'
         else:
             reason = f" — {_e(b.unavailable_reason)}" if b.unavailable_reason else ""

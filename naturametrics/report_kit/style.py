@@ -23,10 +23,13 @@ GUTTER_MM = TEXT_W_MM - 2 * SLOT_MM["half"]      # 6
 MAP_ASPECT = 110.0 / 170.0                       # full map 170 × 110 mm
 LOCATOR_ASPECT = 0.9
 
-# Resolution (R9): rasters at 150 dpi for their slot; charts laid out in CSS px
+# Resolution (R9): maps/imagery at 150 dpi for their slot; charts — thin lines
+# and 7–9 pt labels, flat colours that compress well — at 220 dpi so they stay
+# crisp when zoomed. Charts are laid out in CSS px and rasterised at a scale.
 DPI = 150
+CHART_DPI = 220
 CSS_DPI = 96
-CHART_SCALE = DPI / CSS_DPI                       # 1.5625
+CHART_SCALE = CHART_DPI / CSS_DPI                 # ≈ 2.29
 
 # Type (points)
 FONT_REGULAR = "NotoSans"

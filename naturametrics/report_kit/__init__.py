@@ -17,7 +17,7 @@ from .model import (Block, Brand, Callout, Citation, ContentsItem, ContentsList,
                     MapFigure, PageBreak, Paragraph, ProvenanceTable, Report,
                     ReportMeta, Section, SideBySide, Table, VectorLayer)
 
-KIT_VERSION = "0.1.1"
+KIT_VERSION = "0.1.2"
 
 
 def render_pdf(report: Report) -> bytes:

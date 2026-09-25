@@ -25,22 +25,56 @@ ImageKind = Literal["photo", "flat"]
 
 def chart_opts(slot: str = "full", aspect: float = 0.56) -> dict:
     """Plotly/kaleido export options for a chart filling ``slot``:
-    full → 643×360 CSS px at scale 1.5625 ≈ 1004×563 px."""
+    full → 643×360 CSS px at scale ≈ 2.29 ≈ 1473×826 px (220 dpi)."""
     width = style.mm_to_px(style.SLOT_MM[slot], style.CSS_DPI)
     height = max(120, int(round(width * aspect)))
     return {"width": width, "height": height, "scale": style.CHART_SCALE}
 
 
+#: A chart may be at most this tall relative to its width on the page
+#: (170 mm × 1.3 ≈ 221 mm, inside A4's 261 mm text height).
+MAX_CHART_ASPECT = 1.3
+#: Below this share of the height left for the plot itself, the figure's
+#: fixed pixel margins are judged to have eaten the chart (see _decide_size).
+MIN_PLOT_SHARE = 0.45
+
+
+def _decide_size(fig: dict, slot: str, aspect: float) -> Tuple[int, int]:
+    """(width, height) in CSS px for a figure on the page.
+
+    Normally the slot's width at ``aspect``. But plotly margins are fixed
+    pixels: a figure designed with big margins for context rows (Yvynation's
+    deforestation timeline: 1183 px tall, 843 px of margins) squeezed to
+    643×399 px has *no* plot left — every trace crushed onto one line. When
+    the margins would leave less than MIN_PLOT_SHARE of the height, the
+    figure keeps its designed height and the layout is widened instead
+    (capped at MAX_CHART_ASPECT), so the whole chart scales down together
+    and the plot keeps its proportions.
+    """
+    base = chart_opts(slot, aspect)
+    layout = fig.get("layout") or {}
+    margin = layout.get("margin") or {}
+    fixed = float(margin.get("t") or 80) + float(margin.get("b") or 80)
+    if fixed <= base["height"] * (1 - MIN_PLOT_SHARE):
+        return base["width"], base["height"]
+    designed = float(layout.get("height") or 0)
+    # The designer's height when it leaves a usable plot (it may be mostly
+    # context rows on purpose); otherwise enough for a 260 px plot.
+    height = int(round(designed if designed - fixed >= 200 else fixed + 260))
+    width = max(base["width"], int(round(height / MAX_CHART_ASPECT)))
+    return width, height
+
+
 def prepare_figure(fig_json: dict, slot: str = "full", aspect: float = 0.56) -> dict:
-    """A copy of a Plotly figure dict made fit for a page: fixed size, white
-    backgrounds (on-screen charts are transparent), fonts ≥ 10 px, long
-    legends moved below, interactive widgets removed. No plotly import —
-    this works on the plain dict (``fig.to_plotly_json()``)."""
+    """A copy of a Plotly figure dict made fit for a page: its size (see
+    _decide_size), white backgrounds (on-screen charts are transparent),
+    fonts ≥ 10 px, long legends moved below, interactive widgets removed. No
+    plotly import — this works on the plain dict (``fig.to_plotly_json()``).
+
+    Rasterise it with ``figure_opts(prepared, slot)``, never with separately
+    computed numbers: the size decided here is the one to render at."""
     fig = copy.deepcopy(fig_json or {})
     layout = fig.setdefault("layout", {})
-    opts = chart_opts(slot, aspect)
-    layout["width"], layout["height"] = opts["width"], opts["height"]
-    layout["autosize"] = False
     layout["paper_bgcolor"] = "#ffffff"
     layout["plot_bgcolor"] = "#ffffff"
     font = layout.setdefault("font", {})
@@ -58,7 +92,28 @@ def prepare_figure(fig_json: dict, slot: str = "full", aspect: float = 0.56) -> 
     title = layout.get("title")
     if isinstance(title, dict) and title.get("font"):
         title["font"]["size"] = max(11, int(title["font"].get("size") or 11))
+    data = fig.get("data") or []
+    if data and all(tr.get("type") == "sankey" for tr in data):
+        # No axes to make room for: plotly's web defaults (80/80/100/80 px)
+        # would waste a third of the page width. Only fills unset sides.
+        margin = layout.setdefault("margin", {})
+        has_title = bool(title.get("text") if isinstance(title, dict) else title)
+        for side, value in (("l", 10), ("r", 10), ("b", 10), ("t", 45 if has_title else 10)):
+            margin.setdefault(side, value)
+    layout["width"], layout["height"] = _decide_size(fig, slot, aspect)
+    layout["autosize"] = False
     return fig
+
+
+def figure_opts(prepared: dict, slot: str = "full") -> dict:
+    """Plotly.toImage / kaleido options for a figure from ``prepare_figure``:
+    its own layout size, at the scale that makes the raster exactly the slot's
+    width at CHART_DPI (≈ 2.29 for an ordinary chart, less for a widened one)."""
+    layout = (prepared or {}).get("layout") or {}
+    width = int(layout.get("width") or chart_opts(slot)["width"])
+    height = int(layout.get("height") or chart_opts(slot)["height"])
+    return {"width": width, "height": height,
+            "scale": style.slot_px(slot, style.CHART_DPI) / width}
 
 
 def image_size(data: bytes) -> Tuple[str, int, int]:
@@ -98,8 +153,9 @@ def decode_data_url(data_url: str, max_bytes: int = 3_000_000) -> bytes:
 
 
 def fit_image(data: bytes, slot_mm: float, kind: ImageKind = "flat",
-              height_mm: Optional[float] = None) -> bytes:
-    """Re-encode ``data`` for a slot ``slot_mm`` wide at 150 dpi.
+              height_mm: Optional[float] = None, dpi: int = style.DPI) -> bytes:
+    """Re-encode ``data`` for a slot ``slot_mm`` wide at ``dpi`` (150 for
+    maps/imagery; charts pass style.CHART_DPI).
 
     Downsamples anything larger (never upsamples), then encodes imagery
     (``photo``) as JPEG q≈80 and charts / class rasters (``flat``) as PNG,
@@ -111,8 +167,8 @@ def fit_image(data: bytes, slot_mm: float, kind: ImageKind = "flat",
     fmt, width, height = image_size(data)
     if width * height > MAX_PIXELS:
         raise ValueError(f"image of {width}×{height} px exceeds {MAX_PIXELS} px")
-    target_w = style.mm_to_px(slot_mm)
-    target_h = style.mm_to_px(height_mm) if height_mm else None
+    target_w = style.mm_to_px(slot_mm, dpi)
+    target_h = style.mm_to_px(height_mm, dpi) if height_mm else None
     img = Image.open(io.BytesIO(data))
     img.load()
     scale = min(1.0, target_w / img.width,

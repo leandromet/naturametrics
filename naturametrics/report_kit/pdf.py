@@ -375,7 +375,7 @@ class _Renderer:
     def _figure(self, b: Figure, width_pt):
         slot_pt = min(width_pt, style.SLOT_MM[b.slot] * mm)
         if b.png:
-            data = images.fit_image(b.png, slot_pt / mm, "flat")
+            data = images.fit_image(b.png, slot_pt / mm, "flat", dpi=style.CHART_DPI)
             _, pw, ph = images.image_size(data)
             img = Image(io.BytesIO(data), width=slot_pt, height=slot_pt * ph / pw)
             img.hAlign = "LEFT"

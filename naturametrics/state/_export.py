@@ -621,7 +621,9 @@ class ExportMixin(rx.State, mixin=True):
         if capture:
             figs = {s.key: rk_images.prepare_figure(s.fig_json, s.slot, s.aspect)
                     for s in specs}
-            sizes = {s.key: rk_images.chart_opts(s.slot, s.aspect) for s in specs}
+            # Render at the size prepare_figure decided (it may widen a figure
+            # with big fixed margins rather than crush its plot).
+            sizes = {s.key: rk_images.figure_opts(figs[s.key], s.slot) for s in specs}
             callbacks = {
                 s.key: str(format_queue_events(
                     cls.receive_report_chart(job_id, s.key), args_spec=lambda d: [d]))

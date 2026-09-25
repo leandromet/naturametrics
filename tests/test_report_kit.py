@@ -102,7 +102,9 @@ def test_oversized_image_is_embedded_at_slot_size():
     big = _png(4000, 2250, noisy=True)
     fitted = images.fit_image(big, style.SLOT_MM["full"], "flat")
     _, w, _ = images.image_size(fitted)
-    assert w <= style.slot_px("full") == 1004
+    assert w <= style.slot_px("full") == 1004                    # maps: 150 dpi
+    chart = images.fit_image(big, style.SLOT_MM["full"], "flat", dpi=style.CHART_DPI)
+    assert images.image_size(chart)[1] <= style.slot_px("full", style.CHART_DPI) == 1472
 
 
 def test_photo_stays_jpeg_and_flat_stays_png():
@@ -219,9 +221,39 @@ def test_capture_script_embeds_every_figure_and_callback():
 
 
 def test_chart_opts_follow_r9():
+    """Charts: laid out at their CSS size, rasterised at 220 dpi."""
     o = images.chart_opts("full", 0.56)
-    assert o["width"] == 643 and o["scale"] == pytest.approx(1.5625)
-    assert round(o["width"] * o["scale"]) == pytest.approx(1004, abs=2)
+    assert o["width"] == 643 and o["scale"] == pytest.approx(220 / 96)
+    assert round(o["width"] * o["scale"]) == pytest.approx(style.slot_px("full", 220), abs=2)
+
+
+def test_figure_with_big_fixed_margins_keeps_its_plot():
+    """Regression: Yvynation's deforestation timeline is designed 1183 px tall
+    with 843 px of margins (context bands above, policy rows below). Forced to
+    643×399 px it had no plot left — every series crushed onto one line."""
+    fig = {"data": [{"type": "scatter", "y": [1, 2]}],
+           "layout": {"height": 1183, "margin": {"t": 180, "b": 663, "l": 100, "r": 30}}}
+    prepared = images.prepare_figure(fig, "full", 0.62)
+    lay = prepared["layout"]
+    plot_h = lay["height"] - 180 - 663
+    assert plot_h >= 300                                   # the designed plot height survives
+    assert lay["height"] / lay["width"] <= images.MAX_CHART_ASPECT + 1e-6
+    o = images.figure_opts(prepared, "full")
+    assert (o["width"], o["height"]) == (lay["width"], lay["height"])
+    assert round(o["width"] * o["scale"]) == style.slot_px("full", style.CHART_DPI)
+
+
+def test_ordinary_figure_keeps_the_slot_aspect():
+    prepared = images.prepare_figure({"data": [], "layout": {"height": 800}}, "full", 0.56)
+    assert (prepared["layout"]["width"], prepared["layout"]["height"]) == (643, 360)
+
+
+def test_sankey_gets_compact_margins_unless_set():
+    fig = {"data": [{"type": "sankey"}], "layout": {"title": {"text": "T"}}}
+    m = images.prepare_figure(fig)["layout"]["margin"]
+    assert m == {"l": 10, "r": 10, "b": 10, "t": 45}
+    fig["layout"]["margin"] = {"l": 120}
+    assert images.prepare_figure(fig)["layout"]["margin"]["l"] == 120
 
 
 def test_prepare_figure_sets_page_ready_layout():

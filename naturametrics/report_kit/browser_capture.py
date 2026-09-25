@@ -15,7 +15,7 @@ pieces live here because both apps need them identically:
 
 Reflex caps an *incoming* socket message at ``REFLEX_SOCKET_MAX_HTTP_BUFFER_SIZE``
 (1 000 000 bytes by default) and drops the connection silently beyond it, so
-the script retries an oversized chart at scale 1 and gives up past
+the script retries an oversized chart at 150 dpi, then scale 1, and gives up past
 ``max_chars`` rather than sending it.
 """
 
@@ -51,7 +51,7 @@ def build_capture_script(figs: Mapping[str, dict], callbacks: Mapping[str, str],
 
     ``figs`` — {key: prepared figure dict}; ``callbacks`` — {key: JS function
     source}; ``opts`` — {key: {"width", "height", "scale"}} from
-    ``images.chart_opts``. Waits up to ``wait_ms`` for ``window.Plotly``
+    ``images.figure_opts(prepared, slot)``. Waits up to ``wait_ms`` for ``window.Plotly``
     (its bundle loads lazily with the first ``rx.plotly``).
     """
     keys = [k for k in figs if k in callbacks and k in opts]
@@ -72,6 +72,9 @@ def build_capture_script(figs: Mapping[str, dict], callbacks: Mapping[str, str],
         "    try {"
         "      d = await window.Plotly.toImage(figs[key], {format: 'png', width: o.width,"
         "            height: o.height, scale: o.scale});"
+        "      if (d.length > MAX) d = await window.Plotly.toImage(figs[key],"
+        "            {format: 'png', width: o.width, height: o.height,"
+        "             scale: o.scale * 150 / 220});"
         "      if (d.length > MAX) d = await window.Plotly.toImage(figs[key],"
         "            {format: 'png', width: o.width, height: o.height, scale: 1});"
         "      if (d.length > MAX) d = '';"

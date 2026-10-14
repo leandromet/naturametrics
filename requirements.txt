@@ -3,6 +3,11 @@
 
 # Core
 reflex==0.8.27              # same minor as Yvynation, so its component API matches
+sqlalchemy>=2.0,<2.1          # SQLAlchemy 2.1 made greenlet optional (the
+                              # "asyncio" extra); reflex 0.8.27 uses the async
+                              # engine via sqlmodel, so a fresh 2.1 install
+                              # breaks `reflex init` with "No module named
+                              # 'greenlet'". 2.0.x always ships greenlet.
 python-dotenv==1.2.2  # >=1.2.2 fixes CVE-2026-28684 (set_key symlink handling);
                        # unexploitable here (this app only calls load_dotenv,
                        # never set_key) but no reason to leave it flagged

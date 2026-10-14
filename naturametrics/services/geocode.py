@@ -1,11 +1,12 @@
 """Resolving what the user typed into the location search box.
 
 Ported from camposcope's module of the same name, trimmed: naturametrics has
-no property registry, so there is no CAR-code resolver here. Four resolvers,
-tried in a fixed order and stopping at the first match: a coordinate, a
+no property registry, so there is no CAR-code resolver here. Five resolvers,
+tried in a fixed order and stopping at the first match: a CEP, a coordinate, a
 município, a protected territory (terra indígena or unidade de conservação), a
-place name. The first three are exact and local; only the fourth reaches a
-third-party service (Nominatim), which is what keeps geocoder usage defensible
+place name or street address. The first four are exact (a CEP is recognised
+locally, then looked up — services/address.py); only the last is a guess
+against a third-party service (Nominatim), which is what keeps geocoder usage defensible
 — most searches never reach it at all.
 
 The território resolver is the one that does not *only* stop at the first
@@ -26,13 +27,11 @@ from __future__ import annotations
 
 import logging
 import re
-import threading
-import time
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
-import requests
-
+from . import address
+from .address import Place
 from ..config.settings import (
     BRAZIL_BBOX,
     GEOCODER_COUNTRY_CODES,
@@ -171,113 +170,45 @@ def _validated(lat: float, lon: float, source: str) -> Coordinate:
 
 
 # --------------------------------------------------------------------------- #
-# Place names
+# Place names, street addresses and CEPs
 # --------------------------------------------------------------------------- #
-@dataclass(frozen=True)
-class Place:
-    """A geocoded place. Frames the map; never selects a point."""
-
-    label: str
-    lat: float
-    lon: float
-    #: ``[[south, west], [north, east]]`` — framing a bbox is honest about
-    #: uncertainty in a way a single pin is not.
-    bounds: Optional[List[List[float]]]
-    attribution: str = "© colaboradores do OpenStreetMap (ODbL)"
-
-
-#: Nominatim's policy caps us at ~1 request/second and forbids bulk use, so
-#: requests serialise through here.
-_LOCK = threading.Lock()
-_cache: Dict[str, List[Place]] = {}
-_cache_lock = threading.Lock()
-_session: Optional[requests.Session] = None
+#: The client lives in services/address.py (shared verbatim with camposcope
+#: and yvynation); this module only configures it for Brazil.
+_geocoder = address.AddressGeocoder(
+    url=GEOCODER_URL,
+    user_agent=GEOCODER_USER_AGENT,
+    accept_language="pt-BR,pt",
+    # Never widen this. The app covers Brazil; a search that can wander off
+    # it will.
+    countrycodes=GEOCODER_COUNTRY_CODES,
+    enabled=GEOCODER_ENABLED,
+    timeout=(GEOCODER_TIMEOUT_CONNECT, GEOCODER_TIMEOUT_READ),
+    keep=_in_brazil,
+    viewbox=BRAZIL_BBOX,
+)
 
 
-def _get_session() -> requests.Session:
-    global _session
-    if _session is None:
-        s = requests.Session()
-        s.headers.update({
-            "User-Agent": GEOCODER_USER_AGENT,
-            "Accept": "application/json",
-            "Accept-Language": "pt-BR,pt",
-        })
-        _session = s
-    return _session
-
-
-def search_places(query: str, *, limit: int = 5) -> List[Place]:
-    """Geocode a place name. **The last resort, never the first try.**
-
-    Callers must have already ruled out a coordinate and a município — see
-    :func:`resolve`. Results are cached for the process lifetime; a place name
-    does not move.
-    """
-    q = (query or "").strip()
-    if not q:
-        return []
+def search_places(query: str, *, limit: int = 6) -> List[Place]:
+    """Geocode a place name or street address. **The last resort, never the
+    first try** — callers have already ruled out a CEP, a coordinate, a
+    município and a territory (:func:`resolve`)."""
     if not GEOCODER_ENABLED:
         raise GeocodeError("A busca por lugares está desativada nesta instalação.")
-
-    key = f"{q.lower()}:{limit}"
-    with _cache_lock:
-        hit = _cache.get(key)
-        if hit is not None:
-            return hit
-
-    params = {
-        "q": q,
-        "format": "jsonv2",
-        "limit": limit,
-        # Never widen this. The app covers Brazil; a search that can wander off
-        # it will.
-        "countrycodes": GEOCODER_COUNTRY_CODES,
-    }
-
-    with _LOCK:
-        try:
-            r = _get_session().get(
-                GEOCODER_URL,
-                params=params,
-                timeout=(GEOCODER_TIMEOUT_CONNECT, GEOCODER_TIMEOUT_READ),
-            )
-        except requests.RequestException as exc:
-            raise GeocodeError(f"Não foi possível contatar o serviço de busca: {exc}")
-        # One request per second is the policy; hold the lock for it rather than
-        # trusting callers to pace themselves.
-        time.sleep(1.0)
-
-    if r.status_code != 200:
-        raise GeocodeError(f"O serviço de busca respondeu HTTP {r.status_code}.")
-
     try:
-        payload = r.json()
-    except ValueError as exc:
-        raise GeocodeError("Resposta inesperada do serviço de busca.") from exc
+        return _geocoder.search(query, limit=limit)
+    except address.AddressError as exc:
+        raise GeocodeError(f"Não foi possível contatar o serviço de busca: {exc}")
 
-    places: List[Place] = []
-    for item in payload:
-        try:
-            lat, lon = float(item["lat"]), float(item["lon"])
-        except (KeyError, TypeError, ValueError):
-            continue
-        bbox = item.get("boundingbox")
-        bounds = None
-        if bbox and len(bbox) == 4:
-            try:
-                s, n, w, e = (float(v) for v in bbox)
-                bounds = [[s, w], [n, e]]
-            except (TypeError, ValueError):
-                bounds = None
-        places.append(Place(
-            label=item.get("display_name", q),
-            lat=lat, lon=lon, bounds=bounds,
-        ))
 
-    with _cache_lock:
-        _cache[key] = places
-    return places
+def search_cep(digits: str) -> Tuple[List[Place], Optional[Dict[str, str]]]:
+    """A CEP → its place(s), plus ViaCEP's record (whose ``ibge`` code lets the
+    caller fall back to framing the município)."""
+    if not GEOCODER_ENABLED:
+        raise GeocodeError("A busca por lugares está desativada nesta instalação.")
+    try:
+        return _geocoder.search_cep(digits)
+    except address.AddressError as exc:
+        raise GeocodeError(f"Não foi possível contatar o serviço de busca: {exc}")
 
 
 # --------------------------------------------------------------------------- #
@@ -292,7 +223,7 @@ class Resolution:
     resolving somewhere plausible and wrong.
     """
 
-    kind: str            # "coordenada" | "municipio" | "territorio" | "lugar" | "vazio"
+    kind: str            # "cep" | "coordenada" | "municipio" | "territorio" | "lugar" | "vazio"
     echo: str            # human-readable "read as …"
     payload: Any = None
     #: Territory matches carried ALONGSIDE a município hit, not instead of it —
@@ -312,6 +243,12 @@ def resolve(text: str) -> Resolution:
     raw = (text or "").strip()
     if not raw:
         return Resolution("vazio", "")
+
+    # 0 — CEP. Recognised locally; only acting on it needs a lookup. First,
+    # so "78890-000" can never be read as anything numeric.
+    cep = address.parse_cep(raw)
+    if cep:
+        return Resolution("cep", f"CEP {address.format_cep(cep)}", cep)
 
     # 1 — coordinate. Exact and local. A ValueError here is a real message.
     coord = parse_coordinates(raw)
@@ -354,5 +291,5 @@ def resolve(text: str) -> Resolution:
 
 __all__ = [
     "Coordinate", "Place", "Resolution", "GeocodeError",
-    "parse_coordinates", "search_places", "resolve",
+    "parse_coordinates", "search_places", "search_cep", "resolve",
 ]

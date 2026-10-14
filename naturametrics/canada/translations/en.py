@@ -20,6 +20,61 @@ TRANSLATIONS_EN: dict[str, str] = {
     "go_to_brazil": "Go to Brazil",
     "language_label": "Language",
     "close_button": "Close",
+
+    # --- location search (components/search.py) ------------------------- #
+    "search_title": "Find a place",
+    "search_placeholder": "Address, postal code, coordinate or place…",
+    "search_read_as": "read as:",
+    "search_button": "Search",
+    "search_button_busy": "Searching…",
+    "search_clear_aria": "Clear the search",
+    "search_places_heading": "Places and addresses",
+    "search_places_note": (
+        "A place only frames the map and drops a pin. Click the map to "
+        "choose an analysis point."
+    ),
+    "search_place_hint": "click the map to choose an analysis point",
+    "echo_postal": "postal code",
+    "echo_coordenada": "coordinate",
+    "echo_lugar": "place",
+    "erro_postal_nao_encontrado": (
+        "Postal code {code} not found. Try the street address instead."
+    ),
+    "erro_lugar_nao_encontrado": "No place found for “{query}”.",
+    "precision_endereco": "address",
+    "precision_rua": "street",
+    "precision_cep": "postal code",
+    "precision_bairro": "neighbourhood",
+    "precision_cidade": "town",
+    "precision_regiao": "region",
+    "precision_lugar": "place",
+
+    # --- quick start (components/quickstart.py) ------------------------- #
+    "qs_title": "Get started in 30 seconds",
+    "qs_step1_lead": "Search",
+    "qs_step1_body": (
+        "a street address, postal code, coordinate or place — or just pan "
+        "the map."
+    ),
+    "qs_step2_lead": "Click any point",
+    "qs_step2_body": (
+        "in Canada: a marker and four analysis areas are drawn around it."
+    ),
+    "qs_step3_lead": "Read the results",
+    "qs_step3_body": (
+        "below the map: crop-inventory history, forest stand age and forest "
+        "loss."
+    ),
+    "qs_step4_lead": "Download the data",
+    "qs_step4_body": "from «Download data» at the top of the page.",
+    "qs_more": (
+        "There is much more: yearly Landsat imagery, forest-change layers, "
+        "buffer previews and species records (GBIF)."
+    ),
+    "qs_got_it": "Got it",
+    "qs_full_howto": "See the full how-to",
+    "qs_close_aria": "Close the quick start",
+    "help_show_quickstart": "Show the quick start again",
     "clear_button": "Clear",
     "reset_button": "Reset",
     "cancel_button": "Cancel",

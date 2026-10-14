@@ -26,7 +26,7 @@ from typing import Any, Dict, List
 
 import reflex as rx
 
-from ..services import geocode, municipios, territorios
+from ..services import address, geocode, municipios, territorios
 from ._proxy import state_class
 from ..services.geocode import GeocodeError
 
@@ -53,6 +53,41 @@ class SearchMixin(rx.State, mixin=True):
     municipio_hits: List[Dict[str, Any]] = []
     territorio_hits: List[Dict[str, Any]] = []
     place_hits: List[Dict[str, Any]] = []
+    #: ``[lat, lon]`` of the chosen geocoded place, drawn as a pin. A pin and
+    #: not a study point: finding an address is not choosing where to analyse.
+    search_pin: List[float] = []
+
+    @rx.var(cache=True, deps=["buffer_overlays", "search_pin"], auto_deps=False)
+    def map_overlays(self) -> Dict[str, Any]:
+        """What the map's ``overlays`` prop draws: the study point's buffers
+        plus the search pin. Explicit deps — ``buffer_overlays`` lives in
+        another mixin and is read through ``getattr``, which the automatic
+        dependency scan cannot see."""
+        base = getattr(self, "buffer_overlays", None) or {
+            "type": "FeatureCollection", "features": []}
+        pin = self.search_pin
+        if len(pin) != 2:
+            return base
+        return {
+            **base,
+            "type": "FeatureCollection",
+            "features": list(base.get("features") or []) + [{
+                "type": "Feature",
+                "properties": {"role": "search_pin"},
+                "geometry": {"type": "Point", "coordinates": [pin[1], pin[0]]},
+            }],
+        }
+
+    @rx.var
+    def place_attribution(self) -> str:
+        """Credit exactly the sources the listed places came from."""
+        return address.attributions(self.place_hits)
+
+    @rx.var
+    def can_search_as_place(self) -> bool:
+        """Escape hatch under a município/território reading — the local
+        resolvers win by design, so this is how the user overrules them."""
+        return self.echo_kind in ("municipio", "territorio") and bool(self.query.strip())
 
     @rx.var
     def has_search_results(self) -> bool:
@@ -69,6 +104,8 @@ class SearchMixin(rx.State, mixin=True):
         ``payload``.
         """
         kind, payload = resolution.kind, resolution.payload
+        if kind == "cep":
+            return f"{self.tr['echo_cep']} {address.format_cep(payload)}"
         if kind == "coordenada":
             return f"{self.tr['echo_coordenada']} {payload.lat:.4f}, {payload.lon:.4f}"
         if kind == "municipio":
@@ -130,6 +167,9 @@ class SearchMixin(rx.State, mixin=True):
 
         kind = resolution.kind
 
+        if kind == "cep":
+            return state_class(self).search_cep_code(resolution.payload)
+
         if kind == "coordenada":
             coord = resolution.payload
             # The one branch that selects a point, not just a place — same
@@ -162,10 +202,25 @@ class SearchMixin(rx.State, mixin=True):
             return
 
         # kind == "lugar" — the only branch that touches a third party.
+        return state_class(self).search_as_place
+
+    @rx.event(background=True)
+    async def search_as_place(self):
+        """Geocode the query as a place name or street address — the last
+        resolver, and the "search as an address" link under a local match."""
         async with self:
+            raw = self.query.strip()
+            if not raw:
+                return
+            self.search_error = ""
+            self.municipio_hits = []
+            self.territorio_hits = []
+            self.place_hits = []
             self.searching_place = True
+            self.echo = self._echo_text(geocode.Resolution("lugar", "", raw))
+            self.echo_kind = "lugar"
         try:
-            places = geocode.search_places(raw, limit=5)
+            places = geocode.search_places(raw, limit=6)
         except GeocodeError as exc:
             async with self:
                 self.searching_place = False
@@ -176,15 +231,35 @@ class SearchMixin(rx.State, mixin=True):
             self.searching_place = False
             if not places:
                 self.search_error = self.tr["erro_lugar_nao_encontrado"].format(query=raw)
-            self.place_hits = [
-                {
-                    "label": p.label,
-                    "lat": p.lat,
-                    "lon": p.lon,
-                    "bounds": p.bounds or [],
-                }
-                for p in places
-            ]
+            self.place_hits = [p.to_hit() for p in places]
+        if len(places) == 1:
+            return state_class(self).choose_place(0)
+
+    @rx.event(background=True)
+    async def search_cep_code(self, digits: str):
+        """A CEP: OSM's postcode centroid labelled with ViaCEP's street;
+        failing both, the município ViaCEP names."""
+        async with self:
+            self.searching_place = True
+            self.search_error = ""
+        try:
+            places, info = geocode.search_cep(digits)
+        except GeocodeError as exc:
+            async with self:
+                self.searching_place = False
+                self.search_error = str(exc)
+            return
+
+        async with self:
+            self.searching_place = False
+            self.place_hits = [p.to_hit() for p in places]
+            if not places and not (info and info.get("ibge")):
+                self.search_error = self.tr["erro_cep_nao_encontrado"].format(
+                    cep=address.format_cep(digits))
+        if places:
+            return state_class(self).choose_place(0)
+        if info and info.get("ibge", "").isdigit():
+            return state_class(self).choose_municipio(int(info["ibge"]))
 
     # --- acting on a result ------------------------------------------------
     @rx.event(background=True)
@@ -254,19 +329,30 @@ class SearchMixin(rx.State, mixin=True):
 
     @rx.event
     def choose_place(self, index: int) -> None:
-        """Frame the map on a geocoded place. **Selects no point.**"""
+        """Frame the map on a geocoded place and pin it. **Selects no point.**
+
+        A street address or postcode gets a centre + zoom by precision —
+        ``fit_bounds`` is capped at z12 in leaflet_map.js, too far out to see
+        which field the pin is in; a town or region keeps its bounding box.
+        """
         try:
             place = self.place_hits[int(index)]
         except (IndexError, ValueError, TypeError):
             return
-        self.place_hits = []
-        bounds = place.get("bounds")
-        if not bounds:
-            lat, lon = place["lat"], place["lon"]
-            bounds = [[lat - _POINT_PAD_DEG, lon - _POINT_PAD_DEG],
-                      [lat + _POINT_PAD_DEG, lon + _POINT_PAD_DEG]]
-        self.fit_bounds = bounds
-        self.query = place["label"]
+        precision = place.get("precision", "lugar")
+        lat, lon = place["lat"], place["lon"]
+        if place.get("bounds") and precision not in address.POINT_PRECISIONS:
+            self.fit_bounds = place["bounds"]
+        elif precision in address.POINT_PRECISIONS:
+            self.map_center = [lat, lon]
+            self.map_zoom = address.ZOOM_BY_PRECISION.get(precision, 14)
+        else:
+            self.fit_bounds = [[lat - _POINT_PAD_DEG, lon - _POINT_PAD_DEG],
+                               [lat + _POINT_PAD_DEG, lon + _POINT_PAD_DEG]]
+        self.search_pin = [lat, lon]
+        title = place.get("title") or place["label"]
+        subtitle = place.get("subtitle") or ""
+        self.query = f"{title}, {subtitle}" if subtitle else title
         self.echo = f"{self.tr['echo_lugar']} — {self.tr['search_place_hint']}"
         self.echo_kind = "lugar"
 
@@ -279,3 +365,4 @@ class SearchMixin(rx.State, mixin=True):
         self.municipio_hits = []
         self.territorio_hits = []
         self.place_hits = []
+        self.search_pin = []

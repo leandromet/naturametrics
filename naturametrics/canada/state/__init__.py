@@ -25,11 +25,13 @@ from ._export import CanadaExportMixin
 from ._gbif import CanadaGbifMixin
 from ._layers import CanadaLayersMixin
 from ._point import CanadaPointMixin
+from ._search import CanadaSearchMixin
 from ._ui import CanadaUIMixin
 
 
 class CanadaState(CanadaAnalysisMixin, CanadaExportMixin, CanadaGbifMixin,
-                  CanadaLayersMixin, CanadaPointMixin, CanadaUIMixin, rx.State):
+                  CanadaLayersMixin, CanadaPointMixin, CanadaSearchMixin,
+                  CanadaUIMixin, rx.State):
     """Root state for the ``/canada`` route."""
 
 

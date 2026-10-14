@@ -85,6 +85,26 @@ class CanadaUIMixin(rx.State, mixin=True):
     def set_help_open(self, value: bool):
         self.help_open = value
 
+    #: "1" once this browser dismissed the quick-start card — browser storage,
+    #: a per-viewer convenience (see the Brazil page's ``state/_ui.py``). Its
+    #: own key: the Canada card says different things.
+    quickstart_seen: str = rx.LocalStorage("", name="naturametrics_quickstart_ca_v1")
+
+    @rx.var
+    def show_quickstart(self) -> bool:
+        return self.quickstart_seen != "1"
+
+    def dismiss_quickstart(self):
+        self.quickstart_seen = "1"
+
+    def open_full_howto(self):
+        self.quickstart_seen = "1"
+        self.help_open = True
+
+    def reset_quickstart(self):
+        self.quickstart_seen = ""
+        self.help_open = False
+
     def set_cite_open(self, value: bool):
         self.cite_open = value
 

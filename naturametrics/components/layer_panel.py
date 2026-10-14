@@ -1127,6 +1127,11 @@ def layer_panel(fill_height: bool = True) -> rx.Component:
     from .search import search_panel
 
     return rx.vstack(
+        # Search sits above every group, always visible: it is the first
+        # thing the quick-start card tells a new user to do, and the groups
+        # below all start closed (see `_all_groups()`), so inside "Área de
+        # estudo" it was a click away from anyone who did not know it existed.
+        search_panel(),
         rx.accordion.root(
             rx.accordion.item(
                 rx.accordion.header(
@@ -1140,7 +1145,7 @@ def layer_panel(fill_height: bool = True) -> rx.Component:
                     ),
                 ),
                 rx.accordion.content(
-                    _all_groups(search_panel(), gbif_control()),
+                    _all_groups(gbif_control()),
                     # See `_group()`'s own comment on why this needs
                     # `padding_x="0"` — Radix's AccordionContent otherwise
                     # bakes in its own 16px on top of this panel's root
@@ -1193,26 +1198,22 @@ def layer_panel(fill_height: bool = True) -> rx.Component:
     )
 
 
-def _all_groups(search_panel: rx.Component,
-                gbif_control: rx.Component) -> rx.Component:
+def _all_groups(gbif_control: rx.Component) -> rx.Component:
     """The five topic groups, each independently collapsible
     (`type="multiple"`) — nested inside `layer_panel()`'s own outer,
     single-item accordion (the "collapse everything" wrapper), so this is
     one level *below* that, not the sidebar root itself any more.
 
-    ``search_panel`` and ``gbif_control`` are passed in already built,
-    rather than imported and called here directly: the deferred `from .search import search_panel`
-    inside `layer_panel()` exists to break a circular import (search.py
-    imports `_section`/`_info_icon` back from this module), and that
-    import is scoped to `layer_panel()`'s own function body — a second,
-    identically-named top-level import here would shadow the *component*
-    name `search_panel` with the *function* the moment this module is
-    imported, which is exactly the ordering problem the deferred import
-    was written to avoid in the first place.
+    ``gbif_control`` is passed in already built, rather than imported and
+    called here directly: the deferred import inside `layer_panel()` exists
+    to break a circular import (gbif_panel.py imports `_section`/
+    `_info_icon` back from this module). The search box used to be passed in
+    the same way for the "study_area" group; it now sits above all groups,
+    in `layer_panel()` itself.
     """
     return rx.accordion.root(
         _group("study_area", "target", AppState.tr["group_study_area"],
-              search_panel, point_control(), geometry_control()),
+              point_control(), geometry_control()),
         _group("landcover_base", "layers",
               AppState.tr["group_landcover_base"],
               basemap_control(), mapbiomas_control(), compare_control(),

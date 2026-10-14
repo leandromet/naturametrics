@@ -59,7 +59,7 @@ TRANSLATIONS_EN: dict[str, str] = {
 
     # --- location search ---------------------------------------------------- #
     "search_title": "Search",
-    "search_placeholder": "Coordinate, município, territory or place…",
+    "search_placeholder": "CEP, address, coordinate, municipality or territory…",
     "search_read_as": "read as:",
     "search_button": "Search",
     "search_button_busy": "Searching…",
@@ -69,13 +69,53 @@ TRANSLATIONS_EN: dict[str, str] = {
         "A territory only frames the map and switches its layer on; no "
         "study point is chosen."
     ),
-    "search_places_heading": "Places",
+    "search_places_heading": "Places and addresses",
     "search_places_attribution": "© OpenStreetMap contributors (ODbL)",
-    "search_place_hint": "click the map to choose a point",
+    "search_place_hint": "click the map to choose an analysis point",
     "echo_coordenada": "coordinate",
     "echo_municipio": "município",
     "echo_territorio": "territory",
     "echo_lugar": "place",
+    "echo_cep": "CEP (postcode)",
+    "search_as_place": "Search as an address or place instead",
+    "precision_endereco": "address",
+    "precision_rua": "street",
+    "precision_cep": "postcode",
+    "precision_bairro": "neighbourhood",
+    "precision_cidade": "town",
+    "precision_regiao": "region",
+    "precision_lugar": "place",
+    "erro_cep_nao_encontrado": (
+        "CEP {cep} not found. Try the street address or the municipality name."
+    ),
+
+    # --- quick start (components/quickstart.py) ------------------------- #
+    "qs_title": "Get started in 30 seconds",
+    "qs_step1_lead": "Search",
+    "qs_step1_body": (
+        "a CEP (postcode), address, coordinate, municipality or Indigenous "
+        "land — or just pan the map."
+    ),
+    "qs_step2_lead": "Click any point",
+    "qs_step2_body": (
+        "on the map: a marker and four analysis areas (1 to 10 km) are drawn "
+        "around it."
+    ),
+    "qs_step3_lead": "Read the history",
+    "qs_step3_body": (
+        "of land use since 1985 in the map's panel, next to vegetation age, "
+        "landscape metrics and biomass."
+    ),
+    "qs_step4_lead": "Download the data",
+    "qs_step4_body": "from «Download data» at the top of the page.",
+    "qs_more": (
+        "There is much more: year-to-year comparisons, IFN clusters, drawn "
+        "areas, IBAMA embargoes and species records."
+    ),
+    "qs_got_it": "Got it",
+    "qs_full_howto": "See the full how-to",
+    "qs_close_aria": "Close the quick start",
+    "help_show_quickstart": "Show the quick start again",
     "erro_lugar_nao_encontrado": "No place found for “{query}”.",
 
     # --- layer panel: info-icon popovers ---------------------------------- #

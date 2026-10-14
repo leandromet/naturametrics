@@ -358,8 +358,11 @@ def layer_panel() -> rx.Component:
     # Brazil page's own layer_panel()) — a top-level import here would try to
     # read those names off this module before it has finished defining them.
     from .gbif_panel import gbif_control
+    from .search import search_panel
 
     return rx.vstack(
+        search_panel(),
+        rx.divider(),
         point_control(),
         rx.divider(),
         basemap_control(),

@@ -59,7 +59,7 @@ TRANSLATIONS_PT: dict[str, str] = {
 
     # --- busca de localização ------------------------------------------------ #
     "search_title": "Buscar",
-    "search_placeholder": "Coordenada, município, território ou lugar…",
+    "search_placeholder": "CEP, endereço, coordenada, município ou território…",
     "search_read_as": "lido como:",
     "search_button": "Buscar",
     "search_button_busy": "Buscando…",
@@ -69,13 +69,53 @@ TRANSLATIONS_PT: dict[str, str] = {
         "Um território apenas enquadra o mapa e liga a camada "
         "correspondente; nenhum ponto de estudo é escolhido."
     ),
-    "search_places_heading": "Lugares",
+    "search_places_heading": "Lugares e endereços",
     "search_places_attribution": "© colaboradores do OpenStreetMap (ODbL)",
-    "search_place_hint": "clique no mapa para escolher um ponto",
+    "search_place_hint": "clique no mapa para escolher um ponto de análise",
     "echo_coordenada": "coordenada",
     "echo_municipio": "município",
     "echo_territorio": "território",
     "echo_lugar": "lugar",
+    "echo_cep": "CEP",
+    "search_as_place": "Buscar como endereço ou lugar",
+    "precision_endereco": "endereço",
+    "precision_rua": "rua",
+    "precision_cep": "CEP",
+    "precision_bairro": "bairro",
+    "precision_cidade": "cidade",
+    "precision_regiao": "região",
+    "precision_lugar": "lugar",
+    "erro_cep_nao_encontrado": (
+        "CEP {cep} não encontrado. Tente o endereço ou o nome do município."
+    ),
+
+    # --- quick start (components/quickstart.py) ------------------------- #
+    "qs_title": "Comece em 30 segundos",
+    "qs_step1_lead": "Busque",
+    "qs_step1_body": (
+        "um CEP, endereço, coordenada, município ou terra indígena — ou "
+        "simplesmente navegue pelo mapa."
+    ),
+    "qs_step2_lead": "Clique em qualquer ponto",
+    "qs_step2_body": (
+        "do mapa: um marcador e quatro áreas de análise (1 a 10 km) são "
+        "criados em volta dele."
+    ),
+    "qs_step3_lead": "Leia o histórico",
+    "qs_step3_body": (
+        "de uso do solo desde 1985 no painel do mapa, ao lado da idade da "
+        "vegetação, da paisagem e da biomassa."
+    ),
+    "qs_step4_lead": "Baixe os dados",
+    "qs_step4_body": "pelo botão «Baixar dados», no topo da página.",
+    "qs_more": (
+        "Há muito mais: comparação entre anos, conglomerados do IFN, áreas "
+        "desenhadas, embargos do IBAMA e registros de espécies."
+    ),
+    "qs_got_it": "Entendi",
+    "qs_full_howto": "Ver o guia completo",
+    "qs_close_aria": "Fechar o início rápido",
+    "help_show_quickstart": "Mostrar o início rápido de novo",
     "erro_lugar_nao_encontrado": "Nenhum lugar encontrado para “{query}”.",
 
     # --- layer panel: info-icon popovers ---------------------------------- #

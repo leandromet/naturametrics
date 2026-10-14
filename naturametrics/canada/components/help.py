@@ -85,9 +85,15 @@ def how_to_use_dialog() -> rx.Component:
                 # no props, so the onClick/ref Radix's "asChild" cloning tries
                 # to inject onto it at runtime never arrives. See
                 # naturametrics/components/help.py::como_usar_dialog for the trace.
+                rx.button(
+                    rx.icon("rocket", size=14), S.tr["help_show_quickstart"],
+                    size="2", variant="ghost", color_scheme="gray",
+                    on_click=S.reset_quickstart,
+                ),
+                rx.spacer(),
                 rx.button(S.tr["close_button"], size="2", variant="soft",
                          on_click=S.set_help_open(False)),
-                justify="end", margin_top="1rem",
+                align="center", margin_top="1rem", wrap="wrap", gap="2",
             ),
             max_width=["94vw", "94vw", "640px", "640px"],
         ),

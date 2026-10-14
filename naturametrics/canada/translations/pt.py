@@ -20,6 +20,62 @@ TRANSLATIONS_PT: dict[str, str] = {
     "go_to_brazil": "Ir para o Brasil",
     "language_label": "Idioma",
     "close_button": "Fechar",
+
+    # --- location search (components/search.py) ------------------------- #
+    "search_title": "Encontrar um lugar",
+    "search_placeholder": "Endereço, código postal, coordenada ou lugar…",
+    "search_read_as": "lido como:",
+    "search_button": "Buscar",
+    "search_button_busy": "Buscando…",
+    "search_clear_aria": "Limpar a busca",
+    "search_places_heading": "Lugares e endereços",
+    "search_places_note": (
+        "Um lugar apenas enquadra o mapa e marca um alfinete. Clique no mapa "
+        "para escolher um ponto de análise."
+    ),
+    "search_place_hint": "clique no mapa para escolher um ponto de análise",
+    "echo_postal": "código postal",
+    "echo_coordenada": "coordenada",
+    "echo_lugar": "lugar",
+    "erro_postal_nao_encontrado": (
+        "Código postal {code} não encontrado. Tente o endereço."
+    ),
+    "erro_lugar_nao_encontrado": "Nenhum lugar encontrado para “{query}”.",
+    "precision_endereco": "endereço",
+    "precision_rua": "rua",
+    "precision_cep": "código postal",
+    "precision_bairro": "bairro",
+    "precision_cidade": "cidade",
+    "precision_regiao": "região",
+    "precision_lugar": "lugar",
+
+    # --- quick start (components/quickstart.py) ------------------------- #
+    "qs_title": "Comece em 30 segundos",
+    "qs_step1_lead": "Busque",
+    "qs_step1_body": (
+        "um endereço, código postal, coordenada ou lugar — ou simplesmente "
+        "navegue pelo mapa."
+    ),
+    "qs_step2_lead": "Clique em qualquer ponto",
+    "qs_step2_body": (
+        "do Canadá: um marcador e quatro áreas de análise são criados em "
+        "volta dele."
+    ),
+    "qs_step3_lead": "Leia os resultados",
+    "qs_step3_body": (
+        "abaixo do mapa: histórico do inventário agrícola, idade e perda da "
+        "floresta."
+    ),
+    "qs_step4_lead": "Baixe os dados",
+    "qs_step4_body": "pelo botão «Baixar dados», no topo da página.",
+    "qs_more": (
+        "Há muito mais: imagens Landsat por ano, camadas de mudança florestal, "
+        "prévia das áreas de análise e registros de espécies (GBIF)."
+    ),
+    "qs_got_it": "Entendi",
+    "qs_full_howto": "Ver o guia completo",
+    "qs_close_aria": "Fechar o início rápido",
+    "help_show_quickstart": "Mostrar o início rápido de novo",
     "clear_button": "Limpar",
     "reset_button": "Resetar",
     "cancel_button": "Cancelar",

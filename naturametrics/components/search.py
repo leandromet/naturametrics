@@ -17,6 +17,7 @@ from .layer_panel import _section
 
 #: One colour per resolver, so the echo line is scannable without being read.
 _ECHO_COLOR = {
+    "cep": "cyan",
     "coordenada": "blue",
     "municipio": "amber",
     "territorio": "purple",
@@ -41,6 +42,9 @@ def _echo_line() -> rx.Component:
                     "gray",
                 ),
                 variant="soft",
+                # A place echo carries a hint longer than the sidebar; a badge
+                # does not wrap by default.
+                style={"whiteSpace": "normal", "height": "auto", "maxWidth": "100%"},
             ),
             spacing="2",
             align="center",
@@ -48,6 +52,42 @@ def _echo_line() -> rx.Component:
             wrap="wrap",
         ),
         rx.fragment(),
+    )
+
+
+def _search_as_place_link() -> rx.Component:
+    """"Search as an address instead" — under a município or território
+    reading only; the user's way to overrule a local resolver."""
+    return rx.cond(
+        AppState.can_search_as_place,
+        rx.link(
+            rx.hstack(rx.icon("map-pin", size=12),
+                      rx.text(AppState.tr["search_as_place"], size="1"),
+                      spacing="1", align="center"),
+            on_click=AppState.search_as_place,
+            cursor="pointer", underline="hover",
+        ),
+        rx.fragment(),
+    )
+
+
+#: Precision → badge colour: a street-level hit is a pin, a town-level one
+#: only a framed area, and the two must not look alike.
+_PRECISION_COLOR = {
+    "endereco": "grass", "rua": "grass", "cep": "cyan", "bairro": "amber",
+    "cidade": "amber", "regiao": "gray", "lugar": "gray",
+}
+
+
+def _precision_badge(precision) -> rx.Component:
+    return rx.badge(
+        rx.match(precision,
+                 *[(k, AppState.tr[f"precision_{k}"]) for k in _PRECISION_COLOR],
+                 AppState.tr["precision_lugar"]),
+        size="1", variant="soft", flex_shrink="0",
+        color_scheme=rx.match(precision,
+                              *[(k, v) for k, v in _PRECISION_COLOR.items()],
+                              "gray"),
     )
 
 
@@ -80,6 +120,7 @@ def _search_field() -> rx.Component:
             width="100%",
         ),
         _echo_line(),
+        _search_as_place_link(),
         rx.button(
             rx.cond(
                 AppState.searching_place,
@@ -186,12 +227,19 @@ def _place_hits() -> rx.Component:
             rx.foreach(
                 AppState.place_hits,
                 lambda p, i: _result_row(
-                    rx.text(p["label"], size="1"),
+                    rx.hstack(
+                        rx.text(p["title"], size="1", weight="medium"),
+                        rx.spacer(),
+                        _precision_badge(p["precision"]),
+                        spacing="2", align="start", width="100%",
+                    ),
+                    rx.cond(p["subtitle"],
+                            rx.text(p["subtitle"], size="1", color_scheme="gray"),
+                            rx.fragment()),
                     on_click=AppState.choose_place(i),
                 ),
             ),
-            rx.text(AppState.tr["search_places_attribution"], size="1",
-                    color_scheme="gray"),
+            rx.text(AppState.place_attribution, size="1", color_scheme="gray"),
             spacing="1",
             width="100%",
         ),

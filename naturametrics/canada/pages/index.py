@@ -5,8 +5,9 @@ from __future__ import annotations
 import reflex as rx
 
 from ...components.map import leaflet_map
+from ...components.quickstart import quickstart_card
 from ..components.layer_panel import layer_panel
-from ..components.layout import shell
+from ..components.layout import ACCENT, shell
 from ..components.map_legend import map_legend
 from ..components.results import results_drawer
 from ..state import CanadaState as S
@@ -20,7 +21,7 @@ def map_pane() -> rx.Component:
             zoom=S.map_zoom,
             bounds=S.map_bounds,
             layers=S.map_layers,
-            overlays=S.buffer_overlays,
+            overlays=S.map_overlays,
             vectors=S.map_vectors,
             fit_bounds=S.fit_bounds,
             on_map_click=S.set_study_point,
@@ -29,6 +30,10 @@ def map_pane() -> rx.Component:
             height="100%",
         ),
         map_legend(),
+        # The phone map here is its own 52dvh box with the results BELOW it,
+        # not under a sheet — so the card may use the whole box.
+        quickstart_card(S, accent=ACCENT, desktop_from=3,
+                        mobile_max_height="calc(100% - 16px)"),
         width="100%", height="100%",
         # Leaflet needs a positioned, sized container or it renders one grey tile.
         position="absolute", top="0", left="0",

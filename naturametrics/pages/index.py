@@ -14,6 +14,7 @@ from ..components.layer_panel import layer_panel
 from ..components.layout import ACCENT, shell
 from ..components.map import leaflet_map
 from ..components.map_legend import map_legend
+from ..components.quickstart import quickstart_card
 from ..components.results import results_drawer
 from ..state import AppState
 
@@ -283,7 +284,7 @@ def map_pane() -> rx.Component:
             bounds=AppState.map_bounds,
             swipe=AppState.compare_mode != "off",
             layers=AppState.map_layers,
-            overlays=AppState.buffer_overlays,
+            overlays=AppState.map_overlays,
             vectors=AppState.map_vectors,
             fit_bounds=AppState.fit_bounds,
             on_map_click=AppState.set_study_point,
@@ -298,6 +299,9 @@ def map_pane() -> rx.Component:
             height="100%",
         ),
         map_legend(),
+        # desktop_from=3: this page keeps its bottom sheet up to "lg", one
+        # breakpoint later than camposcope (see _MOBILE_ONLY above).
+        quickstart_card(AppState, accent=ACCENT, desktop_from=3),
         width="100%",
         height="100%",
         # Leaflet needs a positioned, sized container or it renders one grey tile.

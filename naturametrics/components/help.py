@@ -94,9 +94,15 @@ def como_usar_dialog() -> rx.Component:
                 # to inject onto it at runtime never arrives — the button
                 # renders but does nothing, and only Escape/overlay-click (via
                 # Radix's own document-level listeners) still close the dialog.
+                rx.button(
+                    rx.icon("rocket", size=14), tr["help_show_quickstart"],
+                    size="2", variant="ghost", color_scheme="gray",
+                    on_click=AppState.reset_quickstart,
+                ),
+                rx.spacer(),
                 rx.button(tr["close_button"], size="2", variant="soft",
                          on_click=AppState.set_como_usar_open(False)),
-                justify="end", margin_top="1rem",
+                align="center", margin_top="1rem", wrap="wrap", gap="2",
             ),
             max_width=["94vw", "94vw", "640px", "640px"],
         ),

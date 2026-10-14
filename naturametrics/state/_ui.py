@@ -97,6 +97,27 @@ class UIMixin(rx.State, mixin=True):
     def set_como_usar_open(self, value: bool):
         self.como_usar_open = value
 
+    #: "1" once this browser dismissed the quick-start card. Browser storage:
+    #: a per-viewer convenience that must survive a reload and never follow a
+    #: user to someone else's screen.
+    quickstart_seen: str = rx.LocalStorage("", name="naturametrics_quickstart_br_v1")
+
+    @rx.var
+    def show_quickstart(self) -> bool:
+        return self.quickstart_seen != "1"
+
+    def dismiss_quickstart(self):
+        self.quickstart_seen = "1"
+
+    def open_full_howto(self):
+        """The quick-start card's last line: hand over to "Como usar"."""
+        self.quickstart_seen = "1"
+        self.como_usar_open = True
+
+    def reset_quickstart(self):
+        self.quickstart_seen = ""
+        self.como_usar_open = False
+
     def set_como_citar_open(self, value: bool):
         self.como_citar_open = value
 

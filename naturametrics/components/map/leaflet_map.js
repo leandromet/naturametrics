@@ -104,6 +104,12 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
       } else {
         map.setView(config.center, config.zoom);
       }
+      // The view Python asked for at construction is the baseline section 4
+      // compares against. Recorded HERE, not on that effect's own first run:
+      // the effect first runs before this async construction finishes (map
+      // still null), so its "first run" used to be the first REAL request —
+      // a search result's centre — which it then swallowed.
+      lastViewRef.current = JSON.stringify([config.center, config.zoom]);
 
       L.control.scale({ imperial: false, position: "bottomleft" }).addTo(map);
 
@@ -780,6 +786,20 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
               interactive: false,
             });
           }
+          // The search pin (SearchMixin.search_pin): a geocoded address or
+          // postcode, not an analysis point — blue and larger, so it never
+          // reads as the orange/red selection markers.
+          if (props.role === "search_pin") {
+            return L.circleMarker(latlng, {
+              pane: "nmOverlays",
+              radius: 8,
+              color: "#ffffff",
+              weight: 3,
+              fillColor: "#0090ff",
+              fillOpacity: 1,
+              interactive: false,
+            });
+          }
           return L.circleMarker(latlng, {
             pane: "nmOverlays",
             radius: props.role === "selected_point" ? 5 : 6,
@@ -1378,11 +1398,8 @@ function useNaturametricsMap(containerRef, config, layers, overlays, vectors, on
     if (!map || !config || !config.center) return;
 
     const desired = JSON.stringify([config.center, config.zoom]);
-    if (lastViewRef.current === null) {
-      // First run: the map was already framed at construction.
-      lastViewRef.current = desired;
-      return;
-    }
+    // lastViewRef is seeded at construction (section 1); a null here would
+    // mean the map is not built yet, which the `!map` guard already covers.
     if (lastViewRef.current === desired) return;
 
     lastViewRef.current = desired;

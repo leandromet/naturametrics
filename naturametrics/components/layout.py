@@ -20,6 +20,7 @@ import reflex as rx
 
 from ..state import AppState
 from .help import header_actions
+from .suite_links import suite_links
 
 ACCENT = "jade"  # distinct from Yvynation's palette — see doc/07-ui-ux.md §8
 
@@ -89,6 +90,8 @@ def header() -> rx.Component:
             display=["none", "none", "none", "block"],
         ),
         rx.box(width="1rem", display=["none", "none", "none", "block"]),
+        suite_links("naturametrics", region="brazil", language=AppState.language,
+                    accent=ACCENT),
         canada_link(),
         language_switcher(),
         header_actions(),

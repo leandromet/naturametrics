@@ -1,0 +1,250 @@
+"""Links between the three UmaTerra platforms, each explained on hover.
+
+Camposcope (one rural property), Naturametrics (any clicked point) and
+Yvynation (protected territories) answer different questions about the same
+land, and a reader who starts in one often wants another. This is the one
+control in every header that jumps between them.
+
+* **Wide screens** (≥ 1280 px): compact chips — icon and name — with a
+  hover/focus tooltip saying what each is for: the UmaTerra portal (home of all
+  the platforms) first, then the three platforms. The current platform is
+  highlighted and is not a link.
+* **Everywhere else** (a phone has no hover, and no room): one "platforms"
+  button that opens a menu showing the same descriptions in full.
+  ``compact=True`` forces this at every width, for a header that is already
+  full (Yvynation's workspace navbar).
+
+Each link keeps the **region** (a Brazil page links to the others' Brazil page,
+a Canada page to their ``/canada``) and the **language** (``?lang=``, which every
+platform honours on load; one that does not know the language keeps its own).
+
+Shared verbatim by the three apps — each copy of this file is byte-identical, so
+edit one and ``cp`` it to the others. It reads nothing from any app's state or
+translation tables: the descriptions live here, in en / pt / es / fr, so a
+platform that only offers two languages can still describe the others in a
+third.
+
+Base URLs default to the production subdomains; set ``UMATERRA_URL_CAMPOSCOPE`` /
+``UMATERRA_URL_NATURAMETRICS`` / ``UMATERRA_URL_YVYNATION`` (and
+``UMATERRA_URL_PORTAL`` for the portal) to point them at local servers while
+developing.
+"""
+
+from __future__ import annotations
+
+import os
+
+import reflex as rx
+
+PLATFORMS = ("camposcope", "naturametrics", "yvynation")
+
+PORTAL = "portal"
+
+_DEFAULT_URLS = {
+    "portal": "https://umaterra.com.br",
+    "camposcope": "https://camposcope.umaterra.com.br",
+    "naturametrics": "https://naturametrics.umaterra.com.br",
+    "yvynation": "https://yvynation.umaterra.com.br",
+}
+
+NAMES = {"portal": "UmaTerra", "camposcope": "Camposcope",
+         "naturametrics": "Naturametrics", "yvynation": "Yvynation"}
+
+#: The icon each app already carries in its own header.
+ICONS = {"portal": "globe", "camposcope": "scan-search", "naturametrics": "layers",
+         "yvynation": "trees"}
+
+#: What each platform is for. One or two sentences: it is read in a tooltip.
+DESCRIPTIONS = {
+    "portal": {
+        "en": "The home page for all the platforms: what each one is for, who it "
+              "helps, and how to support the project. Free and open source.",
+        "pt": "A página inicial de todas as plataformas: para que serve cada uma, a "
+              "quem ajuda e como apoiar o projeto. Gratuitas e de código aberto.",
+        "es": "La página principal de todas las plataformas: para qué sirve cada una, "
+              "a quién ayuda y cómo apoyar el proyecto. Gratuitas y de código abierto.",
+        "fr": "La page d'accueil de toutes les plateformes : à quoi sert chacune, qui "
+              "elle aide et comment soutenir le projet. Gratuites et à code source "
+              "ouvert.",
+    },
+    "camposcope": {
+        "en": "Analyses one rural property at a time — its registered boundary "
+              "(the CAR in Brazil, ParcelMap BC parcels in Canada) and the land "
+              "around it: cover, forest loss, biomass and fire.",
+        "pt": "Analisa um imóvel rural por vez — o limite cadastrado (CAR no Brasil, "
+              "parcelas do ParcelMap BC no Canadá) e a terra ao redor: cobertura, "
+              "perda florestal, biomassa e fogo.",
+        "es": "Analiza un inmueble rural a la vez — su límite registrado (el CAR en "
+              "Brasil, parcelas de ParcelMap BC en Canadá) y la tierra alrededor: "
+              "cobertura, pérdida forestal, biomasa y fuego.",
+        "fr": "Analyse une propriété rurale à la fois — sa limite enregistrée (le CAR "
+              "au Brésil, les parcelles de ParcelMap BC au Canada) et les terres "
+              "autour : couverture, perte forestière, biomasse et feux.",
+    },
+    "naturametrics": {
+        "en": "Land-use history and landscape metrics around any point you click "
+              "(Brazil: MapBiomas since 1985 and forest-inventory plots; Canada: "
+              "crop inventory, forest age and forest change).",
+        "pt": "Histórico de uso da terra e métricas de paisagem ao redor de qualquer "
+              "ponto clicado (Brasil: MapBiomas desde 1985 e conglomerados do "
+              "inventário florestal; Canadá: inventário agrícola, idade e mudança "
+              "da floresta).",
+        "es": "Historial de uso del suelo y métricas del paisaje alrededor de "
+              "cualquier punto en que haga clic (Brasil: MapBiomas desde 1985 y "
+              "parcelas del inventario forestal; Canadá: inventario agrícola, edad "
+              "y cambio forestal).",
+        "fr": "Historique d'usage du sol et métriques du paysage autour de n'importe "
+              "quel point cliqué (Brésil : MapBiomas depuis 1985 et placettes de "
+              "l'inventaire forestier; Canada : inventaire des cultures, âge et "
+              "changement de la forêt).",
+    },
+    "yvynation": {
+        "en": "Land-cover change inside Brazil's Indigenous lands and conservation "
+              "units, and Canada's protected areas, or inside areas you draw — with "
+              "maps, charts and reports.",
+        "pt": "Mudança da cobertura do solo dentro das terras indígenas e unidades de "
+              "conservação do Brasil e das áreas protegidas do Canadá, ou de áreas "
+              "que você desenha — com mapas, gráficos e relatórios.",
+        "es": "Cambio de la cobertura del suelo dentro de las tierras indígenas y "
+              "unidades de conservación de Brasil y las áreas protegidas de Canadá, "
+              "o de áreas que usted dibuje — con mapas, gráficos e informes.",
+        "fr": "Changement de l'occupation du sol dans les terres autochtones et les "
+              "unités de conservation du Brésil et les aires protégées du Canada, ou "
+              "dans des zones que vous dessinez — avec cartes, graphiques et rapports.",
+    },
+}
+
+HERE = {"en": "You are here", "pt": "Você está aqui", "es": "Está aquí",
+        "fr": "Vous êtes ici"}
+TITLE = {"en": "UmaTerra platforms", "pt": "Plataformas UmaTerra",
+         "es": "Plataformas UmaTerra", "fr": "Plateformes UmaTerra"}
+
+_LANGS = ("en", "pt", "es", "fr")
+
+#: Chips need this much width; below it the menu button is used instead.
+#: Index 4 of a Reflex responsive list is the ``lg`` breakpoint (1280 px).
+_CHIPS_ONLY = ["none", "none", "none", "none", "flex"]
+_MENU_ONLY = ["flex", "flex", "flex", "flex", "none"]
+
+
+def base_url(platform: str) -> str:
+    """The platform's base URL (no trailing slash), overridable by environment."""
+    return os.environ.get(f"UMATERRA_URL_{platform.upper()}",
+                          _DEFAULT_URLS[platform]).rstrip("/")
+
+
+def href(platform: str, region: str, language) -> str:
+    """Link target: the platform's Brazil (``/``) or Canada (``/canada``) page,
+    carrying the language. ``language`` may be a string or a state Var.
+
+    The portal has no regions and keeps its language in the path rather than a
+    parameter: Portuguese at ``/``, English at ``/en/`` (it offers only those
+    two, so Spanish and French readers get English)."""
+    if platform == PORTAL:
+        return rx.match(language, ("pt", f"{base_url(PORTAL)}/"),
+                        f"{base_url(PORTAL)}/en/")
+    path = "/canada" if region == "canada" else "/"
+    return f"{base_url(platform)}{path}?lang={language}"
+
+
+def _by_lang(table: dict, language):
+    """Pick ``table[lang]`` for a language that may be a Var (English default)."""
+    return rx.match(language, *[(code, table[code]) for code in _LANGS[1:]], table["en"])
+
+
+def _tip(platform: str, language, here: bool):
+    desc = {c: f"{NAMES[platform]} — {DESCRIPTIONS[platform][c]}" for c in _LANGS}
+    if not here:
+        return _by_lang(desc, language)
+    return _by_lang({c: f"{desc[c]} ({HERE[c]})" for c in _LANGS}, language)
+
+
+def _chip(platform: str, *, current: str, region: str, language,
+          accent: str) -> rx.Component:
+    here = platform == current          # never true for the portal
+    inner = rx.hstack(
+        rx.icon(ICONS[platform], size=14),
+        rx.text(NAMES[platform], size="1", weight="medium"),
+        spacing="1", align="center",
+        padding="3px 9px", border_radius="var(--radius-2)",
+    )
+    if here:
+        body = rx.box(
+            inner, aria_current="page",
+            background=f"var(--{accent}-4)", color=f"var(--{accent}-11)",
+        )
+    else:
+        body = rx.link(
+            rx.box(inner, color="var(--gray-11)",
+                   _hover={"background": "var(--gray-4)", "color": "var(--gray-12)"}),
+            href=href(platform, region, language), underline="none",
+            aria_label=_tip(platform, language, here),
+        )
+    return rx.tooltip(body, content=_tip(platform, language, here),
+                      side="bottom", delay_duration=250)
+
+
+def _menu_item(platform: str, *, current: str, region: str, language) -> rx.Component:
+    here = platform == current          # never true for the portal
+    text = rx.vstack(
+        rx.hstack(
+            rx.icon(ICONS[platform], size=14),
+            rx.text(NAMES[platform], size="2", weight="bold"),
+            rx.cond(here, rx.badge(_by_lang(HERE, language), size="1", variant="soft"),
+                    rx.fragment()),
+            spacing="2", align="center",
+        ),
+        rx.text(_by_lang({c: DESCRIPTIONS[platform][c] for c in _LANGS}, language),
+                size="1", color="var(--gray-11)", white_space="normal",
+                line_height="1.4"),
+        spacing="1", align_items="start",
+        max_width="min(78vw, 300px)",
+    )
+    return rx.menu.item(
+        text, disabled=here,
+        on_click=rx.redirect(href(platform, region, language)),
+        style={"height": "auto", "padding": "8px 10px", "cursor": "pointer"},
+    )
+
+
+def suite_links(current: str, *, region: str, language, accent: str = "green",
+                compact: bool = False) -> rx.Component:
+    """The platform switcher. ``current`` is this app (``"camposcope"``,
+    ``"naturametrics"`` or ``"yvynation"``); ``region`` is ``"brazil"`` or
+    ``"canada"`` — the page the reader is on, which the links preserve;
+    ``language`` is the page's language (string or Var)."""
+    menu = rx.menu.root(
+        # The button is the trigger's *direct* child: wrapping it in a tooltip
+        # here made the tooltip wrapper swallow the trigger's props, and the menu
+        # never opened. The menu itself is the explanation, so a plain title does.
+        rx.menu.trigger(
+            rx.button(rx.icon("layout-grid", size=15),
+                      rx.text("UmaTerra", display=["none", "none", "block", "block"]),
+                      size="1", variant="soft", color_scheme="gray",
+                      aria_label=_by_lang(TITLE, language),
+                      title=_by_lang(TITLE, language)),
+        ),
+        rx.menu.content(
+            _menu_item(PORTAL, current=current, region=region, language=language),
+            rx.menu.separator(),
+            *[_menu_item(p, current=current, region=region, language=language)
+              for p in PLATFORMS],
+            side="bottom", align="end",
+        ),
+    )
+    if compact:
+        return rx.box(menu, flex_shrink="0")
+    chips = rx.hstack(
+        _chip(PORTAL, current=current, region=region, language=language, accent=accent),
+        # the portal is the home of the three that follow, not a fourth platform
+        rx.box(width="1px", height="16px", background="var(--gray-6)", margin_x="2px"),
+        *[_chip(p, current=current, region=region, language=language, accent=accent)
+          for p in PLATFORMS],
+        role="navigation", aria_label=_by_lang(TITLE, language),
+        spacing="1", align="center", flex_shrink="0",
+        padding="2px", border="1px solid var(--gray-5)", border_radius="var(--radius-3)",
+    )
+    return rx.fragment(
+        rx.box(chips, display=_CHIPS_ONLY, flex_shrink="0"),
+        rx.box(menu, display=_MENU_ONLY, flex_shrink="0"),
+    )

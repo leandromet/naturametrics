@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import reflex as rx
 
+from ...components.suite_links import suite_links
 from ..state import CanadaState as S
 from .help import header_actions
 
@@ -67,6 +68,8 @@ def header() -> rx.Component:
         rx.text(S.tr["nav_subtitle"], size="2", color_scheme="gray",
                 display=["none", "none", "none", "block"]),
         rx.box(width="1rem", display=["none", "none", "none", "block"]),
+        suite_links("naturametrics", region="canada", language=S.language,
+                    accent=ACCENT),
         brazil_link(),
         language_switcher(),
         header_actions(),

@@ -68,12 +68,18 @@ def _step(S, n: int, accent: str, desktop_from: int) -> rx.Component:
 
 def quickstart_card(S, *, accent: str, desktop_from: int = 2, steps: int = 4,
                     mobile_max_height: str = "calc(100% - 45vh - 16px)",
-                    ) -> rx.Component:
+                    hide_when=None) -> rx.Component:
     """The card, positioned for a ``position: relative`` map container.
 
     ``mobile_max_height``'s default suits a map box that a 45vh bottom sheet
     covers from below; a page whose phone map is its own short box (no sheet
     over it) passes ``"calc(100% - 16px)"``.
+
+    ``hide_when`` is an optional boolean Var: while it is true the card is not
+    shown (without marking it dismissed). A page whose results drawer opens over
+    the map passes "an area is selected" — the card's job is done by then, and a
+    card taller than the space above the drawer would hide its own buttons
+    underneath it (French text is longer than English, which is how this showed).
     """
     tr = S.tr
     card = rx.vstack(
@@ -142,4 +148,7 @@ def quickstart_card(S, *, accent: str, desktop_from: int = 2, steps: int = 4,
         # cover the card, not hide under it.
         z_index="990",
     )
-    return rx.cond(S.is_hydrated & S.show_quickstart, card)
+    visible = S.is_hydrated & S.show_quickstart
+    if hide_when is not None:
+        visible = visible & ~hide_when
+    return rx.cond(visible, card)

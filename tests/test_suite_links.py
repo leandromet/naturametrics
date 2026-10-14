@@ -39,3 +39,9 @@ def test_compact_mode_is_the_menu_only():
     compact = str(sl.suite_links("naturametrics", region="canada", language="en", compact=True))
     assert "layout-grid" in compact or "LayoutGrid" in compact
     assert "aria_current" not in compact and "aria-current" not in compact
+
+
+def test_portal_link_lands_on_the_matching_language_page():
+    js = str(sl.href(sl.PORTAL, "brazil", "es"))
+    for path in ('umaterra.com.br/"', "umaterra.com.br/es/", "umaterra.com.br/fr/", "umaterra.com.br/en/"):
+        assert path.rstrip('"') in js, path

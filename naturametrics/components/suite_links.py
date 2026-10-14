@@ -138,11 +138,12 @@ def href(platform: str, region: str, language) -> str:
     carrying the language. ``language`` may be a string or a state Var.
 
     The portal has no regions and keeps its language in the path rather than a
-    parameter: Portuguese at ``/``, English at ``/en/`` (it offers only those
-    two, so Spanish and French readers get English)."""
+    parameter: Portuguese at ``/``, then ``/es/``, ``/fr/`` and ``/en/`` (the
+    default for anything else)."""
     if platform == PORTAL:
-        return rx.match(language, ("pt", f"{base_url(PORTAL)}/"),
-                        f"{base_url(PORTAL)}/en/")
+        root = base_url(PORTAL)
+        return rx.match(language, ("pt", f"{root}/"), ("es", f"{root}/es/"),
+                        ("fr", f"{root}/fr/"), f"{root}/en/")
     path = "/canada" if region == "canada" else "/"
     return f"{base_url(platform)}{path}?lang={language}"
 

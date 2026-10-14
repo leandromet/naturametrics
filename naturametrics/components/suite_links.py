@@ -18,8 +18,13 @@ Each link keeps the **region** (a Brazil page links to the others' Brazil page,
 a Canada page to their ``/canada``) and the **language** (``?lang=``, which every
 platform honours on load; one that does not know the language keeps its own).
 
-Shared verbatim by the three apps — each copy of this file is byte-identical, so
-edit one and ``cp`` it to the others. It reads nothing from any app's state or
+Shared by the three apps and checked by hash: the canonical copy is
+``/server/naturametrics/naturametrics/components/suite_links.py``. Edit it there, then run
+``python scripts/sync_shared_files.py`` in Naturametrics, which copies it to
+Camposcope and Yvynation and rewrites each app's ``tests/shared_files.sha256``.
+An edit made in any other copy fails that app's ``tests/test_shared_files.py``.
+
+It reads nothing from any app's state or
 translation tables: the descriptions live here, in en / pt / es / fr, so a
 platform that only offers two languages can still describe the others in a
 third.

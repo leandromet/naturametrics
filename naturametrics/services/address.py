@@ -29,6 +29,12 @@ process lifetime (an address does not move).
 **A geocoded result frames the map and selects nothing.** That rule lives in
 the state layer, but it is the reason ``Place`` carries a precision and a
 bounding box rather than pretending to be an exact point.
+
+Shared by the three apps and checked by hash: the canonical copy is
+``/server/naturametrics/naturametrics/services/address.py``. Edit it there, then run
+``python scripts/sync_shared_files.py`` in Naturametrics, which copies it to
+Camposcope and Yvynation and rewrites each app's ``tests/shared_files.sha256``.
+An edit made in any other copy fails that app's ``tests/test_shared_files.py``.
 """
 
 from __future__ import annotations

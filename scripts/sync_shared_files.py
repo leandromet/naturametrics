@@ -1,0 +1,111 @@
+"""Copy the suite's shared single files into Camposcope and Yvynation, by hash.
+
+    python scripts/sync_shared_files.py            # copy, then rewrite every manifest
+    python scripts/sync_shared_files.py --check    # verify every copy, change nothing
+
+The report kit is a package and has its own sync (``sync_report_kit.py``). These
+are loose files that sit at a different path in each app — the address search,
+the quick-start card and the links between the platforms — so each app keeps
+its own ``tests/shared_files.sha256`` with its own paths, and its
+``tests/test_shared_files.py`` (the same file in all three apps) recomputes the
+hashes. A fix made in a copy instead of here fails that app's tests rather than
+being silently overwritten by the next sync.
+
+Naturametrics holds the canonical copies, as it does for the report kit. An app
+whose checkout is missing is reported and skipped.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import shutil
+import sys
+from pathlib import Path
+
+#: App roots: the directory holding each app's ``tests/``.
+APPS = {
+    "naturametrics": Path(__file__).resolve().parent.parent,
+    "camposcope": Path("/server/camposcope"),
+    "yvynation": Path("/home/leandromb/google_eengine/yvynation/reflex_app"),
+}
+CANONICAL = "naturametrics"
+
+#: Each shared file's path in each app, relative to that app's root.
+SHARED = {
+    "address": {
+        "naturametrics": "naturametrics/services/address.py",
+        "camposcope": "camposcope/services/address.py",
+        "yvynation": "yvynation/utils/address.py",
+    },
+    "quickstart": {
+        "naturametrics": "naturametrics/components/quickstart.py",
+        "camposcope": "camposcope/components/quickstart.py",
+        "yvynation": "yvynation/components/quickstart.py",
+    },
+    "suite_links": {
+        "naturametrics": "naturametrics/components/suite_links.py",
+        "camposcope": "camposcope/components/suite_links.py",
+        "yvynation": "yvynation/components/suite_links.py",
+    },
+}
+MANIFEST = Path("tests") / "shared_files.sha256"
+
+
+def digest(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def manifest_text(app: str) -> str:
+    """``<sha256>  <path>`` per shared file, for ``app``'s own paths. Every app's
+    manifest carries the canonical digests, so a copy that differs fails."""
+    root = APPS[CANONICAL]
+    lines = [f"{digest(root / paths[CANONICAL])}  {paths[app]}" for paths in SHARED.values()]
+    return "\n".join(lines) + "\n"
+
+
+def verify(app: str) -> list[str]:
+    root = APPS[app]
+    problems = []
+    for name, paths in SHARED.items():
+        mine, canon = root / paths[app], APPS[CANONICAL] / paths[CANONICAL]
+        if not mine.exists():
+            problems.append(f"missing: {paths[app]}")
+        elif digest(mine) != digest(canon):
+            problems.append(f"differs from canonical: {paths[app]}")
+    if not (root / MANIFEST).exists():
+        problems.append(f"{MANIFEST} missing")
+    elif (root / MANIFEST).read_text() != manifest_text(app):
+        problems.append(f"{MANIFEST} is stale")
+    return problems
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--check", action="store_true")
+    args = ap.parse_args()
+
+    present = {a: r for a, r in APPS.items() if r.exists()}
+    for app in APPS.keys() - present.keys():
+        print(f"{app}: skipped, {APPS[app]} not found")
+
+    if args.check:
+        bad = 0
+        for app in present:
+            problems = verify(app)
+            print(f"{app}: {'OK' if not problems else '; '.join(problems)}")
+            bad += bool(problems)
+        return 1 if bad else 0
+
+    for app in present:
+        if app != CANONICAL:
+            for paths in SHARED.values():
+                shutil.copyfile(APPS[CANONICAL] / paths[CANONICAL], present[app] / paths[app])
+        (present[app] / MANIFEST).write_text(manifest_text(app))
+        problems = verify(app)
+        print(f"{app}: {'synced' if not problems else 'FAILED ' + '; '.join(problems)}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

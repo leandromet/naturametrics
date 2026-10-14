@@ -9,8 +9,14 @@ button: the "seen" flag lives in the viewer's own browser storage
 (``quickstart_seen``), so it never follows a user to another screen and never
 reaches the server's idea of state.
 
-Written once and shared verbatim across the suite's pages (Camposcope and
-Naturametrics, Brazil and Canada; Yvynation) — each page passes its own state
+Shared by the three apps and checked by hash: the canonical copy is
+``/server/naturametrics/naturametrics/components/quickstart.py``. Edit it there, then run
+``python scripts/sync_shared_files.py`` in Naturametrics, which copies it to
+Camposcope and Yvynation and rewrites each app's ``tests/shared_files.sha256``.
+An edit made in any other copy fails that app's ``tests/test_shared_files.py``.
+
+Used by every page of the suite (Camposcope and Naturametrics, Brazil and
+Canada; Yvynation, Brazil and Canada) — each page passes its own state
 class, accent colour and the breakpoint its layout switches at. The state
 class must provide ``tr`` (with the ``qs_*`` keys), ``show_quickstart``,
 ``dismiss_quickstart`` and ``open_full_howto``.

@@ -17,7 +17,7 @@ control in every header that jumps between them.
   full (Yvynation's workspace navbar).
 
 Each link keeps the **region** (a Brazil page links to the others' Brazil page,
-a Canada page to their ``/canada``; muda-clima has one page, ``/app/``) and the **language** (``?lang=``, which every
+a Canada page to their ``/canada``; muda-clima has one page for both countries, ``/app/``, and ``?region=ca`` frames Canada) and the **language** (``?lang=``, which every
 platform honours on load; one that does not know the language keeps its own).
 
 muda-clima is not a Reflex app: its header renders the same entries
@@ -125,20 +125,20 @@ DESCRIPTIONS = {
               "dans des zones que vous dessinez — avec cartes, graphiques et rapports.",
     },
     "clima": {
-        "en": "Climate exposure of the land around any point you click: today's land "
-              "use (MapBiomas) read against CMIP6 projections of heat, drought and "
-              "heavy rain — plus deforestation alerts and ENSO.",
-        "pt": "Exposição climática da terra ao redor de qualquer ponto clicado: o uso "
-              "atual (MapBiomas) lido junto com as projeções CMIP6 de calor, seca e "
-              "chuva forte — e alertas de desmatamento e ENSO.",
+        "en": "Climate exposure of the land around any point you click, in Brazil and "
+              "Canada: today's land use read against CMIP6 projections of heat, "
+              "drought and heavy rain — plus measured fire, terrain, rain and wind.",
+        "pt": "Exposição climática da terra ao redor de qualquer ponto clicado, no "
+              "Brasil e no Canadá: o uso atual lido junto com as projeções CMIP6 de "
+              "calor, seca e chuva forte — e fogo, terreno, chuva e vento medidos.",
         "es": "Exposición climática de la tierra alrededor de cualquier punto en que "
-              "haga clic: el uso actual (MapBiomas) leído junto a las proyecciones "
-              "CMIP6 de calor, sequía y lluvia intensa — además de alertas de "
-              "deforestación y ENSO.",
-        "fr": "Exposition climatique des terres autour de n'importe quel point cliqué : "
-              "l'usage actuel (MapBiomas) lu avec les projections CMIP6 de chaleur, de "
-              "sécheresse et de pluies intenses — ainsi que les alertes de "
-              "déforestation et l'ENSO.",
+              "haga clic, en Brasil y Canadá: el uso actual leído junto a las "
+              "proyecciones CMIP6 de calor, sequía y lluvia intensa — además de "
+              "fuego, terreno, lluvia y viento medidos.",
+        "fr": "Exposition climatique des terres autour de n'importe quel point cliqué, "
+              "au Brésil et au Canada : l'usage actuel lu avec les projections CMIP6 "
+              "de chaleur, de sécheresse et de pluies intenses — ainsi que feux, "
+              "terrain, pluie et vent mesurés.",
     },
 }
 
@@ -178,10 +178,10 @@ def href(platform: str, region: str, language) -> str:
         root = base_url(PORTAL)
         return rx.match(language, ("pt", f"{root}/"), ("es", f"{root}/es/"),
                         ("fr", f"{root}/fr/"), f"{root}/en/")
-    if platform == "clima":             # one page, no Canada version
-        path = "/app/"
-    else:
-        path = "/canada" if region == "canada" else "/"
+    if platform == "clima":             # one page for both countries; ?region=ca frames Canada
+        return (f"{base_url(platform)}/app/?lang={language}"
+                + ("&region=ca" if region == "canada" else ""))
+    path = "/canada" if region == "canada" else "/"
     return f"{base_url(platform)}{path}?lang={language}"
 
 

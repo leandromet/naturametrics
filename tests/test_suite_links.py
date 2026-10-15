@@ -17,8 +17,9 @@ def test_links_keep_the_region_and_the_language():
     assert sl.href("camposcope", "brazil", "pt") == "https://camposcope.umaterra.com.br/?lang=pt"
     assert sl.href("naturametrics", "canada", "en") == "https://naturametrics.umaterra.com.br/canada?lang=en"
     assert sl.href("yvynation", "canada", "fr") == "https://yvynation.umaterra.com.br/canada?lang=fr"
-    # muda-clima has a single page (its console) and no Canada version.
-    assert sl.href("clima", "canada", "en") == "https://clima.umaterra.com.br/app/?lang=en"
+    # muda-clima has one page for both countries; the Canada link frames the map on Canada.
+    assert sl.href("clima", "brazil", "en") == "https://clima.umaterra.com.br/app/?lang=en"
+    assert sl.href("clima", "canada", "en") == "https://clima.umaterra.com.br/app/?lang=en&region=ca"
 
 
 def test_base_urls_can_be_pointed_at_local_servers(monkeypatch):

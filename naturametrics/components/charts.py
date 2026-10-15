@@ -1,7 +1,7 @@
 """Charts.
 
 The signature view is the land-cover history: one stacked column per year,
-1985–2024, coloured with the **official MapBiomas palette** (doc/07-ui-ux.md §4).
+1985–2025, coloured with the **official MapBiomas palette** (doc/07-ui-ux.md §4).
 """
 
 from __future__ import annotations

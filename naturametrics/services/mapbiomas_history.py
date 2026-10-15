@@ -1,8 +1,8 @@
 """MapBiomas land-cover history for a set of buffers.
 
 This is the performance-critical path (doc/06-ee-layers.md §4). MapBiomas
-Collection 10.1 ships all 40 years as 40 **bands of one image**, so the whole
-"40 years × 4 buffers" matrix is a *single* ``reduceRegions`` — not because we
+Collection 11 ships all 41 years as 41 **bands of one image**, so the whole
+"41 years × 4 buffers" matrix is a *single* ``reduceRegions`` — not because we
 are rationing Earth Engine calls (the Partner tier makes that irrelevant) but
 because one round-trip beats 160 sequential ones.
 

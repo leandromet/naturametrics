@@ -1,15 +1,15 @@
 """Links between the UmaTerra platforms, each explained on hover.
 
 Camposcope (one rural property), Naturametrics (any clicked point), Yvynation
-(protected territories) and Clima (the climate exposure of the land around a
+(protected territories) and muda-clima (the climate exposure of the land around a
 point) answer different questions about the same land, and a reader who starts
 in one often wants another. This is the one
 control in every header that jumps between them.
 
-* **Wide screens** (≥ 1536 px): compact chips — icon and name — with a
+* **Wide screens** (≥ 1880 px): compact chips — icon and name — with a
   hover/focus tooltip saying what each is for: the UmaTerra portal (home of all
   the platforms) first, then the four platforms. (Was 1280 px with three; a
-  fifth chip no longer fits the headers between 1280 and 1536.) The current platform is
+  fifth chip no longer fits the headers below ~1855 px.) The current platform is
   highlighted and is not a link.
 * **Everywhere else** (a phone has no hover, and no room): one "platforms"
   button that opens a menu showing the same descriptions in full.
@@ -17,10 +17,10 @@ control in every header that jumps between them.
   full (Yvynation's workspace navbar).
 
 Each link keeps the **region** (a Brazil page links to the others' Brazil page,
-a Canada page to their ``/canada``; Clima has one page, ``/app/``) and the **language** (``?lang=``, which every
+a Canada page to their ``/canada``; muda-clima has one page, ``/app/``) and the **language** (``?lang=``, which every
 platform honours on load; one that does not know the language keeps its own).
 
-Clima (muda-clima) is not a Reflex app: its header renders the same entries
+muda-clima is not a Reflex app: its header renders the same entries
 from its own ``app/web/suite.py``. Keep the descriptions in step with it.
 
 Shared by the three apps and checked by hash: the canonical copy is
@@ -60,7 +60,7 @@ _DEFAULT_URLS = {
 
 NAMES = {"portal": "UmaTerra", "camposcope": "Camposcope",
          "naturametrics": "Naturametrics", "yvynation": "Yvynation",
-         "clima": "Clima"}
+         "clima": "muda-clima"}
 
 #: The icon each app already carries in its own header.
 ICONS = {"portal": "globe", "camposcope": "scan-search", "naturametrics": "layers",
@@ -150,9 +150,15 @@ TITLE = {"en": "UmaTerra platforms", "pt": "Plataformas UmaTerra",
 _LANGS = ("en", "pt", "es", "fr")
 
 #: Chips need this much width; below it the menu button is used instead.
-#: Index 5 of a Reflex responsive list is the ``xl`` breakpoint (1536 px).
-_CHIPS_ONLY = ["none", "none", "none", "none", "none", "flex"]
-_MENU_ONLY = ["flex", "flex", "flex", "flex", "flex", "none"]
+#: Measured in Naturametrics' header (2026-10-14, five chips, the widest header
+#: of the three): the rightmost button ("Aviso sobre uso de IA") ends at 1904 px on
+#: a 1920 px screen and stops tracking the screen width below ~1855 px, where it
+#: overflows (1839 px at 1800). So chips from 1880 px; 1080p screens get them.
+#: A plain CSS media query: Reflex's breakpoint list has nothing between 1536 and
+#: infinity.
+_CHIPS_WIDTH = "@media (min-width: 1880px)"
+_CHIPS_ONLY = {"display": "none", _CHIPS_WIDTH: {"display": "flex"}}
+_MENU_ONLY = {"display": "flex", _CHIPS_WIDTH: {"display": "none"}}
 
 
 def base_url(platform: str) -> str:
@@ -277,6 +283,6 @@ def suite_links(current: str, *, region: str, language, accent: str = "green",
         padding="2px", border="1px solid var(--gray-5)", border_radius="var(--radius-3)",
     )
     return rx.fragment(
-        rx.box(chips, display=_CHIPS_ONLY, flex_shrink="0"),
-        rx.box(menu, display=_MENU_ONLY, flex_shrink="0"),
+        rx.box(chips, style=_CHIPS_ONLY, flex_shrink="0"),
+        rx.box(menu, style=_MENU_ONLY, flex_shrink="0"),
     )

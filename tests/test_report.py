@@ -226,7 +226,7 @@ def test_citation_and_sources_by_language():
     citation = next(b for b in en_report.blocks() if isinstance(b, rk.Citation))
     assert CITATION_TEXT.split(".")[0] in citation.text
     assert "Disponível" not in citation.text and "Available at" in citation.text
-    assert any("Collection 10.1" in s for s in citation.sources)
+    assert any("Collection 11" in s for s in citation.sources)
     assert not any("Coleção" in s for s in citation.sources)
     assert any("mapbiomas.org" in s for s in citation.sources)
     assert "Como citar" not in pt   # the kit prints that heading, not the model

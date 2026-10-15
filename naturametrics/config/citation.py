@@ -56,7 +56,7 @@ BIBTEX = f"""@software{{naturametrics_{APP_YEAR},
 
 #: Constraint C4 — every layer the app can draw is credited here.
 DATA_SOURCES = [
-    ("MapBiomas — Coleção 10.1",
+    ("MapBiomas — Coleção 11",
      "Projeto MapBiomas — Mapeamento Anual de Cobertura e Uso da Terra no Brasil. "
      "Licença CC-BY-SA.",
      "https://mapbiomas.org"),
@@ -146,7 +146,7 @@ DATA_SOURCES = [
 #: Canada's from canada/services/exports.py::DATA_SOURCES) — only the two "How
 #: to cite" dialogs draw from this shared, bilingual, both-countries list.
 DATA_SOURCES_EN = [
-    ("MapBiomas — Collection 10.1",
+    ("MapBiomas — Collection 11",
      "MapBiomas Project — Annual Land Use and Land Cover Mapping in Brazil. "
      "CC-BY-SA license.",
      "https://mapbiomas.org"),

@@ -469,8 +469,8 @@ def fetch_report_maps(d: ReportData, lang: str = "pt",
     backdrop = raster.get("backdrop")
     backdrop = backdrop if isinstance(backdrop, bytes) else None
     vectors, base_legend = _vectors(frame, L, d.is_selection)
-    mb_attr = "MapBiomas Coleção 10.1 (CC BY-SA 4.0)" if L == "pt" else \
-        "MapBiomas Collection 10.1 (CC BY-SA 4.0)"
+    mb_attr = "MapBiomas Coleção 11 (CC BY-SA 4.0)" if L == "pt" else \
+        "MapBiomas Collection 11 (CC BY-SA 4.0)"
     out: dict[str, Any] = {}
 
     def attribution(*parts: str) -> str:

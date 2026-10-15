@@ -247,7 +247,7 @@ TRANSLATIONS_EN: dict[str, str] = {
 
     "buffer_preview_toggle_label": "Show buffer land use",
     "buffer_preview_hidden_note": (
-        "Hidden while «MapBiomas 10.1» is on — the coverage already shows "
+        "Hidden while «MapBiomas 11» is on — the coverage already shows "
         "across the whole map."
     ),
 
@@ -384,13 +384,13 @@ TRANSLATIONS_EN: dict[str, str] = {
     "landuse_title": "Land-use history",
     "download_button": "Download data",
     "download_point_aria": "Download data for this point",
-    "analysis_running": "Reducing 40 years over 4 buffers…",
-    "full_area_running": "Reducing 40 years over the bounding box…",
-    "top_classes_title": "Top classes (2024)",
+    "analysis_running": "Reducing 41 years over 4 buffers…",
+    "full_area_running": "Reducing 41 years over the bounding box…",
+    "top_classes_title": "Top classes (2025)",
     "area_natural_label": "Natural area (recorded)",
     "median_label": "Median (dated)",
     "no_change_label": "No change observed",
-    "change_title": "Change 2008→2024",
+    "change_title": "Change 2008→2025",
     "vegetation_age_title": "Vegetation age",
     "vegetation_age_tab_hint": (
         "How long each patch of natural vegetation has stood undisturbed, "
@@ -473,7 +473,7 @@ TRANSLATIONS_EN: dict[str, str] = {
     "age_running": "Reading the deforestation and secondary-vegetation series…",
     "empty_state_title": "Click the map or draw an area",
     "empty_state_body": (
-        "The land-use history and vegetation age, from 1985/1987 to 2024, "
+        "The land-use history and vegetation age, from 1985/1987 to 2025, "
         "will be computed for radii of 1, 2, 5 and 10 km around a point — or "
         "for the whole area if you draw one, paste a WKT, or upload a KML."
     ),
@@ -489,7 +489,7 @@ TRANSLATIONS_EN: dict[str, str] = {
     "no_point_badge": "no point",
     "study_point_desc": (
         "A spreadsheet with: the point's own pixel year by year, one tab "
-        "per radius ({radii} km) with the full 1985–2024 series, a "
+        "per radius ({radii} km) with the full 1985–2025 series, a "
         "variation summary by class, the MapBiomas class dictionary, and "
         "a metadata tab with the provenance of each query."
     ),
@@ -538,7 +538,7 @@ TRANSLATIONS_EN: dict[str, str] = {
     ),
     "check_pixel_label": "Pixel class, year by year",
     "check_pixel_detail": (
-        "Each cluster's 30 m pixel, one column per year from 1985 to 2024. "
+        "Each cluster's 30 m pixel, one column per year from 1985 to 2025. "
         "No size limit — the whole selection comes out in seconds."
     ),
     "check_buffers_label": "Buffer history ({radii} km)",
@@ -586,7 +586,7 @@ TRANSLATIONS_EN: dict[str, str] = {
     "export_stage_waiting_age": "Waiting for vegetation age…",
     "export_stage_computing_landuse": "Computing land use",
     "export_stage_computing_age": "Computing vegetation age",
-    "export_stage_computing_change": "Computing 2008→2024 change",
+    "export_stage_computing_change": "Computing 2008→2025 change",
     "export_stage_computing_metrics": "Computing landscape metrics",
     "export_stage_computing_connectivity": "Computing connectivity",
     "export_stage_computing_biomass": "Computing biomass",
@@ -716,7 +716,7 @@ TRANSLATIONS_EN: dict[str, str] = {
     "help_step2_title": "Read the land-use history",
     "help_step2_body": (
         "The chart below the map shows one column per year, from 1985 to "
-        "2024, with MapBiomas classes in their official colours. Switch "
+        "2025, with MapBiomas classes in their official colours. Switch "
         "the radius across 1/2/5/10 km and use the «%» button to toggle "
         "between hectares and area share."
     ),
@@ -731,8 +731,8 @@ TRANSLATIONS_EN: dict[str, str] = {
     ),
     "help_step4_title": "See the coverage on the map",
     "help_step4_body": (
-        "Turn on «MapBiomas 10.1» in the sidebar. The «Year» control "
-        "spans 1985–2024 — every year is pre-loaded, so switching is "
+        "Turn on «MapBiomas 11» in the sidebar. The «Year» control "
+        "spans 1985–2025 — every year is pre-loaded, so switching is "
         "instant and the map does not shift. «Opacity» controls how much "
         "of the base map shows through underneath."
     ),
@@ -839,7 +839,7 @@ TRANSLATIONS_EN: dict[str, str] = {
     "cite_example_title": "Example of use in text",
     "cite_example_body": (
         "\"The study area was analysed with Naturametrics (Biondo et al., "
-        "2026), using MapBiomas Collection 10.1 and Hansen Global Forest "
+        "2026), using MapBiomas Collection 11 and Hansen Global Forest "
         "Change data (Hansen et al., 2013).\""
     ),
     "cite_spot_callout": (

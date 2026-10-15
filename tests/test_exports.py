@@ -17,6 +17,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from naturametrics.config import mapbiomas as mb  # noqa: E402
 from naturametrics.services import ifn, ods  # noqa: E402
 
 
@@ -162,7 +163,7 @@ def test_study_point_workbook_has_a_tab_per_buffer_and_its_provenance(tmp_path):
 
     for radius in BUFFER_RADII_KM:
         assert f"buffer_{int(radius):02d}km" in back
-    assert len(back["ponto_pixel"]) == 40
+    assert len(back["ponto_pixel"]) == len(mb.MAPBIOMAS_YEARS)   # 41 in Collection 11
 
     # C6: the numbers never travel without the record of how they were made.
     # Empty spacer cells come back as NaN floats, so stringify per value rather

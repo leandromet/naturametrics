@@ -22,9 +22,9 @@ def _entries():
     return out
 
 
-def test_the_manifest_lists_the_three_shared_files():
+def test_the_manifest_lists_the_four_shared_files():
     names = sorted(Path(rel).name for rel in _entries())
-    assert names == ["address.py", "quickstart.py", "suite_links.py"], names
+    assert names == ["address.py", "mapbiomas_legend.py", "quickstart.py", "suite_links.py"], names
 
 
 def test_every_shared_file_matches_the_manifest():

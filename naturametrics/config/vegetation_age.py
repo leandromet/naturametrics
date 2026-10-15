@@ -4,7 +4,7 @@
 user pointed us at (``doc/mapbiomas_veg_secundaria.js``) is MapBiomas' own *generator*
 for this classification: it reads ``projects/mapbiomas-workspace/COLECAO9/integracao``
 (an internal MapBiomas Earth Engine asset — confirmed unreadable by this service
-account, and a Collection 9 vintage besides, one behind the 10.1 used everywhere else
+account, and a Collection 9 vintage besides, two behind the 11 used everywhere else
 in this app) and derives, year by year, whether each pixel is stable primary
 vegetation, stable secondary vegetation, or mid-transition.
 
@@ -23,16 +23,14 @@ from __future__ import annotations
 
 from typing import Dict, List, Tuple
 
-DSV_ASSET = (
-    "projects/mapbiomas-public/assets/brazil/lulc/collection10_1/"
-    "mapbiomas_brazil_collection10_1_deforestation_secondary_vegetation_v3"
-)
+from . import mapbiomas_legend as _legend
+
+DSV_ASSET = _legend.DSV_COLLECTIONS[_legend.DEFAULT_COLLECTION]  # Collection 11, v5
 
 #: The DSV product's own window rules need a few years of lookback/lookahead, so it
 #: starts two years later than the 1985 coverage series and, as of this writing, has
 #: not yet caught up to the current coverage series' last year either.
-DSV_YEAR_START = 1987
-DSV_YEAR_END = 2024
+DSV_YEAR_START, DSV_YEAR_END = _legend.DSV_YEARS[_legend.DEFAULT_COLLECTION]
 DSV_YEARS: List[int] = list(range(DSV_YEAR_START, DSV_YEAR_END + 1))
 
 

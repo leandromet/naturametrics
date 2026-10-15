@@ -189,18 +189,19 @@ IBGE_VEG_TO_GROUP: Dict[int, str] = {
 #: to GROUP_OTHER via ``.get(code, GROUP_OTHER)`` at the call site rather than
 #: raising, since silently mis-bucketing a rare class is worse than an honest
 #: "other". Built from MAPBIOMAS_LABELS_PT's own class families
-#: (config/mapbiomas.py) — Floresta family (1,2,3,5,6,7,49) vs. natural
-#: non-forest (4,8,10,11,12,13,23,28,29,32,50) vs. Silvicultura alone (9,
+#: (config/mapbiomas.py) — Floresta family (1,2,3,5,6,49) vs. natural
+#: non-forest (4,7,8,10,11,12,13,23,28,29,32,50,77,84 — 7 is Collection 11's
+#: Savana Alagada, 77 the old 13, 84 Marismas) vs. Silvicultura alone (9,
 #: MapBiomas' only "planted forest" class — Dendê/35 is scored as a crop, not
 #: forest, since it is planted for fruit not timber/canopy) vs. Agropecuária/
 #: crop family (14 onward) vs. water (26,31,33,34,51,52).
 MAPBIOMAS_TO_GROUP: Dict[int, str] = {
-    **{i: GROUP_NATURAL_FOREST for i in (1, 2, 3, 5, 6, 7, 49)},
-    **{i: GROUP_NATURAL_NON_FOREST for i in (4, 8, 10, 11, 12, 13, 23, 28, 29, 32, 50)},
+    **{i: GROUP_NATURAL_FOREST for i in (1, 2, 3, 5, 6, 49)},
+    **{i: GROUP_NATURAL_NON_FOREST for i in (4, 7, 8, 10, 11, 12, 13, 23, 28, 29, 32, 50, 77, 84)},
     9: GROUP_ANTHROPIC_FOREST,
     **{i: GROUP_ANTHROPIC_NON_FOREST for i in (
         14, 15, 16, 17, 18, 19, 20, 21, 24, 30, 35, 36, 37, 38, 39, 40, 41,
-        42, 43, 44, 45, 46, 47, 48, 62,
+        42, 43, 44, 45, 46, 47, 48, 62, 75, 91,   # 75 solar, 91 wind farms
     )},
     **{i: GROUP_WATER for i in (26, 31, 33, 34, 51, 52)},
     **{i: GROUP_OTHER for i in (0, 22, 25, 27, 146, 435, 466)},

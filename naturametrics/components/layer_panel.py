@@ -126,7 +126,7 @@ def mapbiomas_control() -> rx.Component:
                 checked=AppState.show_mapbiomas,
                 on_change=AppState.toggle_mapbiomas,
             ),
-            rx.text("MapBiomas 10.1", size="2"),
+            rx.text("MapBiomas 11", size="2"),
             rx.spacer(),
             rx.cond(
                 AppState.layer_busy,

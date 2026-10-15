@@ -6,6 +6,8 @@ Verified against the Earth Engine catalogue on 2026-08-18.
 
 from __future__ import annotations
 
+from . import mapbiomas_legend as _legend
+
 import os
 from typing import Any, Dict
 
@@ -137,12 +139,9 @@ DEFAULT_BASEMAP = os.environ.get("NM_BASEMAP", "google_hybrid")
 #: Deforestation & Secondary Vegetation — the authoritative basis for regrowth
 #: dating (doc/10 §3, estimator E1). Bands start at 1987, NOT 1985.
 MAPBIOMAS_DSV = {
-    "asset": (
-        "projects/mapbiomas-public/assets/brazil/lulc/collection10_1/"
-        "mapbiomas_brazil_collection10_1_deforestation_secondary_vegetation_v3"
-    ),
-    "year_start": 1987,
-    "year_end": 2024,
+    "asset": _legend.DSV_COLLECTIONS[_legend.DEFAULT_COLLECTION],
+    "year_start": _legend.DSV_YEARS[_legend.DEFAULT_COLLECTION][0],
+    "year_end": _legend.DSV_YEARS[_legend.DEFAULT_COLLECTION][1],
     "band_template": "classification_{year}",
     "vis": {
         "min": 0,

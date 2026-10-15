@@ -59,14 +59,15 @@ def _age_row(radius_km, age, area_ha):
 
 
 def test_aggregate_forest_age_sums_areas_per_radius_age():
-    a = pd.DataFrame.from_records([_age_row(1.0, 5, 10.0), _age_row(1.0, 38, 100.0)])
-    b = pd.DataFrame.from_records([_age_row(1.0, 5, 4.0), _age_row(1.0, 38, 50.0)])
+    top = fa.CENSORED_AGE     # the oldest, censored age (39 with DSV 1987–2025)
+    a = pd.DataFrame.from_records([_age_row(1.0, 5, 10.0), _age_row(1.0, top, 100.0)])
+    b = pd.DataFrame.from_records([_age_row(1.0, 5, 4.0), _age_row(1.0, top, 50.0)])
     out = aggregate_forest_age([a, b])
     row5 = out[(out["radius_km"] == 1.0) & (out["age"] == 5)].iloc[0]
-    row38 = out[(out["radius_km"] == 1.0) & (out["age"] == 38)].iloc[0]
+    row_top = out[(out["radius_km"] == 1.0) & (out["age"] == top)].iloc[0]
     assert row5["area_ha"] == pytest.approx(14.0)
-    assert row38["area_ha"] == pytest.approx(150.0)
-    assert bool(row38["censored"]) is True
+    assert row_top["area_ha"] == pytest.approx(150.0)
+    assert bool(row_top["censored"]) is True
 
 
 def test_aggregate_forest_age_keeps_radii_separate():

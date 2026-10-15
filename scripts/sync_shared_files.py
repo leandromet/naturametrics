@@ -5,7 +5,7 @@
 
 The report kit is a package and has its own sync (``sync_report_kit.py``). These
 are loose files that sit at a different path in each app — the address search,
-the quick-start card and the links between the platforms — so each app keeps
+the quick-start card, the links between the platforms and the MapBiomas legend — so each app keeps
 its own ``tests/shared_files.sha256`` with its own paths, and its
 ``tests/test_shared_files.py`` (the same file in all three apps) recomputes the
 hashes. A fix made in a copy instead of here fails that app's tests rather than
@@ -14,8 +14,8 @@ being silently overwritten by the next sync.
 Naturametrics holds the canonical copies, as it does for the report kit. An app
 whose checkout is missing is reported and skipped.
 
-An app takes only the files listed for it: muda-clima (Clima) is a FastAPI app,
-not Reflex, so it shares the address search and nothing else.
+An app takes only the files listed for it: muda-clima is a FastAPI app,
+not Reflex, so it shares the address search and the MapBiomas legend only.
 """
 
 from __future__ import annotations
@@ -47,6 +47,12 @@ SHARED = {
         "naturametrics": "naturametrics/components/quickstart.py",
         "camposcope": "camposcope/components/quickstart.py",
         "yvynation": "yvynation/components/quickstart.py",
+    },
+    "mapbiomas_legend": {
+        "naturametrics": "naturametrics/config/mapbiomas_legend.py",
+        "camposcope": "camposcope/config/mapbiomas_legend.py",
+        "yvynation": "yvynation/config/mapbiomas_legend.py",
+        "muda_clima": "app/impact/mapbiomas_legend.py",
     },
     "suite_links": {
         "naturametrics": "naturametrics/components/suite_links.py",

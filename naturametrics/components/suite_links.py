@@ -1,13 +1,15 @@
-"""Links between the three UmaTerra platforms, each explained on hover.
+"""Links between the UmaTerra platforms, each explained on hover.
 
-Camposcope (one rural property), Naturametrics (any clicked point) and
-Yvynation (protected territories) answer different questions about the same
-land, and a reader who starts in one often wants another. This is the one
+Camposcope (one rural property), Naturametrics (any clicked point), Yvynation
+(protected territories) and Clima (the climate exposure of the land around a
+point) answer different questions about the same land, and a reader who starts
+in one often wants another. This is the one
 control in every header that jumps between them.
 
-* **Wide screens** (≥ 1280 px): compact chips — icon and name — with a
+* **Wide screens** (≥ 1536 px): compact chips — icon and name — with a
   hover/focus tooltip saying what each is for: the UmaTerra portal (home of all
-  the platforms) first, then the three platforms. The current platform is
+  the platforms) first, then the four platforms. (Was 1280 px with three; a
+  fifth chip no longer fits the headers between 1280 and 1536.) The current platform is
   highlighted and is not a link.
 * **Everywhere else** (a phone has no hover, and no room): one "platforms"
   button that opens a menu showing the same descriptions in full.
@@ -15,8 +17,11 @@ control in every header that jumps between them.
   full (Yvynation's workspace navbar).
 
 Each link keeps the **region** (a Brazil page links to the others' Brazil page,
-a Canada page to their ``/canada``) and the **language** (``?lang=``, which every
+a Canada page to their ``/canada``; Clima has one page, ``/app/``) and the **language** (``?lang=``, which every
 platform honours on load; one that does not know the language keeps its own).
+
+Clima (muda-clima) is not a Reflex app: its header renders the same entries
+from its own ``app/web/suite.py``. Keep the descriptions in step with it.
 
 Shared by the three apps and checked by hash: the canonical copy is
 ``/server/naturametrics/naturametrics/components/suite_links.py``. Edit it there, then run
@@ -41,7 +46,7 @@ import os
 
 import reflex as rx
 
-PLATFORMS = ("camposcope", "naturametrics", "yvynation")
+PLATFORMS = ("camposcope", "naturametrics", "yvynation", "clima")
 
 PORTAL = "portal"
 
@@ -50,14 +55,16 @@ _DEFAULT_URLS = {
     "camposcope": "https://camposcope.umaterra.com.br",
     "naturametrics": "https://naturametrics.umaterra.com.br",
     "yvynation": "https://yvynation.umaterra.com.br",
+    "clima": "https://clima.umaterra.com.br",
 }
 
 NAMES = {"portal": "UmaTerra", "camposcope": "Camposcope",
-         "naturametrics": "Naturametrics", "yvynation": "Yvynation"}
+         "naturametrics": "Naturametrics", "yvynation": "Yvynation",
+         "clima": "Clima"}
 
 #: The icon each app already carries in its own header.
 ICONS = {"portal": "globe", "camposcope": "scan-search", "naturametrics": "layers",
-         "yvynation": "trees"}
+         "yvynation": "trees", "clima": "cloud-sun-rain"}
 
 #: What each platform is for. One or two sentences: it is read in a tooltip.
 DESCRIPTIONS = {
@@ -117,6 +124,22 @@ DESCRIPTIONS = {
               "unités de conservation du Brésil et les aires protégées du Canada, ou "
               "dans des zones que vous dessinez — avec cartes, graphiques et rapports.",
     },
+    "clima": {
+        "en": "Climate exposure of the land around any point you click: today's land "
+              "use (MapBiomas) read against CMIP6 projections of heat, drought and "
+              "heavy rain — plus deforestation alerts and ENSO.",
+        "pt": "Exposição climática da terra ao redor de qualquer ponto clicado: o uso "
+              "atual (MapBiomas) lido junto com as projeções CMIP6 de calor, seca e "
+              "chuva forte — e alertas de desmatamento e ENSO.",
+        "es": "Exposición climática de la tierra alrededor de cualquier punto en que "
+              "haga clic: el uso actual (MapBiomas) leído junto a las proyecciones "
+              "CMIP6 de calor, sequía y lluvia intensa — además de alertas de "
+              "deforestación y ENSO.",
+        "fr": "Exposition climatique des terres autour de n'importe quel point cliqué : "
+              "l'usage actuel (MapBiomas) lu avec les projections CMIP6 de chaleur, de "
+              "sécheresse et de pluies intenses — ainsi que les alertes de "
+              "déforestation et l'ENSO.",
+    },
 }
 
 HERE = {"en": "You are here", "pt": "Você está aqui", "es": "Está aquí",
@@ -127,9 +150,9 @@ TITLE = {"en": "UmaTerra platforms", "pt": "Plataformas UmaTerra",
 _LANGS = ("en", "pt", "es", "fr")
 
 #: Chips need this much width; below it the menu button is used instead.
-#: Index 4 of a Reflex responsive list is the ``lg`` breakpoint (1280 px).
-_CHIPS_ONLY = ["none", "none", "none", "none", "flex"]
-_MENU_ONLY = ["flex", "flex", "flex", "flex", "none"]
+#: Index 5 of a Reflex responsive list is the ``xl`` breakpoint (1536 px).
+_CHIPS_ONLY = ["none", "none", "none", "none", "none", "flex"]
+_MENU_ONLY = ["flex", "flex", "flex", "flex", "flex", "none"]
 
 
 def base_url(platform: str) -> str:
@@ -149,7 +172,10 @@ def href(platform: str, region: str, language) -> str:
         root = base_url(PORTAL)
         return rx.match(language, ("pt", f"{root}/"), ("es", f"{root}/es/"),
                         ("fr", f"{root}/fr/"), f"{root}/en/")
-    path = "/canada" if region == "canada" else "/"
+    if platform == "clima":             # one page, no Canada version
+        path = "/app/"
+    else:
+        path = "/canada" if region == "canada" else "/"
     return f"{base_url(platform)}{path}?lang={language}"
 
 
@@ -216,7 +242,7 @@ def _menu_item(platform: str, *, current: str, region: str, language) -> rx.Comp
 def suite_links(current: str, *, region: str, language, accent: str = "green",
                 compact: bool = False) -> rx.Component:
     """The platform switcher. ``current`` is this app (``"camposcope"``,
-    ``"naturametrics"`` or ``"yvynation"``); ``region`` is ``"brazil"`` or
+    ``"naturametrics"``, ``"yvynation"`` or ``"clima"``); ``region`` is ``"brazil"`` or
     ``"canada"`` — the page the reader is on, which the links preserve;
     ``language`` is the page's language (string or Var)."""
     menu = rx.menu.root(
@@ -242,7 +268,7 @@ def suite_links(current: str, *, region: str, language, accent: str = "green",
         return rx.box(menu, flex_shrink="0")
     chips = rx.hstack(
         _chip(PORTAL, current=current, region=region, language=language, accent=accent),
-        # the portal is the home of the three that follow, not a fourth platform
+        # the portal is the home of the platforms that follow, not one of them
         rx.box(width="1px", height="16px", background="var(--gray-6)", margin_x="2px"),
         *[_chip(p, current=current, region=region, language=language, accent=accent)
           for p in PLATFORMS],

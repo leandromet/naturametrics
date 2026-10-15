@@ -13,6 +13,9 @@ being silently overwritten by the next sync.
 
 Naturametrics holds the canonical copies, as it does for the report kit. An app
 whose checkout is missing is reported and skipped.
+
+An app takes only the files listed for it: muda-clima (Clima) is a FastAPI app,
+not Reflex, so it shares the address search and nothing else.
 """
 
 from __future__ import annotations
@@ -28,6 +31,7 @@ APPS = {
     "naturametrics": Path(__file__).resolve().parent.parent,
     "camposcope": Path("/server/camposcope"),
     "yvynation": Path("/home/leandromb/google_eengine/yvynation/reflex_app"),
+    "muda_clima": Path("/server/2026_projeto_clima/muda-clima"),
 }
 CANONICAL = "naturametrics"
 
@@ -37,6 +41,7 @@ SHARED = {
         "naturametrics": "naturametrics/services/address.py",
         "camposcope": "camposcope/services/address.py",
         "yvynation": "yvynation/utils/address.py",
+        "muda_clima": "app/services/sources/address.py",
     },
     "quickstart": {
         "naturametrics": "naturametrics/components/quickstart.py",
@@ -60,7 +65,8 @@ def manifest_text(app: str) -> str:
     """``<sha256>  <path>`` per shared file, for ``app``'s own paths. Every app's
     manifest carries the canonical digests, so a copy that differs fails."""
     root = APPS[CANONICAL]
-    lines = [f"{digest(root / paths[CANONICAL])}  {paths[app]}" for paths in SHARED.values()]
+    lines = [f"{digest(root / paths[CANONICAL])}  {paths[app]}"
+             for paths in SHARED.values() if app in paths]
     return "\n".join(lines) + "\n"
 
 
@@ -68,6 +74,8 @@ def verify(app: str) -> list[str]:
     root = APPS[app]
     problems = []
     for name, paths in SHARED.items():
+        if app not in paths:
+            continue
         mine, canon = root / paths[app], APPS[CANONICAL] / paths[CANONICAL]
         if not mine.exists():
             problems.append(f"missing: {paths[app]}")
@@ -100,6 +108,8 @@ def main() -> int:
     for app in present:
         if app != CANONICAL:
             for paths in SHARED.values():
+                if app not in paths:
+                    continue
                 shutil.copyfile(APPS[CANONICAL] / paths[CANONICAL], present[app] / paths[app])
         (present[app] / MANIFEST).write_text(manifest_text(app))
         problems = verify(app)

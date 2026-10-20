@@ -168,24 +168,25 @@ DSV_DEFOR_PRIMARY = 4
 DSV_REGROWTH = 5
 DSV_DEFOR_SECONDARY = 6
 
-#: MapBiomas Fire Collection 4 — a qualifier on vegetation age, never an input (D7).
+#: MapBiomas Fire Collection 5 (1985–2025) — a qualifier on vegetation age, never an input (D7).
+#: Not read by any Brazil-page code yet; kept in step with Yvynation and Camposcope.
 MAPBIOMAS_FIRE = {
     "frequency": {
         "asset": (
-            "projects/mapbiomas-public/assets/brazil/fire/collection4/"
-            "mapbiomas_fire_collection4_fire_frequency_v1"
+            "projects/mapbiomas-public/assets/brazil/fire/collection5/"
+            "mapbiomas_fire_collection5_fire_frequency_v1"
         ),
-        "band_candidates": ("fire_frequency_1985_2024", "fire_frequency"),
+        "band_candidates": ("fire_frequency_1985_2025", "fire_frequency"),
         "vis": {"min": 0, "max": 20,
                 "palette": ["ffffff", "ffffb2", "fecc5c", "fd8d3c", "f03b20", "bd0026"]},
     },
     "year_last": {
         "asset": (
-            "projects/mapbiomas-public/assets/brazil/fire/collection4/"
-            "mapbiomas_fire_collection4_year_last_fire_v1"
+            "projects/mapbiomas-public/assets/brazil/fire/collection5/"
+            "mapbiomas_fire_collection5_year_last_fire_v1"
         ),
         "band_candidates": ("classification_{year}", "year_last_fire", "last_fire_year"),
-        "vis": {"min": 1985, "max": 2024,
+        "vis": {"min": 1985, "max": 2025,
                 "palette": ["440154", "3b528b", "21918c", "5ec962", "fde725"]},
     },
 }
@@ -200,7 +201,7 @@ MAPBIOMAS_FIRE = {
 HANSEN_GFC = {
     "asset": "UMD/hansen/global_forest_change_2025_v1_13",
     "loss_year_start": 2001,
-    "loss_year_end": 2024,  # lossyear band: 1..24 → 2001..2024
+    "loss_year_end": 2025,  # lossyear band: 1..25 → 2001..2025 (v1.13)
     "treecover_vis": {"min": 0, "max": 100,
                       "palette": ["ffffff", "d9f0a3", "78c679", "238443", "004529"]},
     "loss_color": "#d4271e",

@@ -109,9 +109,9 @@ Used as a **qualifier** on vegetation age, not as an age input (§4 of
 
 | Product | Asset | Band |
 |---|---|---|
-| Fire frequency 1985–2024 | `projects/mapbiomas-public/assets/brazil/fire/collection4/mapbiomas_fire_collection4_fire_frequency_v1` | `fire_frequency_1985_2024` |
-| Year of last fire | `.../mapbiomas_fire_collection4_year_last_fire_v1` | per-year `classification_{year}` bands |
-| Annual burned scar size | `.../mapbiomas_fire_collection4_annual_burned_scar_size_range_v1` | `scar_area_ha_{year}`, classes 1–5 by size |
+| Fire frequency 1985–2025 | `projects/mapbiomas-public/assets/brazil/fire/collection5/mapbiomas_fire_collection5_fire_frequency_v1` | `fire_frequency_1985_2025` |
+| Year of last fire | `.../mapbiomas_fire_collection5_year_last_fire_v1` | per-year `classification_{year}` bands |
+| Annual burned scar size | `.../mapbiomas_fire_collection5_annual_burned_scar_size_range_v1` | `scar_area_ha_{year}`, classes 1–5 by size |
 
 ⚠️ Band naming in these assets is inconsistent between products; Yvynation resolves it at
 runtime with a probing helper (`resolve_aux_band`) rather than trusting a fixed name. Port
@@ -131,7 +131,7 @@ questions. **Keep them apart.**
 | EE asset | `UMD/hansen/global_forest_change_2025_v1_13` (`ee.Image`) |
 | Resolution | 30 m |
 | `treecover2000` | Tree canopy cover in 2000, **0–100 %**. Vis: `min 0, max 100, palette ['black','green']` |
-| `lossyear` | 0 = no loss; **1–24 → 2001–2024**. Vis: `min 0, max 24, palette ['yellow','red']` |
+| `lossyear` | 0 = no loss; **1–25 → 2001–2025** (v1.13). Vis: `min 0, max 24, palette ['yellow','red']` |
 | `gain` | 0/1 tree-cover gain **2000–2012 only**, no year resolution |
 | `datamask` | 0 no data · 1 land · 2 water |
 | Licence | CC-BY 4.0, cite Hansen et al. (2013), *Science* 342:850–853 |

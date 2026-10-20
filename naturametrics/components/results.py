@@ -11,6 +11,8 @@ from __future__ import annotations
 import reflex as rx
 
 from .gbif_panel import gbif_buffer_panel
+from ..config.mapbiomas import MAPBIOMAS_YEAR_END
+from ..services.change_mask import FOREST_CODE_BASELINE_YEAR
 from ..state import AppState
 
 #: Standard chart config across the app: no Plotly modebar (see the history-
@@ -331,7 +333,8 @@ def _age_summary_line(row: rx.Var) -> rx.Component:
                         style={"textTransform": "uppercase",
                                "letterSpacing": "0.06em"}),
                 _chart_box(AppState.change_figure, "nm-plot-change",
-                          "naturametrics_mudanca_2008_2024", "150px"),
+                          f"naturametrics_mudanca_{FOREST_CODE_BASELINE_YEAR}_{MAPBIOMAS_YEAR_END}",
+                          "150px"),
                 spacing="1", width="100%", padding_top="0.5rem",
             ),
             rx.fragment(),

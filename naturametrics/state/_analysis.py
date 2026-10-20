@@ -215,7 +215,7 @@ class AnalysisMixin(rx.State, mixin=True):
         age_buffer_task = loop.run_in_executor(
             None, buffer_forest_age_histogram, p, BUFFER_RADII_KM,
             BUFFER_MODE_DEFAULT, self.buffer_shape)
-        # services.change_mask.change_stats — 2008→2024 loss/gain per buffer,
+        # services.change_mask.change_stats — 2008→(last MapBiomas year) loss/gain per buffer,
         # shown as the small bar next to the age summary. Cheap (~1-2 s) and
         # unrelated in failure mode to the age counter above, but it lives in
         # the same panel and the same "vegetation over time" question, so it

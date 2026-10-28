@@ -14,6 +14,7 @@ from .canada.pages.index import canada_index
 from .canada.state import CanadaState
 from .components.layout import ACCENT
 from .config.settings import GA_MEASUREMENT_ID
+from .pages.demonstracao import demonstracao
 from .pages.index import index
 from .state import AppState
 
@@ -54,7 +55,10 @@ app = rx.App(
         # Idle tabs otherwise keep the Reflex WebSocket reconnecting forever,
         # which pins a billed Cloud Run instance with nobody using it — see
         # assets/idle_guard.js and assets/paused.html.
-        rx.el.script(src="/assets/idle_guard.js", defer=True),
+        # Reflex serves the app-root assets/ folder at the site root, so the
+        # file is /idle_guard.js — the old /assets/idle_guard.js fell through
+        # to the SPA's HTML ("Unexpected token '<'") and the guard never ran.
+        rx.el.script(src="/idle_guard.js", defer=True),
     ],
 )
 
@@ -66,7 +70,21 @@ app.add_page(
         "Análise da história de uso da terra e da paisagem no Brasil a partir de "
         "MapBiomas, Hansen e Earth Engine."
     ),
-    on_load=AppState.adopt_lang_param,
+    on_load=AppState.adopt_url_params,
+)
+
+# The scrolling walkthrough of one real point (doc in pages/demonstracao.py).
+# Its numbers come over HTTP from /_demonstracao/naturametrics.json, so the
+# page has no state of its own and no on_load.
+app.add_page(
+    demonstracao,
+    route="/demonstracao",
+    title="Naturametrics — demonstração passo a passo",
+    description=(
+        "Como ler a paisagem em volta de um ponto, raio por raio: MapBiomas, "
+        "pixel do ponto, mudança desde 2008, idade da vegetação, métricas de "
+        "paisagem, biomassa, IBGE e IBAMA, com um conglomerado real do IFN."
+    ),
 )
 
 # The Canada page is a self-contained sibling under naturametrics/canada/ — its

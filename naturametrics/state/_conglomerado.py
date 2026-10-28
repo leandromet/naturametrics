@@ -27,6 +27,7 @@ import reflex as rx
 
 from ..config.settings import (
     BUFFER_MODE_DEFAULT, BUFFER_RADII_KM, MULTI_SELECT_MAX_POINTS,
+    MAP_CLICK_ZOOM,
 )
 from ..services import ifn as ifn_service
 from ..services.buffers import buffer_circles_geojson, buffer_geojson, full_area_geojson
@@ -331,6 +332,48 @@ class ConglomeradoMixin(rx.State, mixin=True):
         self.hover_visible = False
         logger.info("Study point set from conglomerado %s", self.point_conglomerado)
         return event
+
+    def adopt_url_params(self):
+        """``on_load`` of the Brazil page: ``?lang=``, then a study point.
+
+        ``?ifn=<conglomerado>`` (e.g. ``MT_105``) selects that conglomerado
+        with its own published coordinates, exactly as clicking it would;
+        otherwise ``?lat=&lon=`` behaves as a map click. This is the link the
+        demonstration page (``/demonstracao``) opens its example with, and any
+        result can be shared the same way. Bad or absent values leave the page
+        as it would load without them.
+        """
+        self.adopt_lang_param()
+        params = self.router.page.params or {}
+        name = str(params.get("ifn") or "").strip().upper()
+        events = None
+        if name:
+            rows = ifn_service.points_named([name])
+            if rows:
+                lat, lon = float(rows[0]["lat"]), float(rows[0]["lon"])
+                events = self.select_conglomerado(rows[0])
+        if events is None:
+            try:
+                lat, lon = float(params["lat"]), float(params["lon"])
+            except (KeyError, TypeError, ValueError):
+                return None
+            events = self.set_study_point(lat, lon)
+        if not self.has_point:
+            return events
+        # The click path's own fly-to (state/_point.py::_zoom_to_click) is a
+        # no-op here: on a fresh load it runs before the Leaflet instance
+        # exists. Setting map_center instead loses a race in leaflet_map.js —
+        # construction frames Brazil by bounds but seeds its last-view guard
+        # with the already-updated centre, so the view is never applied. This
+        # waits for the instance and frames it once.
+        frame = rx.call_script(
+            "(function () { var n = 0; var t = setInterval(function () {"
+            "  var el = document.getElementById('nm-map'); var map = el && el._nmMap;"
+            f"  if (map) {{ clearInterval(t); map.setView([{lat}, {lon}], 12); }}"
+            "  else if (++n > 100) clearInterval(t);"
+            "}, 100); })()"
+        )
+        return [*(events if isinstance(events, list) else [events]), frame]
 
     # ---------------------------------------------------------------------- #
     # A pasted coordinate list, standing in for the IFN layer above

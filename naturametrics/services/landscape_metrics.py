@@ -57,6 +57,42 @@ METRIC_COLUMNS = [
 HISTOGRAM_COLUMNS = ["radius_km", "class_id", "pixels", "area_ha"]
 
 
+def _vector_patch_stats(image, fc, scale, tile_scale, max_pixels):
+    """Patch count, largest patch and Σ(patch pixels²) for each zone of ``fc``.
+
+    Patches are the 8-connected regions of one class of ``image`` *clipped to
+    each zone*, vectorised with ``reduceToVectors`` and counted by
+    ``countEvery``. This replaced ``connectedComponents`` /
+    ``connectedPixelCount``, which (a) stop counting at 1024 pixels — Earth
+    Engine's ceiling, ~92 ha at 30 m — so every larger patch read as ~92 ha and
+    the largest-patch and effective-mesh figures were truncated, and (b) ran on
+    the unclipped image, so a patch running past the zone counted its full
+    size (a 0.5 km disc reported a largest patch of 117% of itself). Here a
+    patch cut by the zone edge is cut, as in FRAGSTATS.
+
+    Returns features with the property names the old reducers produced —
+    ``countDistinct`` (patches), ``max`` (largest, pixels) and ``sum``
+    (Σ pixels²) — plus the zone's own properties, and no geometry. Measured
+    2026-10-27 on five discs up to 10 km: 0.3–0.7 s for all of them.
+    """
+    import ee
+
+    def stats(feature):
+        geom = feature.geometry()
+        counts = image.clip(geom).reduceToVectors(
+            reducer=ee.Reducer.countEvery(), geometry=geom, scale=scale,
+            geometryType="polygon", eightConnected=True, labelProperty="class",
+            maxPixels=max_pixels, tileScale=tile_scale,
+        ).aggregate_array("count")
+        return ee.Feature(None, feature.toDictionary().combine({
+            "countDistinct": counts.size(),
+            "max": counts.reduce(ee.Reducer.max()),
+            "sum": counts.map(lambda c: ee.Number(c).pow(2)).reduce(ee.Reducer.sum()),
+        }))
+
+    return fc.map(stats)
+
+
 def _diversity(hist_df: pd.DataFrame, radius_km: float) -> dict[str, float]:
     """Shannon / Gini-Simpson / Simpson's evenness for one radius's class-area
     histogram. The one formula, used identically for a single point's own
@@ -138,24 +174,13 @@ def _landscape_metrics_from_collection(
 
     image = ee.Image(mb.MAPBIOMAS_COLLECTIONS[mb.MAPBIOMAS_DEFAULT_COLLECTION]).select(
         mb.band_for_year(year)).rename("class")
-    kernel = ee.Kernel.square(1)
-    labels = image.connectedComponents(kernel, 1024).select("labels")
-    component_size = image.connectedPixelCount(1024, True).rename("patch_size")
     neighbours = image.neighborhoodToBands(ee.Kernel.plus(1))
     edge = neighbours.neq(image).reduce(ee.Reducer.sum()).gt(0).rename("edge")
 
     reduced = image.reduceRegions(collection=fc, reducer=ee.Reducer.frequencyHistogram(),
                                   scale=EE_DEFAULT_SCALE_M, tileScale=EE_TILE_SCALE)
-    patch_reduced = labels.reduceRegions(collection=fc, reducer=ee.Reducer.countDistinct(),
-                                         scale=EE_DEFAULT_SCALE_M, tileScale=EE_TILE_SCALE)
-    largest_reduced = component_size.reduceRegions(collection=fc, reducer=ee.Reducer.max(),
-                                                    scale=EE_DEFAULT_SCALE_M, tileScale=EE_TILE_SCALE)
-    # Same component_size image as largest_reduced above, summed instead of
-    # maxed: Σ(n_i pixels each valued at n_i) = Σn_i² across patches, the
-    # numerator behind the effective-mesh-size proxy (meff_ha, see
-    # METRIC_COLUMNS docstring and _summary_from_properties).
-    mesh_reduced = component_size.reduceRegions(collection=fc, reducer=ee.Reducer.sum(),
-                                                scale=EE_DEFAULT_SCALE_M, tileScale=EE_TILE_SCALE)
+    # one call for patches, largest patch and Σ size² (see _vector_patch_stats)
+    patch_reduced = _vector_patch_stats(image, fc, EE_DEFAULT_SCALE_M, EE_TILE_SCALE, EE_MAX_PIXELS)
     edge_reduced = edge.reduceRegions(collection=fc, reducer=ee.Reducer.mean(),
                                       scale=EE_DEFAULT_SCALE_M, tileScale=EE_TILE_SCALE)
     area_reduced = ee.Image.pixelArea().reduceRegions(
@@ -163,9 +188,7 @@ def _landscape_metrics_from_collection(
         scale=EE_DEFAULT_SCALE_M, tileScale=EE_TILE_SCALE)
 
     hist_info = reduced.getInfo()
-    patch_info = patch_reduced.getInfo()
-    largest_info = largest_reduced.getInfo()
-    mesh_info = mesh_reduced.getInfo()
+    patch_info = largest_info = mesh_info = patch_reduced.getInfo()
     edge_info = edge_reduced.getInfo()
     area_info = area_reduced.getInfo()
 
@@ -213,18 +236,15 @@ def _landscape_metrics_from_collection(
         name="landscape_metrics",
         dataset_id=mb.MAPBIOMAS_COLLECTIONS[mb.MAPBIOMAS_DEFAULT_COLLECTION],
         bands=[mb.band_for_year(year)], scale_m=EE_DEFAULT_SCALE_M,
-        reducer="frequencyHistogram + connectedComponents + neighbourhood edge",
+        reducer="frequencyHistogram + reduceToVectors patches + neighbourhood edge",
         pixel_area_basis="mean ee.Image.pixelArea() per buffer",
         max_pixels=EE_MAX_PIXELS, tile_scale=EE_TILE_SCALE,
         geometry=geometry,
         extra={"year": year, "buffer_mode": mode, "buffer_shape": shape,
                "radii_km": list(radii_km), "point": point_label,
                "connectivity": "8-neighbour", "edge_basis": "native raster pixels",
-               # connectedComponents/connectedPixelCount mask/cap at this many
-               # pixels (~92 ha) — a patch bigger than that reads as truncated,
-               # which is common for intact-forest buffers above ~1 km. Kept in
-               # provenance rather than silently accepted, per constraint C6.
-               "patch_size_cap_pixels": 1024},
+               # patches vectorised per zone, no size cap (_vector_patch_stats)
+               "patches": "reduceToVectors, 8-connected, clipped to each zone",},
     )
     logger.info("Landscape metrics for %s: %s radii, %s classes", point_label,
                 len(summary_df), len(hist_df))

@@ -5,7 +5,8 @@
 
 The report kit is a package and has its own sync (``sync_report_kit.py``). These
 are loose files that sit at a different path in each app — the address search,
-the quick-start card, the links between the platforms and the MapBiomas legend — so each app keeps
+the quick-start card, the links between the platforms, the MapBiomas legend and
+the scrolling demonstrations' kit — so each app keeps
 its own ``tests/shared_files.sha256`` with its own paths, and its
 ``tests/test_shared_files.py`` (the same file in all three apps) recomputes the
 hashes. A fix made in a copy instead of here fails that app's tests rather than
@@ -15,7 +16,8 @@ Naturametrics holds the canonical copies, as it does for the report kit. An app
 whose checkout is missing is reported and skipped.
 
 An app takes only the files listed for it: muda-clima is a FastAPI app,
-not Reflex, so it shares the address search and the MapBiomas legend only.
+not Reflex, so it shares the address search, the MapBiomas legend and the
+demonstrations' kit CSS/JS only.
 """
 
 from __future__ import annotations
@@ -58,6 +60,25 @@ SHARED = {
         "naturametrics": "naturametrics/components/suite_links.py",
         "camposcope": "camposcope/components/suite_links.py",
         "yvynation": "yvynation/components/suite_links.py",
+    },
+    # The scrolling demonstrations' kit (reportagem/kit.py wraps an article in
+    # a Reflex page; muda-clima serves the CSS/JS from its own static dir).
+    "reportagem_kit_py": {
+        "naturametrics": "naturametrics/reportagem/kit.py",
+        "camposcope": "camposcope/reportagem/kit.py",
+        "yvynation": "yvynation/reportagem/kit.py",
+    },
+    "reportagem_kit_js": {
+        "naturametrics": "naturametrics/reportagem/kit.js",
+        "camposcope": "camposcope/reportagem/kit.js",
+        "yvynation": "yvynation/reportagem/kit.js",
+        "muda_clima": "app/web/static/reportagem/kit.js",
+    },
+    "reportagem_kit_css": {
+        "naturametrics": "naturametrics/reportagem/kit.css",
+        "camposcope": "camposcope/reportagem/kit.css",
+        "yvynation": "yvynation/reportagem/kit.css",
+        "muda_clima": "app/web/static/reportagem/kit.css",
     },
 }
 MANIFEST = Path("tests") / "shared_files.sha256"

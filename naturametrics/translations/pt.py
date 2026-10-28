@@ -714,6 +714,7 @@ TRANSLATIONS_PT: dict[str, str] = {
 
     # --- "Como usar" dialog ------------------------------------------------ #
     "help_trigger": "Como usar",
+    "help_demo_link": "Prefere ver funcionando? Abra a demonstração passo a passo, com um conglomerado real do IFN →",
     "help_dialog_title": "Como usar o Naturametrics",
     "help_dialog_desc": (
         "Análise da história de uso da terra e da paisagem em qualquer "

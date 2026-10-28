@@ -22,7 +22,7 @@ from starlette.responses import JSONResponse, Response
 
 from ..canada.services import gbif as gbif_ca
 from ..config.settings import IFN_VIEWPORT_LIMIT
-from ..services import auto_infracao, biomes, embargos, gbif, ifn, territorios
+from ..services import auto_infracao, biomes, demonstracao, embargos, gbif, ifn, territorios
 
 logger = logging.getLogger(__name__)
 
@@ -276,6 +276,27 @@ async def gbif_ca_geojson(request: Request) -> Response:
     return JSONResponse(payload, headers={"Cache-Control": "no-store"})
 
 
+async def demonstracao_json(request: Request) -> Response:
+    """Os números da demonstração em rolagem, dos mesmos serviços da interface.
+
+    ``?ifn=`` (um conglomerado) ou ``?lat=&lon=`` trocam o ponto de exemplo.
+    Um conglomerado fora do catálogo ou uma coordenada fora do Brasil respondem
+    400 com a mensagem para o leitor, em vez de uma página de zeros.
+    """
+    nome = request.query_params.get("ifn") or ""
+    lat = _float_param(request, "lat")
+    lon = _float_param(request, "lon")
+    try:
+        payload = await _run_blocking(lambda: demonstracao.pacote(nome, lat, lon))
+    except demonstracao.PontoInvalido as exc:
+        return JSONResponse({"error": "ponto inválido", "detail": str(exc)}, status_code=400)
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("Demonstração não pôde ser montada")
+        return JSONResponse({"error": "demonstração indisponível", "detail": str(exc)},
+                            status_code=503)
+    return JSONResponse(payload, headers={"Cache-Control": "public, max-age=600"})
+
+
 def register(app) -> None:
     """Attach the routes to the Reflex app's Starlette instance."""
     api = getattr(app, "_api", None)
@@ -292,9 +313,11 @@ def register(app) -> None:
     api.add_route(auto_infracao.GEOJSON_PATH, auto_infracao_geojson, methods=["GET"])
     api.add_route(gbif.GEOJSON_PATH, gbif_geojson, methods=["GET"])
     api.add_route(gbif_ca.GEOJSON_PATH, gbif_ca_geojson, methods=["GET"])
-    logger.info("Registered backend routes %s, %s, %s, %s, %s, %s, %s, %s",
+    api.add_route(demonstracao.ROTA, demonstracao_json, methods=["GET"])
+    logger.info("Registered backend routes %s, %s, %s, %s, %s, %s, %s, %s, %s",
                 biomes.GEOJSON_PATH,
                 territorios.GEOJSON_PATHS["indigena"],
                 territorios.GEOJSON_PATHS["conservacao"],
                 ifn.GEOJSON_PATH, embargos.GEOJSON_PATH,
-                auto_infracao.GEOJSON_PATH, gbif.GEOJSON_PATH, gbif_ca.GEOJSON_PATH)
+                auto_infracao.GEOJSON_PATH, gbif.GEOJSON_PATH, gbif_ca.GEOJSON_PATH,
+                demonstracao.ROTA)

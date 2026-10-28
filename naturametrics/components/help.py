@@ -51,6 +51,14 @@ def como_usar_dialog() -> rx.Component:
                 tr["help_dialog_desc"],
                 size="2", color_scheme="gray", margin_bottom="0.75rem",
             ),
+            # The scrolling walkthrough (pages/demonstracao.py): the same steps
+            # on a real example, with this app's own maps and numbers.
+            rx.link(
+                rx.callout(tr["help_demo_link"], icon="presentation", size="1",
+                           color_scheme="green", width="100%"),
+                href="/demonstracao", underline="none",
+                display="block", margin_bottom="0.75rem",
+            ),
             rx.scroll_area(
                 rx.vstack(
                     _step("1", tr["help_step1_title"], tr["help_step1_body"]),

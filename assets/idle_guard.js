@@ -29,7 +29,7 @@
     } catch (e) {
       /* sessionStorage unavailable (private mode etc.) — resume falls back to "/" */
     }
-    window.location.href = "/assets/paused.html";
+    window.location.href = "/paused.html";  // app-root assets/ is served at /
   }
 
   function reset() {

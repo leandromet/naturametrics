@@ -702,6 +702,7 @@ TRANSLATIONS_EN: dict[str, str] = {
 
     # --- "Como usar" dialog ------------------------------------------------ #
     "help_trigger": "How to use",
+    "help_demo_link": "Rather see it working? Open the step-by-step walkthrough on a real forest-inventory plot (in Portuguese) →",
     "help_dialog_title": "How to use Naturametrics",
     "help_dialog_desc": (
         "Land-use history and landscape analysis at any point in Brazil."

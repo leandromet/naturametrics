@@ -33,13 +33,15 @@
   var LEAFLET_CSS_SRI = "sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=";
   var LEAFLET_JS_SRI = "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=";
 
-  // ─── formatação pt-BR ───────────────────────────────────────────────────
+  // ─── formatação: pt-BR por padrão, en-US numa página <… lang="en"> ──────
+  // (definida em montar(); o kit atende uma página por vez)
+  var LOCALE = "pt-BR";
   function vazio(v) { return v === null || v === undefined || (typeof v === "number" && !isFinite(v)); }
   var fmt = {
     n: function (v, d) {
       if (vazio(v)) return "—";
       d = d === undefined ? 0 : d;
-      return Number(v).toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d });
+      return Number(v).toLocaleString(LOCALE, { minimumFractionDigits: d, maximumFractionDigits: d });
     },
     // hectares com casas decimais proporcionais ao tamanho
     ha: function (v) {
@@ -56,13 +58,14 @@
     data: function (iso) {
       if (!iso) return "—";
       var m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
-      return m ? m[3] + "/" + m[2] + "/" + m[1] : String(iso);
+      if (!m) return String(iso);
+      return LOCALE === "pt-BR" ? m[3] + "/" + m[2] + "/" + m[1] : m[1] + "-" + m[2] + "-" + m[3];
     },
     // "2026-10-27T23:43:31+00:00" → "27/10/2026, 20:43" no fuso do leitor
     dataHora: function (iso) {
       if (!iso) return "—";
       var d = new Date(iso);
-      return isNaN(d) ? String(iso) : d.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+      return isNaN(d) ? String(iso) : d.toLocaleString(LOCALE, { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
     },
     esc: function (s) {
       return String(s === null || s === undefined ? "" : s)
@@ -296,6 +299,10 @@
     try { var b = L.geoJSON(alvo).getBounds(); return b.isValid() ? b : null; } catch (e) { return null; }
   }
 
+  // o rótulo de cada selo, pela língua da página (a classe CSS não muda)
+  var SELO = { real: ["real", "measured"], declarado: ["declarado", "declared"], estimado: ["estimado", "estimated"],
+               ausente: ["ausente", "missing"], exemplo: ["exemplo", "example"], print: ["print", "screenshot"] };
+
   // ─── motor ──────────────────────────────────────────────────────────────
   function iniciar(cfg) {
     esperar(cfg.raiz || "#rp-raiz", 15000).then(function (raiz) {
@@ -308,7 +315,13 @@
     var $ = function (s) { return raiz.querySelector(s); };
     var $$ = function (s) { return Array.prototype.slice.call(raiz.querySelectorAll(s)); };
     var estado = $("#rp-fig-estado"), area = $(".rp-fig-area"), legMapa = $("#rp-mapa-legenda");
+    // a língua da página: <div id="rp-raiz" lang="en"> → textos e números em inglês
+    var lang = (raiz.getAttribute("lang") || "pt").slice(0, 2) === "en" ? "en" : "pt";
+    LOCALE = lang === "en" ? "en-US" : "pt-BR";
     var ctx = {
+      lang: lang,
+      // um texto nas duas línguas, escolhido pela página: ctx.t("…", "…")
+      t: function (pt, en) { return lang === "en" ? en : pt; },
       raiz: raiz, $: $, $$: $$, fmt: fmt, graf: graf, dados: null, L: null, mapa: null,
       backend: urlBackend(raiz.dataset.backend), params: new URLSearchParams(window.location.search),
       _tiles: {}, _vetores: {}, _passo: null
@@ -385,7 +398,12 @@
       $$(".pg-b").forEach(function (b) { b.classList.toggle("aceso", blocos.indexOf(b.dataset.bloco) >= 0); });
       var tit = $("#rp-fig-titulo"); if (tit && passo.dataset.titulo) tit.textContent = passo.dataset.titulo;
       var selo = $("#rp-fig-selo");
-      if (selo) { var sv = passo.dataset.selo || ""; selo.className = "selo " + sv; selo.textContent = sv; selo.style.display = sv ? "" : "none"; }
+      if (selo) {
+        var sv = passo.dataset.selo || "";
+        selo.className = "selo " + sv;
+        selo.textContent = (SELO[sv] || [sv, sv])[ctx.lang === "en" ? 1 : 0];
+        selo.style.display = sv ? "" : "none";
+      }
       var url = $("#rp-fig-url"); if (url && passo.dataset.url) url.textContent = passo.dataset.url;
       if (area) {
         area.dataset.mapa = passo.dataset.mapa || "grande";
@@ -399,6 +417,28 @@
       if (fn) { try { fn(ctx, ctx.dados); } catch (e) { console.error("[reportagem] passo " + id, e); } }
     }
     ctx.reativar = function () { var p = ctx._passo; ctx._passo = null; ativar(p); };
+
+    // notas: o botão abre o <li id="nota-N"> da lista do fim num pop-up junto
+    // dele; um clique fora, Esc ou rolar a página fecha. A lista continua lá
+    // para quem imprime, usa leitor de tela ou está no celular.
+    var pop = document.createElement("div");
+    pop.className = "rp-pop"; pop.hidden = true; pop.setAttribute("role", "note");
+    raiz.appendChild(pop);
+    var fecharNota = function () { pop.hidden = true; };
+    raiz.addEventListener("click", function (e) {
+      var b = e.target.closest && e.target.closest(".rp-nota");
+      if (!b) { if (!e.target.closest || !e.target.closest(".rp-pop")) fecharNota(); return; }
+      var li = raiz.querySelector("#nota-" + b.dataset.nota);
+      if (!li) return;
+      e.preventDefault();
+      pop.innerHTML = li.innerHTML;
+      pop.hidden = false;
+      var r = b.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;
+      pop.style.left = Math.max(12, Math.min(window.innerWidth - w - 12, r.left - 20)) + "px";
+      pop.style.top = (r.bottom + h + 12 < window.innerHeight ? r.bottom + 8 : Math.max(12, r.top - h - 8)) + "px";
+    });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") fecharNota(); });
+    raiz.addEventListener("scroll", fecharNota, { passive: true });
 
     // quem está no meio da janela de rolagem é o passo ativo. No celular a
     // figura ocupa a metade de cima (kit.css), então o passo acende ainda na
@@ -424,7 +464,8 @@
       ctx.mapa.on("click", function () { ctx.mapa.scrollWheelZoom.enable(); });
       ctx.mapa.on("mouseout", function () { ctx.mapa.scrollWheelZoom.disable(); });
     }).catch(function (e) {
-      if (estado) estado.textContent = "O mapa não carregou (" + e.message + "). Os números abaixo continuam valendo.";
+      if (estado) estado.textContent = ctx.t("O mapa não carregou (" + e.message + "). Os números continuam valendo.",
+                                             "The map did not load (" + e.message + "). The numbers still stand.");
     });
 
     var pedido = urlDados
@@ -440,7 +481,7 @@
       ctx.reativar();
       if (!ctx._passo) ativar($(".rp-passo"));
     }).catch(function (e) {
-      if (estado) { estado.classList.add("erro"); estado.textContent = "Não foi possível carregar o exemplo: " + e.message; }
+      if (estado) { estado.classList.add("erro"); estado.textContent = ctx.t("Não foi possível carregar o exemplo: ", "The example could not be loaded: ") + e.message; }
       if (cfg.aoFalhar) cfg.aoFalhar(ctx, e);
     });
   }

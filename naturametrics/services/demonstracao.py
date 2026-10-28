@@ -8,8 +8,8 @@ IBGE × MapBiomas, embargos e autos do IBAMA — para um conglomerado do IFN de
 exemplo (ou outro, por ``?ifn=`` ou ``?lat=&lon=``). Se um número da
 demonstração divergir do aplicativo, o defeito está aqui, não no texto.
 
-Medido no exemplo (MT_105, Colniza/MT): ~15 s a frio, quase todo nas métricas
-de paisagem (connectedComponents); o resto passa de 6 s em paralelo. Por isso o
+Medido no exemplo (MT_105, Colniza/MT): ~6 s a frio em paralelo (eram ~15 s
+antes de as métricas de paisagem passarem a vetorizar os fragmentos). Por isso o
 pacote fica em memória por algumas horas, com uma trava por ponto para que dez
 visitas a frio calculem uma vez só. As URLs de tiles saem de
 ``services/layers.py`` e têm o próprio cache, então são remontadas a cada pedido.
@@ -117,7 +117,8 @@ def _historico(df) -> Dict[str, Any]:
         por_raio.setdefault(_r(raio), {})[str(int(classe))] = [round(serie.get(a, 0.0), 2) for a in anos]
         if str(int(classe)) not in classes:
             linha = g.iloc[0]
-            classes[str(int(classe))] = {"nome": str(linha["class_pt"]), "cor": str(linha["color"])}
+            classes[str(int(classe))] = {"nome": str(linha["class_pt"]), "nome_en": str(linha["class_en"]),
+                                         "cor": str(linha["color"])}
     return {"anos": anos, "raios": por_raio, "classes": classes,
             "nativas": sorted(mb.NATURAL_VEGETATION)}
 
@@ -163,7 +164,8 @@ def _calcular(ponto: Dict[str, Any]) -> Dict[str, Any]:
         out["procedencia"].append(_prov(pv))
     if r["pixel"]:
         df, pv = r["pixel"]
-        out["pixel"] = [{"ano": int(x.year), "classe": int(x.class_id), "nome": str(x.class_pt)}
+        out["pixel"] = [{"ano": int(x.year), "classe": int(x.class_id), "nome": str(x.class_pt),
+                         "nome_en": str(x.class_en)}
                         for x in df.itertuples()]
     if r["idade_ponto"]:
         df, pv = r["idade_ponto"]

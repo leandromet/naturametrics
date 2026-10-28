@@ -15,3 +15,8 @@ from ..reportagem.kit import pagina
 
 def demonstracao() -> rx.Component:
     return pagina("naturametrics")
+
+
+def walkthrough() -> rx.Component:
+    """``/walkthrough`` — the same article in English (naturametrics.en.html)."""
+    return pagina("naturametrics", lingua="en")

@@ -1,0 +1,260 @@
+<header class="rp-topo">
+  <span class="marca"><a href="/?lang=en">Naturametrics</a> · walkthrough</span>
+  <span class="rp-exemplo" id="topo-exemplo"></span>
+  <span class="sp"></span>
+  <a href="/?lang=en" id="link-app" class="rp-link-forte">open this point in the app →</a>
+</header>
+
+<section class="rp-abertura">
+  <div class="rp-chapeu">Land use · landscape · step by step</div>
+  <h1>How to read the landscape around a point, one radius at a time</h1>
+  <p class="rp-linha-fina">One click on the map and Naturametrics draws five circles, pulls forty years of MapBiomas,
+    estimates the age of the vegetation, counts the fragments, measures biomass and shows what Brazil's environmental
+    agency (IBAMA) has recorded nearby. This walkthrough opens a real plot of the National Forest Inventory in the order
+    the app presents it, with where each number comes from and where it stops.</p>
+  <p class="rp-cred" id="abertura-exemplo">Fetching the example point from Earth Engine…</p>
+  <div class="rp-numeros" aria-live="polite">
+    <div><b data-campo="n-nativa0">—</b><small data-campo="n-nativa0-rot">native vegetation in the first year</small></div>
+    <div><b data-campo="n-nativa1">—</b><small data-campo="n-nativa1-rot">native vegetation in the latest year</small></div>
+    <div><b data-campo="n-perda">—</b><small data-campo="n-perda-rot">of native vegetation lost since 2008</small></div>
+    <div><b data-campo="n-ibama">—</b><small>IBAMA embargoes and fines within 10 km <span class="selo real">measured</span></small></div>
+  </div>
+  <p class="rp-legenda-selos">
+    <span class="selo real">measured</span> computed from satellite imagery or a public service.
+    <span class="selo estimado">estimated</span> a modelled product, with a known error margin.
+    <span class="selo ausente">missing</span> a layer that did not respond this time.
+  </p>
+</section>
+
+<section class="rp-scrolly">
+  <div class="rp-passos">
+
+    <article class="rp-passo" data-passo="ponto" data-camada="ponto" data-mapa="grande" data-bloco="busca,ponto" data-titulo="Study point" data-selo="real">
+      <div class="num">1</div>
+      <h2>It all starts from a point</h2>
+      <p>Naturametrics needs no polygon: any click on the map of Brazil becomes a study point. The search box takes a
+        postcode, an address, a coordinate (even one pasted from Google Maps) or a municipality, but it only moves the
+        map — the click chooses the point.<button type="button" class="rp-nota" data-nota="1" aria-label="note 1">1</button></p>
+      <p id="t-ponto"></p>
+      <p class="como"><b>In the app:</b> the <b>Search</b> box and a click on the map, or a direct link with
+        <code>/?lat=…&amp;lon=…</code> (or <code>/?ifn=</code> for an inventory plot).</p>
+    </article>
+
+    <article class="rp-passo" data-passo="ifn" data-camada="ifn" data-mapa="grande" data-bloco="ifn" data-titulo="National Forest Inventory plots" data-selo="real">
+      <div class="num">2</div>
+      <h2>The National Forest Inventory's plots</h2>
+      <p>Brazil's National Forest Inventory (IFN) measures trees on the ground at a grid of plot clusters across the
+        country. The app carries the 17,479 published points, filterable by region, state, municipality and biome. Clicking
+        a plot uses <b>its published coordinates</b>, not the exact spot you clicked: 40 m away is already a different
+        question.<button type="button" class="rp-nota" data-nota="2" aria-label="note 2">2</button></p>
+      <p id="t-ifn"></p>
+      <p class="como"><b>In the app:</b> the <b>IFN, IBAMA and uploaded data</b> group. Hovering a plot previews its land
+        cover; clicking starts the analysis. A switch turns on multiple selection.</p>
+    </article>
+
+    <article class="rp-passo" data-passo="discos" data-camada="discos" data-mapa="grande" data-bloco="ponto" data-titulo="Analysis areas" data-selo="real">
+      <div class="num">3</div>
+      <h2>Five circles around the point</h2>
+      <p>Every analysis runs in five circles, from 0.5 to 10 km in radius. They are <b>full discs</b>, not rings: the 5 km
+        disc contains the 2 km one. The question is "what is the landscape like up to this distance", so the larger radius
+        always includes the smaller.<button type="button" class="rp-nota" data-nota="3" aria-label="note 3">3</button></p>
+      <p id="t-discos"></p>
+      <p class="como"><b>In the app:</b> the <b>0.5 km / 1 km / 2 km / 5 km / 10 km</b> buttons above each chart. The
+        <b>square buffers</b> switch swaps the circle for a square whose side is the diameter.</p>
+    </article>
+
+    <article class="rp-passo" data-passo="historia" data-camada="historia" data-mapa="meio" data-bloco="historia" data-titulo="Land-use history" data-selo="real">
+      <div class="num">4</div>
+      <h2>Forty years of MapBiomas in one disc</h2>
+      <p>Each column is one MapBiomas year, with the disc's hectares in each land-cover class. The map shows the latest
+        year's land cover clipped to the largest disc, as the app does as soon as a point is chosen.</p>
+      <p id="t-historia"></p>
+      <p class="como"><b>In the app:</b> the <b>Land-use history</b> panel, with the radius selector and the <b>%</b>
+        switch; beside it, the latest year's <b>main classes</b>.</p>
+    </article>
+
+    <article class="rp-passo" data-passo="raios" data-camada="raios" data-mapa="meio" data-bloco="historia" data-titulo="Native vegetation by radius" data-selo="real">
+      <div class="num">5</div>
+      <h2>Near and far tell different stories</h2>
+      <p>The same series, now as the share of each disc that is still native vegetation, one line per radius. When the
+        small disc falls before the large one, conversion started near the point and spread; when it falls later, it came
+        from outside.</p>
+      <p id="t-raios"></p>
+      <p class="como"><b>In the app:</b> the <b>Land-use history</b> panel with the <b>%</b> switch, changing radius.
+        Here the map shows the first year of the series.</p>
+    </article>
+
+    <article class="rp-passo" data-passo="pixel" data-camada="pixel" data-mapa="meio" data-bloco="historia" data-titulo="The point's own pixel" data-selo="real">
+      <div class="num">6</div>
+      <h2>The point's own pixel, no averaging</h2>
+      <p>The discs are averages. The 30 m pixel right under the point shows what the classifier saw there, year after
+        year, with nothing to smooth it. It is the most direct record and also the noisiest: one misclassified year shows up
+        as a change that never happened.</p>
+      <p id="t-pixel"></p>
+      <p class="como"><b>In the app:</b> the point's series goes into every export, always with the warning that a single pixel is noisy.</p>
+    </article>
+
+    <article class="rp-passo" data-passo="mudanca" data-camada="mudanca" data-mapa="meio" data-bloco="floresta" data-titulo="Change since 2008" data-selo="real">
+      <div class="num">7</div>
+      <h2>What changed since 2008</h2>
+      <p>The change mask compares native vegetation in 2008, the Forest Code's cut-off, with the latest year. Red is what
+        was native and no longer is; green is what came back. The sum is the same at every radius.</p>
+      <p id="t-mudanca"></p>
+      <p class="como"><b>In the app:</b> the <b>Biomass and forest change</b> group, <b>Change since 2008</b> layer.</p>
+    </article>
+
+    <article class="rp-passo" data-passo="idade" data-camada="idade" data-mapa="meio" data-bloco="idade" data-titulo="Vegetation age" data-selo="real">
+      <div class="num">8</div>
+      <h2>How long each patch has been vegetation</h2>
+      <p>MapBiomas' Deforestation and Secondary Vegetation product records when each pixel was cleared and when it grew
+        back. From that comes the age of today's vegetation. Vegetation never cleared since the record began has no known
+        age: all we know is that it is <b>at least</b> as old as the series.</p>
+      <p id="t-idade"></p>
+      <p>That is why the app never gives a mean age: it shows the median of the dated part and, next to it, how much has no date.<button type="button" class="rp-nota" data-nota="4" aria-label="note 4">4</button></p>
+      <p class="como"><b>In the app:</b> the <b>Vegetation age</b> tab, with the point's series and the distribution by radius.</p>
+    </article>
+
+    <article class="rp-passo" data-passo="metricas" data-camada="metricas" data-mapa="oculto" data-bloco="metricas" data-titulo="Landscape metrics" data-selo="real">
+      <div class="num">9</div>
+      <h2>Fragments, edges and diversity</h2>
+      <p>A landscape has a shape too. The app counts fragments — continuous patches of one class — and measures edge
+        density and class diversity at each radius. In the same disc, more fragments and more edge mean a more broken-up landscape.</p>
+      <p id="t-metricas"></p>
+      <p class="como"><b>In the app:</b> the <b>Metrics</b> tab. Fragments are vectorised inside each disc with no size
+        limit; a fragment cut by the disc's edge counts only the part inside.</p>
+    </article>
+
+    <article class="rp-passo" data-passo="biomassa" data-camada="biomassa" data-mapa="meio" data-bloco="biomassa" data-titulo="Biomass · ESA CCI" data-selo="estimado">
+      <div class="num">10</div>
+      <h2>Biomass, with its uncertainty in view</h2>
+      <p>Above-ground biomass comes from ESA CCI, in 100 m pixels for ten years between 2007 and 2022. The product
+        publishes each pixel's standard deviation alongside, and the app carries it into the chart: the shaded band is the
+        product's own uncertainty.</p>
+      <p id="t-biomassa"></p>
+      <p class="como"><b>In the app:</b> the <b>Biomass</b> tab, in Mg/ha by radius.</p>
+    </article>
+
+    <article class="rp-passo" data-passo="ibge" data-camada="ibge" data-mapa="meio" data-bloco="ibge" data-titulo="IBGE × MapBiomas" data-selo="real">
+      <div class="num">11</div>
+      <h2>Two official maps, two answers</h2>
+      <p>IBGE's vegetation map is drawn as polygons at 1:250,000; MapBiomas classifies every 30 m pixel every year. Where
+        clearing is recent, IBGE still draws forest.</p>
+      <p id="t-ibge"></p>
+      <p class="como"><b>In the app:</b> the <b>IBGE</b> tab, with the matrix by radius, and the IBGE layer in the reference group.</p>
+    </article>
+
+    <article class="rp-passo" data-passo="ibama" data-camada="ibama" data-mapa="grande" data-bloco="ifn" data-titulo="IBAMA · embargoes and fines" data-selo="real">
+      <div class="num">12</div>
+      <h2>What IBAMA has already recorded nearby</h2>
+      <p>Embargoed areas and infraction notices come straight from IBAMA's public services, for the map's extent. They show
+        that enforcement happened, not what happened in each pixel: an embargo can cover more than the clearing, and a
+        notice's coordinate is where it was recorded, not necessarily where the infraction was.</p>
+      <p id="t-ibama"></p>
+      <p class="como"><b>In the app:</b> the <b>IFN, IBAMA and uploaded data</b> group, <b>Embargoes</b> and <b>Infraction notices</b> layers.</p>
+    </article>
+
+    <article class="rp-passo" data-passo="procedencia" data-camada="procedencia" data-mapa="oculto" data-bloco="exportar" data-titulo="Provenance and export" data-selo="real">
+      <div class="num">13</div>
+      <h2>Everything on screen, in one spreadsheet</h2>
+      <p>The <b>Download data</b> button writes an ODS spreadsheet with one sheet per table: history by radius, the point's
+        pixel, age, metrics, biomass and the provenance of each. With multiple selection the same spreadsheet covers
+        hundreds of plots at once, up to a whole biome.<button type="button" class="rp-nota" data-nota="5" aria-label="note 5">5</button></p>
+      <p id="t-procedencia"></p>
+      <p class="como"><b>In the app:</b> the <b>Download data</b> button at the top, and the point's PDF report.</p>
+    </article>
+
+  </div>
+
+  <div class="rp-figura" aria-live="polite">
+    <div class="rp-moldura">
+      <div class="rp-barra-janela"><i></i><i></i><i></i><span id="rp-fig-url">naturametrics.umaterra.com.br</span></div>
+      <div class="rp-fig-corpo">
+        <nav class="rp-pagina" aria-label="Where it is in the app">
+          <div class="pg-rot">in the app</div>
+          <div class="pg-b" data-bloco="busca">search</div>
+          <div class="pg-b" data-bloco="ponto">study area</div>
+          <div class="pg-b" data-bloco="ifn">IFN, IBAMA</div>
+          <div class="pg-b" data-bloco="floresta">biomass and change</div>
+          <div class="pg-b alto" data-bloco="historia">land-use history</div>
+          <div class="pg-par"><div class="pg-b" data-bloco="idade">age</div><div class="pg-b" data-bloco="metricas">metrics</div></div>
+          <div class="pg-par"><div class="pg-b" data-bloco="biomassa">biomass</div><div class="pg-b" data-bloco="ibge">IBGE</div></div>
+          <div class="pg-b" data-bloco="exportar">download · PDF</div>
+        </nav>
+        <div class="rp-fig-principal">
+          <div class="rp-fig-cab"><span id="rp-fig-titulo">Loading…</span><span id="rp-fig-selo" class="selo real">measured</span></div>
+          <div class="rp-fig-area" data-mapa="grande">
+            <div class="rp-mapa-caixa"><div id="rp-mapa"></div><div class="rp-mapa-legenda" id="rp-mapa-legenda"></div></div>
+            <div class="rp-painel">
+              <div id="rp-fig-estado" class="rp-fig-estado">Loading the example point…</div>
+              <div class="rp-camada" id="camada-ponto"><div id="fig-ponto"></div></div>
+              <div class="rp-camada" id="camada-ifn"><div id="fig-ifn"></div></div>
+              <div class="rp-camada" id="camada-discos"><div id="fig-discos"></div></div>
+              <div class="rp-camada" id="camada-historia"><div id="fig-historia"></div></div>
+              <div class="rp-camada" id="camada-raios"><div id="fig-raios"></div></div>
+              <div class="rp-camada" id="camada-pixel"><div id="fig-pixel"></div></div>
+              <div class="rp-camada" id="camada-mudanca"><div id="fig-mudanca"></div></div>
+              <div class="rp-camada" id="camada-idade"><div id="fig-idade"></div></div>
+              <div class="rp-camada" id="camada-metricas"><div id="fig-metricas"></div></div>
+              <div class="rp-camada" id="camada-biomassa"><div id="fig-biomassa"></div></div>
+              <div class="rp-camada" id="camada-ibge"><div id="fig-ibge"></div></div>
+              <div class="rp-camada" id="camada-ibama"><div id="fig-ibama"></div></div>
+              <div class="rp-camada" id="camada-procedencia"><div id="fig-procedencia"></div></div>
+              <p class="rp-fig-legenda" id="rp-fig-legenda"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="rp-fim">
+  <h2>What Naturametrics does not say</h2>
+  <ul class="rp-limites">
+    <li><b>It does not say why the landscape changed.</b> The series shows when and how much; cause, responsibility and
+      legality lie beyond the satellite.</li>
+    <li><b>It does not measure the plot on the ground.</b> The trees the inventory measured are not here: the point is
+      only where the inventory works, and its published coordinate is approximate.</li>
+    <li><b>A disc is not a property.</b> A 10 km disc crosses many holdings, public lands and roads. For a CAR property,
+      Camposcope gives the same reading from its declared boundary.</li>
+    <li><b>It does not add up overlapping discs.</b> In multiple selection each plot counts its own disc; the sum of
+      crossing discs is not the area of their union.</li>
+    <li><b>It cannot see below 30 m.</b> The point's pixel is the most direct record and the noisiest; a lone year that
+      differs from its neighbours is usually a classification error.</li>
+  </ul>
+  <p class="rp-fim-extra" id="fim-extra"></p>
+  <a class="rp-cta" id="cta-app" href="/?lang=en">Open this point in Naturametrics →</a>
+  <a class="rp-cta sec" href="/canada?lang=en">Naturametrics Canada</a>
+  <p class="rp-rodape">More examples:
+    <a href="?ifn=PA_2130">São Félix do Xingu (PA), Amazon</a> ·
+    <a href="?ifn=MT_1527">Água Boa (MT), Cerrado</a> ·
+    <a href="?ifn=MT_2275">Cáceres (MT), Pantanal</a> ·
+    <a href="?">Colniza (MT), this page's example</a>.
+    To read another point, change the plot (<code>?ifn=</code>) or pass a coordinate (<code>?lat=…&amp;lon=…</code>).
+    The numbers come from the app's own services: this page's example is stored with it, and any other point is computed
+    on request. <a href="/demonstracao" lang="pt-BR">Versão em português</a>.</p>
+</section>
+
+<section class="rp-notas" aria-label="Notes">
+  <h3>Notes</h3>
+  <ol>
+    <li id="nota-1">Of the three UmaTerra tools, Naturametrics is the only one whose boundary does not exist before the
+      analysis: the analyst builds it by clicking and choosing a radius. Results therefore depend on the chosen
+      neighbourhood, and the app keeps that choice in view rather than fixing it.
+      <span class="rp-pop-fonte">Biondo et al., <i>Registry, coordinate, cadastre</i> (manuscript in preparation, 2026).</span></li>
+    <li id="nota-2">The catalogue holds 17,495 plots, 16 of them without geometry, leaving 17,479 usable. Each is treated
+      as its own unit, never aggregated beforehand. The biome filter reads a pre-joined asset: at 1:250,000 the outlines of
+      the three largest biomes are too long for Earth Engine's filter, which used to fail silently.
+      <span class="rp-pop-fonte">Biondo et al., <i>Registry, coordinate, cadastre</i> (manuscript in preparation, 2026).</span></li>
+    <li id="nota-3">The discs are cumulative — the 10 km disc contains the 0.5 km one — so values at neighbouring radii
+      are not independent. For direct differences, switch to separate rings in the app itself.
+      <span class="rp-pop-fonte">Biondo et al., <i>Registry, coordinate, cadastre</i> (manuscript in preparation, 2026).</span></li>
+    <li id="nota-4">The rule is in the app's premises: <i>“a single ‘mean forest age’ that quietly counts century-old
+      forest as 40 years old is the exact failure mode this constraint exists to prevent.”</i> Age always ships with its censored share.
+      <span class="rp-pop-fonte">Biondo et al., <i>Registry, coordinate, cadastre</i> (manuscript in preparation, 2026).</span></li>
+    <li id="nota-5">Exporting a few hundred plots produces hundreds of thousands of rows. The previous library took 42 s
+      for 60,000 rows; the app's own streaming writer writes 600,000 rows in 3.9 s, into a 14 MB file, and refuses to go
+      past 2²⁰ rows per sheet, the limit at which LibreOffice and Excel silently drop the rest.
+      <span class="rp-pop-fonte">Biondo et al., <i>Registry, coordinate, cadastre</i> (manuscript in preparation, 2026).</span></li>
+  </ol>
+</section>

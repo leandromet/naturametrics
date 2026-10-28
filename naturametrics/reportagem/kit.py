@@ -36,8 +36,12 @@ def ler(nome: str) -> str:
     return (_AQUI / nome).read_text(encoding="utf-8")
 
 
-def pagina(artigo: str, script: str | None = None) -> rx.Component:
+def pagina(artigo: str, script: str | None = None, lingua: str = "pt") -> rx.Component:
     """A página de um artigo: ``<artigo>.html`` + ``<artigo>.js`` sobre o kit.
+
+    ``lingua="en"`` lê ``<artigo>.en.html`` e marca a raiz com ``lang="en"``;
+    o mesmo ``.js`` escolhe então os textos em inglês (``ctx.t(pt, en)``) e o
+    kit formata números e datas em en-US.
 
     ``script`` troca o ``.js`` por outro, para artigos que diferem só no texto
     e compartilham os tratadores (Yvynation: TI, UC e área desenhada).
@@ -49,9 +53,10 @@ def pagina(artigo: str, script: str | None = None) -> rx.Component:
     return rx.fragment(
         rx.el.style(ler("kit.css")),
         rx.html(
-            ler(f"{artigo}.html"),
+            ler(f"{artigo}.en.html" if lingua == "en" else f"{artigo}.html"),
             id="rp-raiz",
-            custom_attrs={"data-backend": get_config().api_url, "lang": "pt-BR"},
+            custom_attrs={"data-backend": get_config().api_url,
+                          "lang": "en" if lingua == "en" else "pt-BR"},
             on_mount=rx.call_script(ler("kit.js") + "\n" + ler(f"{script or artigo}.js")),
         ),
     )

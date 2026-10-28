@@ -222,6 +222,24 @@
 .rp-cartao b { display: block; font: 700 20px/1.15 var(--rp-sans); color: var(--pg-tinta); overflow-wrap: anywhere; }
 .rp-cartao small { font-size: 12px; color: var(--pg-tinta3); }
 
+/* ─── notas: <button class="rp-nota" data-nota="2">2</button> no texto abre um
+   pop-up com o <li id="nota-2"> da lista de notas no fim do artigo ─── */
+#rp-raiz .rp-nota { display: inline-block; font: 700 10.5px/16px var(--rp-sans); min-width: 17px; height: 17px; padding: 0 4px;
+  margin: 0 1px 0 2px; vertical-align: 4px; border: 0; border-radius: 9px; background: var(--rp-destaque); color: var(--rp-fundo); cursor: pointer; }
+#rp-raiz .rp-nota:focus-visible { outline: 2px solid var(--rp-tinta); outline-offset: 2px; }
+.rp-pop { position: fixed; z-index: 1200; max-width: min(380px, calc(100vw - 24px)); background: var(--rp-fundo); color: var(--rp-tinta);
+  border: 1px solid var(--rp-linha); border-left: 3px solid var(--rp-destaque); border-radius: 4px; box-shadow: 0 10px 30px var(--rp-sombra);
+  padding: 11px 14px 10px; font: 14px/1.5 var(--rp-sans); }
+.rp-pop[hidden] { display: none; }
+.rp-pop a { color: var(--rp-destaque); }
+.rp-pop .rp-pop-fonte { display: block; margin-top: 6px; font-size: 12px; color: var(--rp-tinta2); }
+.rp-notas { max-width: 900px; margin: 0 auto; padding: 0 24px 60px; font: 14px/1.6 var(--rp-sans); color: var(--rp-tinta2); }
+.rp-notas h3 { font: 700 13px var(--rp-sans); letter-spacing: .1em; text-transform: uppercase; color: var(--rp-tinta); }
+.rp-notas ol { padding-left: 22px; }
+.rp-notas li { margin-bottom: 8px; }
+.rp-notas li:target { background: color-mix(in srgb, var(--rp-destaque) 10%, transparent); }
+.rp-notas .rp-pop-fonte { color: var(--rp-tinta2); font-size: 12.5px; }
+
 /* ─── fim ─── */
 .rp-fim { max-width: 900px; margin: 0 auto; padding: 40px 24px 90px; }
 .rp-fim h2 { font: 700 32px/1.15 var(--rp-serif); }

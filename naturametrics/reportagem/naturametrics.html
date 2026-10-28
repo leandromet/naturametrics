@@ -7,21 +7,22 @@
 
 <section class="rp-abertura">
   <div class="rp-chapeu">Uso da terra · paisagem · passo a passo</div>
-  <h1>Como ler a paisagem em volta de um ponto, raio por raio</h1>
-  <p class="rp-linha-fina">Um clique no mapa vira cinco círculos, quarenta anos de MapBiomas, a idade da vegetação,
-    a forma dos fragmentos, a biomassa e os embargos do IBAMA por perto. Esta demonstração abre um conglomerado de verdade
-    do Inventário Florestal Nacional e mostra, na ordem do aplicativo, de onde sai cada número e o que ele não diz.</p>
-  <p class="rp-cred" id="abertura-exemplo">Carregando o ponto de exemplo no Earth Engine…</p>
+  <h1>Como ler a paisagem em volta de um ponto, raio a raio</h1>
+  <p class="rp-linha-fina">Um clique no mapa e o Naturametrics desenha cinco círculos, busca quarenta anos de MapBiomas,
+    estima a idade da vegetação, conta os fragmentos, mede a biomassa e mostra o que o IBAMA já registrou por perto. Aqui,
+    um conglomerado de verdade do Inventário Florestal Nacional é aberto na ordem do aplicativo, com a origem de cada
+    número e os seus limites.</p>
+  <p class="rp-cred" id="abertura-exemplo">Buscando o ponto de exemplo no Earth Engine…</p>
   <div class="rp-numeros" aria-live="polite">
-    <div><b data-campo="n-nativa0">—</b><small data-campo="n-nativa0-rot">vegetação nativa no primeiro ano</small></div>
-    <div><b data-campo="n-nativa1">—</b><small data-campo="n-nativa1-rot">vegetação nativa no último ano</small></div>
-    <div><b data-campo="n-perda">—</b><small data-campo="n-perda-rot">vegetação nativa perdida desde 2008</small></div>
+    <div><b data-campo="n-nativa0">—</b><small data-campo="n-nativa0-rot">de vegetação nativa no primeiro ano</small></div>
+    <div><b data-campo="n-nativa1">—</b><small data-campo="n-nativa1-rot">de vegetação nativa no último ano</small></div>
+    <div><b data-campo="n-perda">—</b><small data-campo="n-perda-rot">de vegetação nativa perdida desde 2008</small></div>
     <div><b data-campo="n-ibama">—</b><small>embargos e autos do IBAMA a até 10 km <span class="selo real">real</span></small></div>
   </div>
   <p class="rp-legenda-selos">
-    <span class="selo real">real</span> calculado agora, a partir de dado de satélite ou de um serviço público.
-    <span class="selo estimado">estimado</span> produto modelado, ou medida com limite conhecido de cálculo.
-    <span class="selo ausente">ausente</span> camada que não respondeu neste cálculo.
+    <span class="selo real">real</span> calculado a partir de imagem de satélite ou de um serviço público.
+    <span class="selo estimado">estimado</span> produto de modelo, com margem de erro conhecida.
+    <span class="selo ausente">ausente</span> camada que não respondeu desta vez.
   </p>
 </section>
 
@@ -30,41 +31,42 @@
 
     <article class="rp-passo" data-passo="ponto" data-camada="ponto" data-mapa="grande" data-bloco="busca,ponto" data-titulo="Ponto de estudo" data-selo="real">
       <div class="num">1</div>
-      <h2>Um ponto, de onde tudo parte</h2>
-      <p>O Naturametrics não precisa de um polígono: qualquer clique no mapa do Brasil vira um ponto de estudo. A busca
-        aceita CEP, endereço, coordenada (inclusive colada do Google Maps) ou município, e só enquadra o mapa: quem escolhe
-        o ponto é o clique.</p>
+      <h2>Tudo parte de um ponto</h2>
+      <p>O Naturametrics não precisa de polígono: qualquer clique no mapa do Brasil vira um ponto de estudo. A busca aceita
+        CEP, endereço, coordenada (inclusive copiada do Google Maps) ou município, mas só posiciona o mapa — quem escolhe o
+        ponto é o clique.<button type="button" class="rp-nota" data-nota="1" aria-label="nota 1">1</button></p>
       <p id="t-ponto"></p>
-      <p class="como"><b>No aplicativo:</b> caixa <b>Buscar</b> e um clique no mapa, ou um link direto
-        <code>/?lat=…&amp;lon=…</code> (ou <code>/?ifn=</code> para um conglomerado).</p>
+      <p class="como"><b>No aplicativo:</b> caixa <b>Buscar</b> e um clique no mapa, ou um link direto com
+        <code>/?lat=…&amp;lon=…</code> (ou <code>/?ifn=</code>, para um conglomerado).</p>
     </article>
 
     <article class="rp-passo" data-passo="ifn" data-camada="ifn" data-mapa="grande" data-bloco="ifn" data-titulo="Conglomerados do IFN" data-selo="real">
       <div class="num">2</div>
       <h2>Os pontos do Inventário Florestal Nacional</h2>
-      <p>O Inventário Florestal Nacional mede árvores em campo numa grade de conglomerados pelo país. O aplicativo traz os
-        17.479 pontos publicados, filtráveis por região, estado, município e bioma. Clicar num conglomerado usa as
-        <b>coordenadas publicadas dele</b>, não o lugar exato do clique: 40 m de diferença já respondem outra pergunta.</p>
+      <p>O Inventário Florestal Nacional mede árvores em campo numa grade de conglomerados espalhada pelo país. O aplicativo
+        traz os 17.479 pontos publicados, que podem ser filtrados por região, estado, município e bioma. Ao clicar num
+        conglomerado, valem as <b>coordenadas publicadas dele</b>, e não o lugar exato do clique: 40 m de diferença já
+        respondem a outra pergunta.<button type="button" class="rp-nota" data-nota="2" aria-label="nota 2">2</button></p>
       <p id="t-ifn"></p>
-      <p class="como"><b>No aplicativo:</b> grupo <b>IFN, IBAMA e dados enviados</b>. Passar o mouse sobre um conglomerado
-        mostra uma prévia do uso do solo; clicar inicia a análise. Uma chave liga a seleção múltipla.</p>
+      <p class="como"><b>No aplicativo:</b> grupo <b>IFN, IBAMA e dados enviados</b>. Ao passar o mouse sobre um
+        conglomerado aparece uma prévia do uso do solo; o clique inicia a análise. Uma chave liga a seleção de vários pontos.</p>
     </article>
 
     <article class="rp-passo" data-passo="discos" data-camada="discos" data-mapa="grande" data-bloco="ponto" data-titulo="Áreas de análise" data-selo="real">
       <div class="num">3</div>
-      <h2>Cinco discos em volta do ponto</h2>
-      <p>Cada análise roda em cinco discos, de 0,5 a 10 km de raio. São <b>discos cheios</b>, não anéis: o de 5 km contém
-        o de 2 km. A pergunta é "como é a paisagem até esta distância", e o raio maior sempre inclui o menor.</p>
+      <h2>Cinco círculos em volta do ponto</h2>
+      <p>Cada análise roda em cinco círculos, de 0,5 a 10 km de raio. São <b>círculos cheios</b>, e não anéis: o de 5 km
+        contém o de 2 km. A pergunta é "como é a paisagem até esta distância", e por isso o raio maior sempre inclui o menor.<button type="button" class="rp-nota" data-nota="3" aria-label="nota 3">3</button></p>
       <p id="t-discos"></p>
       <p class="como"><b>No aplicativo:</b> os botões <b>0,5 km / 1 km / 2 km / 5 km / 10 km</b> acima de cada gráfico.
-        A chave de <b>buffers quadrados</b> troca o círculo por um quadrado de lado igual ao diâmetro.</p>
+        A chave <b>buffers quadrados</b> troca o círculo por um quadrado com lado igual ao diâmetro.</p>
     </article>
 
     <article class="rp-passo" data-passo="historia" data-camada="historia" data-mapa="meio" data-bloco="historia" data-titulo="História de uso da terra" data-selo="real">
       <div class="num">4</div>
-      <h2>Quarenta anos de MapBiomas num disco</h2>
-      <p>Cada coluna é um ano do MapBiomas e mostra quantos hectares do disco estavam em cada classe. No mapa, o uso do solo
-        do último ano, recortado no disco maior, como o aplicativo mostra assim que o ponto é escolhido.</p>
+      <h2>Quarenta anos de MapBiomas num círculo</h2>
+      <p>Cada coluna é um ano do MapBiomas, com os hectares do círculo em cada classe de uso. No mapa, o uso do solo do
+        último ano recortado no círculo maior, como o aplicativo mostra logo que o ponto é escolhido.</p>
       <p id="t-historia"></p>
       <p class="como"><b>No aplicativo:</b> painel <b>História de uso da terra</b>, com a escolha do raio e a chave
         <b>%</b>; ao lado, as <b>classes principais</b> do último ano.</p>
@@ -73,59 +75,60 @@
     <article class="rp-passo" data-passo="raios" data-camada="raios" data-mapa="meio" data-bloco="historia" data-titulo="Vegetação nativa por raio" data-selo="real">
       <div class="num">5</div>
       <h2>Perto e longe contam histórias diferentes</h2>
-      <p>A mesma série, agora como parte do disco que ainda é vegetação nativa, um traço por raio. Quando o disco pequeno
-        cai antes do grande, a conversão começou perto do ponto e se espalhou; quando cai depois, chegou de fora.</p>
+      <p>A mesma série, agora como a fatia de cada círculo que ainda é vegetação nativa, com uma linha por raio. Quando o
+        círculo pequeno cai antes do grande, a conversão começou perto do ponto e se espalhou; quando cai depois, veio de fora.</p>
       <p id="t-raios"></p>
       <p class="como"><b>No aplicativo:</b> painel <b>História de uso da terra</b> com a chave <b>%</b>, trocando o raio.
-        O mapa mostra aqui o primeiro ano da série.</p>
+        Aqui o mapa mostra o primeiro ano da série.</p>
     </article>
 
     <article class="rp-passo" data-passo="pixel" data-camada="pixel" data-mapa="meio" data-bloco="historia" data-titulo="O pixel do ponto" data-selo="real">
       <div class="num">6</div>
-      <h2>O pixel do próprio ponto, sem média</h2>
-      <p>Os discos são médias. O pixel de 30 m exatamente sob o ponto diz o que o classificador viu ali, ano a ano, sem nada
-        para suavizar. É o dado mais direto e também o mais ruidoso: um ano mal classificado aparece como uma troca falsa.</p>
+      <h2>O pixel do ponto, sem média nenhuma</h2>
+      <p>Os círculos são médias. Já o pixel de 30 m logo abaixo do ponto mostra o que o classificador viu ali, ano a ano, sem
+        nada que suavize. É o dado mais direto e também o mais instável: um ano mal classificado aparece como uma troca que
+        não aconteceu.</p>
       <p id="t-pixel"></p>
-      <p class="como"><b>No aplicativo:</b> a série do ponto vai junto em toda exportação, sempre com o aviso de que um pixel só é ruidoso.</p>
+      <p class="como"><b>No aplicativo:</b> a série do ponto vai em toda exportação, sempre com o aviso de que um pixel sozinho oscila.</p>
     </article>
 
     <article class="rp-passo" data-passo="mudanca" data-camada="mudanca" data-mapa="meio" data-bloco="floresta" data-titulo="Mudança desde 2008" data-selo="real">
       <div class="num">7</div>
       <h2>O que mudou desde 2008</h2>
-      <p>A máscara de mudança compara vegetação nativa em 2008, o marco do Código Florestal, com o último ano: vermelho é
-        o que era nativo e deixou de ser; verde é o que voltou. A conta é a mesma em todos os raios.</p>
+      <p>A máscara de mudança compara a vegetação nativa de 2008, o marco do Código Florestal, com a do último ano. Em
+        vermelho, o que era nativo e deixou de ser; em verde, o que voltou. A conta é a mesma em todos os raios.</p>
       <p id="t-mudanca"></p>
       <p class="como"><b>No aplicativo:</b> grupo <b>Biomassa e mudança florestal</b>, camada <b>Mudança desde 2008</b>.</p>
     </article>
 
     <article class="rp-passo" data-passo="idade" data-camada="idade" data-mapa="meio" data-bloco="idade" data-titulo="Idade da vegetação" data-selo="real">
       <div class="num">8</div>
-      <h2>Há quanto tempo cada pedaço é vegetação</h2>
-      <p>O MapBiomas Desmatamento e Vegetação Secundária marca quando cada pixel foi desmatado e quando voltou a crescer.
-        Daí sai a idade da vegetação de hoje. A vegetação que nunca foi desmatada desde o começo do registro não tem idade
-        conhecida: só se sabe que é <b>pelo menos</b> tão velha quanto a série.</p>
+      <h2>Há quanto tempo cada pedaço é mata</h2>
+      <p>O MapBiomas Desmatamento e Vegetação Secundária registra quando cada pixel foi desmatado e quando voltou a crescer.
+        Daí sai a idade da vegetação de hoje. A vegetação que nunca foi derrubada desde o início do registro não tem idade
+        conhecida: só se sabe que tem <b>pelo menos</b> a idade da série.</p>
       <p id="t-idade"></p>
-      <p>Por isso o aplicativo nunca mostra uma idade média: mostra a mediana da parte datada e, ao lado, quanto não tem data.</p>
+      <p>Por isso o aplicativo nunca dá uma idade média: mostra a mediana da parte com data e, ao lado, quanto ficou sem data.<button type="button" class="rp-nota" data-nota="4" aria-label="nota 4">4</button></p>
       <p class="como"><b>No aplicativo:</b> aba <b>Idade da vegetação</b>, com a série do ponto e a distribuição por raio.</p>
     </article>
 
-    <article class="rp-passo" data-passo="metricas" data-camada="metricas" data-mapa="oculto" data-bloco="metricas" data-titulo="Métricas de paisagem" data-selo="estimado">
+    <article class="rp-passo" data-passo="metricas" data-camada="metricas" data-mapa="oculto" data-bloco="metricas" data-titulo="Métricas de paisagem" data-selo="real">
       <div class="num">9</div>
       <h2>Fragmentos, bordas e diversidade</h2>
-      <p>A paisagem também tem forma. O aplicativo conta os fragmentos (manchas contínuas de uma mesma classe), mede a
-        densidade de borda e a diversidade de classes em cada raio. Mais fragmentos e mais borda no mesmo disco quer dizer
+      <p>A paisagem também tem forma. O aplicativo conta os fragmentos — manchas contínuas de uma mesma classe —, mede a
+        densidade de borda e a diversidade de classes em cada raio. No mesmo círculo, mais fragmentos e mais borda indicam
         uma paisagem mais recortada.</p>
       <p id="t-metricas"></p>
-      <p class="como"><b>No aplicativo:</b> aba <b>Métricas</b>. As contas usam componentes conectados do Earth Engine,
-        que tem um teto de tamanho de mancha, e o aplicativo registra esse teto na procedência.</p>
+      <p class="como"><b>No aplicativo:</b> aba <b>Métricas</b>. Os fragmentos são vetorizados dentro de cada círculo, sem
+        limite de tamanho; um fragmento cortado pela borda do círculo conta só a parte de dentro.</p>
     </article>
 
     <article class="rp-passo" data-passo="biomassa" data-camada="biomassa" data-mapa="meio" data-bloco="biomassa" data-titulo="Biomassa · ESA CCI" data-selo="estimado">
       <div class="num">10</div>
-      <h2>Biomassa, com a sua incerteza</h2>
-      <p>A biomassa acima do solo vem do ESA CCI, em pixels de 100 m e dez anos entre 2007 e 2022. O produto publica junto
-        o desvio-padrão de cada pixel, e o aplicativo leva esse desvio para o gráfico: a faixa sombreada é a incerteza do
-        próprio produto.</p>
+      <h2>Biomassa, com a incerteza à vista</h2>
+      <p>A biomassa acima do solo vem do ESA CCI, em pixels de 100 m e para dez anos entre 2007 e 2022. O produto publica
+        junto o desvio-padrão de cada pixel, e o aplicativo leva esse desvio para o gráfico: a faixa sombreada é a incerteza
+        do próprio produto.</p>
       <p id="t-biomassa"></p>
       <p class="como"><b>No aplicativo:</b> aba <b>Biomassa</b>, em Mg/ha por raio.</p>
     </article>
@@ -136,14 +139,14 @@
       <p>O mapa de vegetação do IBGE é desenhado em polígonos na escala de 1:250.000; o MapBiomas classifica cada pixel de
         30 m todo ano. Onde o desmatamento é recente, o IBGE ainda desenha floresta.</p>
       <p id="t-ibge"></p>
-      <p class="como"><b>No aplicativo:</b> aba <b>IBGE</b>, com a matriz por raio e a camada do IBGE no grupo de referência.</p>
+      <p class="como"><b>No aplicativo:</b> aba <b>IBGE</b>, com a matriz por raio, e a camada do IBGE no grupo de referência.</p>
     </article>
 
     <article class="rp-passo" data-passo="ibama" data-camada="ibama" data-mapa="grande" data-bloco="ifn" data-titulo="IBAMA · embargos e autos" data-selo="real">
       <div class="num">12</div>
       <h2>O que o IBAMA já registrou por perto</h2>
-      <p>Áreas embargadas e autos de infração vêm direto dos serviços públicos do IBAMA, no recorte do mapa. Eles dizem que
-        houve fiscalização, não o que aconteceu num pixel: um embargo pode cobrir uma área maior que o desmatamento, e a
+      <p>Áreas embargadas e autos de infração vêm direto dos serviços públicos do IBAMA, no recorte do mapa. Eles mostram que
+        houve fiscalização, não o que aconteceu em cada pixel: um embargo pode cobrir uma área maior que o desmatamento, e a
         coordenada de um auto é a do registro, não necessariamente a da infração.</p>
       <p id="t-ibama"></p>
       <p class="como"><b>No aplicativo:</b> grupo <b>IFN, IBAMA e dados enviados</b>, camadas <b>Embargos</b> e <b>Autos de infração</b>.</p>
@@ -151,12 +154,12 @@
 
     <article class="rp-passo" data-passo="procedencia" data-camada="procedencia" data-mapa="oculto" data-bloco="exportar" data-titulo="Procedência e exportação" data-selo="real">
       <div class="num">13</div>
-      <h2>Tudo o que se vê, numa planilha</h2>
-      <p>O botão <b>Baixar dados</b> gera uma planilha ODS com uma aba por tabela: histórico por raio, pixel do ponto, idade,
-        métricas, biomassa e a procedência de cada uma. Com a seleção múltipla, a mesma planilha cobre centenas de
-        conglomerados de uma vez, até um bioma inteiro.</p>
+      <h2>Tudo o que aparece, numa planilha</h2>
+      <p>O botão <b>Baixar dados</b> gera uma planilha ODS com uma aba por tabela: histórico por raio, pixel do ponto,
+        idade, métricas, biomassa e a procedência de cada uma. Com a seleção de vários pontos, a mesma planilha cobre
+        centenas de conglomerados de uma vez, até um bioma inteiro.<button type="button" class="rp-nota" data-nota="5" aria-label="nota 5">5</button></p>
       <p id="t-procedencia"></p>
-      <p class="como"><b>No aplicativo:</b> botão <b>Baixar dados</b> no topo, e o relatório em PDF do ponto.</p>
+      <p class="como"><b>No aplicativo:</b> botão <b>Baixar dados</b>, no topo, e o relatório em PDF do ponto.</p>
     </article>
 
   </div>
@@ -208,15 +211,15 @@
   <h2>O que o Naturametrics não diz</h2>
   <ul class="rp-limites">
     <li><b>Não diz por que a paisagem mudou.</b> A série mostra quando e quanto; a causa, o responsável e a legalidade
-      ficam fora do satélite.</li>
-    <li><b>Não mede o conglomerado em campo.</b> As árvores medidas pelo IFN não estão aqui: o ponto é só o lugar onde
-      o inventário mede, e a coordenada publicada é uma aproximação.</li>
-    <li><b>Não confunde disco com propriedade.</b> Um disco de 10 km atravessa muitos imóveis, terras públicas e estradas.
-      Para um imóvel do CAR, o Camposcope faz a mesma leitura pelos limites declarados.</li>
-    <li><b>Não soma discos sobrepostos.</b> Na seleção múltipla, cada conglomerado conta o próprio disco; a soma de discos
-      que se cruzam não é a área da união.</li>
-    <li><b>Não enxerga abaixo de 30 m.</b> O pixel do ponto é o dado mais direto e o mais ruidoso; um ano isolado diferente
-      dos vizinhos é, em geral, erro de classificação.</li>
+      ficam fora do alcance do satélite.</li>
+    <li><b>Não mede o conglomerado em campo.</b> As árvores medidas pelo IFN não estão aqui: o ponto é só o lugar onde o
+      inventário mede, e a coordenada publicada é aproximada.</li>
+    <li><b>Não confunde círculo com propriedade.</b> Um círculo de 10 km atravessa muitos imóveis, terras públicas e
+      estradas. Para um imóvel do CAR, o Camposcope faz a mesma leitura a partir dos limites declarados.</li>
+    <li><b>Não soma círculos sobrepostos.</b> Na seleção de vários pontos, cada conglomerado conta o próprio círculo; a soma
+      de círculos que se cruzam não é a área da união.</li>
+    <li><b>Não enxerga detalhes menores que 30 m.</b> O pixel do ponto é o dado mais direto e o mais instável; um ano
+      isolado, diferente dos vizinhos, costuma ser erro de classificação.</li>
   </ul>
   <p class="rp-fim-extra" id="fim-extra"></p>
   <a class="rp-cta" id="cta-app" href="/">Abrir este ponto no Naturametrics →</a>
@@ -226,6 +229,33 @@
     <a href="?ifn=MT_1527">Água Boa (MT), Cerrado</a> ·
     <a href="?ifn=MT_2275">Cáceres (MT), Pantanal</a> ·
     <a href="?">Colniza (MT), o exemplo desta página</a>.
-    Troque o conglomerado (<code>?ifn=</code>) ou passe uma coordenada (<code>?lat=…&amp;lon=…</code>) para ler qualquer
-    ponto do Brasil. Os números vêm dos mesmos serviços do aplicativo: o exemplo desta página fica guardado com ela, e outro ponto é calculado na hora.</p>
+    Para ler outro ponto, troque o conglomerado (<code>?ifn=</code>) ou passe uma coordenada (<code>?lat=…&amp;lon=…</code>).
+    Os números vêm dos mesmos serviços do aplicativo: o exemplo desta página fica guardado com ela, e qualquer outro
+    ponto é calculado na hora. <a href="/walkthrough" lang="en">English version</a>.</p>
+</section>
+
+<section class="rp-notas" aria-label="Notas">
+  <h3>Notas</h3>
+  <ol>
+    <li id="nota-1">Das três ferramentas da UmaTerra, o Naturametrics é a única em que o limite não existe antes da
+      análise: é o analista quem o constrói, ao clicar e escolher um raio. Por isso o resultado depende da vizinhança
+      escolhida, e o aplicativo deixa essa escolha à vista em vez de fixá-la.
+      <span class="rp-pop-fonte">Biondo et al., <i>Registry, coordinate, cadastre</i> (manuscrito em preparação, 2026).</span></li>
+    <li id="nota-2">O catálogo tem 17.495 conglomerados, dos quais 16 sem geometria; ficam 17.479 utilizáveis. Cada um é
+      tratado como uma unidade própria, sem agregação prévia. O filtro por bioma lê um asset preparado com antecedência:
+      os contornos dos três maiores biomas, na escala de 1:250.000, são longos demais para o filtro do Earth Engine, que
+      falhava em silêncio.
+      <span class="rp-pop-fonte">Biondo et al., <i>Registry, coordinate, cadastre</i> (manuscrito em preparação, 2026).</span></li>
+    <li id="nota-3">Os círculos são cumulativos — o de 10 km contém o de 0,5 km —, então os valores de raios vizinhos não
+      são independentes. Quem quiser diferenças diretas pode trocar para anéis separados no próprio aplicativo.
+      <span class="rp-pop-fonte">Biondo et al., <i>Registry, coordinate, cadastre</i> (manuscrito em preparação, 2026).</span></li>
+    <li id="nota-4">A regra está nas premissas do aplicativo: uma "idade média da floresta" que conta silenciosamente uma
+      mata centenária como se tivesse 40 anos é exatamente o erro que essa restrição existe para impedir. A idade é sempre
+      mostrada com a parcela censurada.
+      <span class="rp-pop-fonte">Biondo et al., <i>Registry, coordinate, cadastre</i> (manuscrito em preparação, 2026).</span></li>
+    <li id="nota-5">Exportar algumas centenas de conglomerados gera centenas de milhares de linhas. A biblioteca anterior
+      levava 42 s para 60 mil linhas; o gravador próprio do aplicativo escreve 600 mil linhas em 3,9 s, num arquivo de
+      14 MB, e se recusa a passar de 2²⁰ linhas por aba, o limite em que LibreOffice e Excel cortam o resto sem avisar.
+      <span class="rp-pop-fonte">Biondo et al., <i>Registry, coordinate, cadastre</i> (manuscrito em preparação, 2026).</span></li>
+  </ol>
 </section>

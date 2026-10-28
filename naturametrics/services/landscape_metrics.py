@@ -36,8 +36,8 @@ logger = logging.getLogger(__name__)
 #: connectivity proxy: the size a patch would need to be, alone in the
 #: landscape, for a randomly placed pair of points to have the same chance of
 #: falling in the same patch as they do here. It falls out of the same
-#: connected-components image already built for ``largest_patch_ha``, at the
-#: cost of one more ``reduceRegions`` call (see ``mesh_reduced`` below), which
+#: vectorised patches already counted for ``largest_patch_ha``
+#: (:func:`_vector_patch_stats`, one call for all three), which
 #: is why it is always computed rather than gated behind its own button the
 #: way the costlier true nearest-neighbour distance is (services.connectivity).
 #: ``patch_area_sq_ha`` is the Σ(patch area²) numerator behind it, kept as its
@@ -128,9 +128,9 @@ def _summary_from_properties(
     # length, edge_m, alongside the ratio, so a multi-selection sum can add
     # lengths and areas separately and only divide once, at the end).
     edge_m = edge_fraction * pixels * pixel_scale_m
-    # Σ(patch pixel-count²) across the buffer — see mesh_reduced in
-    # _landscape_metrics_from_collection for how this sum, taken over the
-    # *same* per-pixel patch-size image as largest_patch above, equals
+    # Σ(patch pixel-count²) across the buffer — see _vector_patch_stats: the
+    # sum of each vectorised patch's pixel count squared, the *same* patches
+    # as largest_patch above, equals
     # Σ(patch area²) once scaled by pixel_area_m2² (each patch's n_i pixels
     # each carry the value n_i, so summing them gives n_i² per patch).
     patch_size_sum = float(props.get("patch_size_sum") or 0)
@@ -261,7 +261,8 @@ def landscape_metrics(
     """Landscape metrics for one point's buffers.
 
     Patches are contiguous 8-neighbour regions of equal MapBiomas class. NP and
-    LPI use Earth Engine connected components; ED is the native-raster boundary
+    LPI come from patches vectorised per buffer (_vector_patch_stats, no size
+    cap); ED is the native-raster boundary
     estimate. Diversity metrics (shannon/simpson/simpson_evenness) are computed
     from the returned histogram by :func:`_diversity`, not carried as columns
     here — see :func:`aggregate_landscape_metrics` for why.

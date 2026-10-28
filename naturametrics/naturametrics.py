@@ -14,7 +14,7 @@ from .canada.pages.index import canada_index
 from .canada.state import CanadaState
 from .components.layout import ACCENT
 from .config.settings import GA_MEASUREMENT_ID
-from .pages.demonstracao import demonstracao
+from .pages.demonstracao import demonstracao, walkthrough
 from .pages.index import index
 from .state import AppState
 
@@ -84,6 +84,17 @@ app.add_page(
         "Como ler a paisagem em volta de um ponto, raio por raio: MapBiomas, "
         "pixel do ponto, mudança desde 2008, idade da vegetação, métricas de "
         "paisagem, biomassa, IBGE e IBAMA, com um conglomerado real do IFN."
+    ),
+)
+
+app.add_page(
+    walkthrough,
+    route="/walkthrough",
+    title="Naturametrics — step-by-step walkthrough",
+    description=(
+        "How to read the landscape around a point, one radius at a time: "
+        "MapBiomas, the point's pixel, change since 2008, vegetation age, "
+        "landscape metrics, biomass, IBGE and IBAMA, on a real inventory plot."
     ),
 )
 

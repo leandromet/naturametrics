@@ -399,14 +399,13 @@
     ctx.enquadrar = function (alvo, opcoes) {
       if (!ctx.mapa) return;
       var b = limites(ctx.L, alvo);
-      if (b) ctx.mapa.flyToBounds(b, Object.assign({ padding: [24, 24], maxZoom: 15, duration: 0.8 }, opcoes || {}));
+      if (b) { ctx._enquadre = [b, Object.assign({ padding: [24, 24], maxZoom: 15, duration: 0.8 }, opcoes || {})]; ctx.mapa.flyToBounds(b, ctx._enquadre[1]); }
     };
-    ctx.centro = function (latlon, zoom) { if (ctx.mapa) ctx.mapa.flyTo(latlon, zoom, { duration: 0.8 }); };
+    ctx.centro = function (latlon, zoom) { if (ctx.mapa) { ctx._enquadre = null; ctx.mapa.flyTo(latlon, zoom, { duration: 0.8 }); } };
 
     function ativar(passo) {
       if (!passo || passo === ctx._passo) return;
       ctx._passo = passo;
-      if (ctx.travarMapa) ctx.travarMapa();
       $$(".rp-passo").forEach(function (p) { p.classList.toggle("ativo", p === passo); });
       var id = passo.dataset.passo;
       var camada = passo.dataset.camada !== undefined ? passo.dataset.camada : id;
@@ -431,7 +430,14 @@
       ctx.legendaFig("");
       if (!ctx.dados) return;
       var fn = cfg.passos && cfg.passos[id];
+      ctx._enquadre = null;
       if (fn) { try { fn(ctx, ctx.dados); } catch (e) { console.error("[reportagem] passo " + id, e); } }
+      // no celular a legenda fica sob o mapa: a deste passo pode ter mudado a altura dele
+      // depois do enquadramento, que então é refeito no tamanho novo
+      if (ctx.mapa) {
+        var antes = ctx.mapa.getSize();
+        if (!ctx.mapa.invalidateSize(false).getSize().equals(antes) && ctx._enquadre) ctx.mapa.flyToBounds(ctx._enquadre[0], ctx._enquadre[1]);
+      }
     }
     ctx.reativar = function () { var p = ctx._passo; ctx._passo = null; ativar(p); };
 
@@ -480,22 +486,32 @@
       // rolar a página não deve dar zoom; clicar no mapa libera
       ctx.mapa.on("click", function () { ctx.mapa.scrollWheelZoom.enable(); });
       ctx.mapa.on("mouseout", function () { ctx.mapa.scrollWheelZoom.disable(); });
-      // No toque, o mapa fixo ocupa a metade de cima da tela: com arrasto ligado
-      // o Leaflet põe touch-action:none e o dedo que rola a página passa a mover
-      // o mapa (medido em 390×844: um gesto de 250 px rolava 0 px; travado, rola 253). Então ele começa
-      // travado, um toque libera arrastar e pinçar, e o passo seguinte trava de novo.
+      // No toque, o mapa fixo ocupa a metade de cima da tela e o texto passa por cima dele: rolar
+      // o texto vale mais que arrastar o mapa. Então o dedo nunca arrasta nem pinça (com arrasto
+      // ligado o Leaflet põe touch-action:none e um gesto de 250 px rolava 0 px em 390×844);
+      // mover e aproximar ficam nos botões: setas junto do + e −.
       if (window.matchMedia("(pointer: coarse)").matches) {
-        var caixaMapa = el.parentElement;
-        ctx.travarMapa = function () {
-          ctx.mapa.dragging.disable(); ctx.mapa.touchZoom.disable();
-          if (caixaMapa) caixaMapa.classList.add("rp-mapa-travado");
-        };
-        ctx.travarMapa();
-        ctx.mapa.on("click", function () {
-          ctx.mapa.dragging.enable(); ctx.mapa.touchZoom.enable();
-          if (caixaMapa) caixaMapa.classList.remove("rp-mapa-travado");
+        ctx.mapa.dragging.disable(); ctx.mapa.touchZoom.disable(); ctx.mapa.doubleClickZoom.disable();
+        if (el.parentElement) el.parentElement.classList.add("rp-mapa-travado");
+        var Setas = L.Control.extend({
+          options: { position: "topleft" },
+          onAdd: function (mapa) {
+            var caixa = L.DomUtil.create("div", "leaflet-bar rp-setas");
+            [["↑", 0, -1, ctx.t("mover para o norte", "pan north")], ["←", -1, 0, ctx.t("mover para o oeste", "pan west")],
+             ["→", 1, 0, ctx.t("mover para o leste", "pan east")], ["↓", 0, 1, ctx.t("mover para o sul", "pan south")]].forEach(function (s) {
+              var a = L.DomUtil.create("a", "", caixa);
+              a.href = "#"; a.role = "button"; a.textContent = s[0]; a.title = s[3]; a.setAttribute("aria-label", s[3]);
+              L.DomEvent.disableClickPropagation(a);
+              L.DomEvent.on(a, "click", function (ev) {
+                L.DomEvent.preventDefault(ev);
+                var t = mapa.getSize();
+                mapa.panBy([s[1] * t.x / 3, s[2] * t.y / 3]);
+              });
+            });
+            return caixa;
+          }
         });
-        if (caixaMapa) caixaMapa.setAttribute("data-dica", ctx.t("toque no mapa para mover e dar zoom", "tap the map to pan and zoom"));
+        new Setas().addTo(ctx.mapa);
       }
     }).catch(function (e) {
       if (estado) estado.textContent = ctx.t("O mapa não carregou (" + e.message + "). Os números continuam valendo.",

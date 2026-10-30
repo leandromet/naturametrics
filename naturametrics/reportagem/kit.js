@@ -324,7 +324,7 @@
       t: function (pt, en) { return lang === "en" ? en : pt; },
       raiz: raiz, $: $, $$: $$, fmt: fmt, graf: graf, dados: null, L: null, mapa: null,
       backend: urlBackend(raiz.dataset.backend), params: new URLSearchParams(window.location.search),
-      _tiles: {}, _vetores: {}, _passo: null
+      _tiles: {}, _imagens: {}, _vetores: {}, _passo: null
     };
 
     ctx.preencher = function (campos) {
@@ -354,6 +354,22 @@
         ctx._tiles[k] = (p.layers
           ? ctx.L.tileLayer.wms(p.url, Object.assign(op, { layers: p.layers, format: p.format || "image/png", transparent: p.transparent !== false, version: p.version || "1.1.1" }))
           : ctx.L.tileLayer(p.url, op)).addTo(ctx.mapa);
+      });
+    };
+    // imagens: {chave: {url, bounds: [[sul, oeste], [norte, leste]], opacity, attribution}} — idem.
+    // Para páginas estáticas (as histórias do portal), onde os tiles do Earth Engine
+    // expirariam: a camada vem pré-renderizada como PNG recortado na área da página.
+    ctx.imagens = function (pedidas) {
+      if (!ctx.mapa) return;
+      pedidas = pedidas || {};
+      Object.keys(ctx._imagens).forEach(function (k) {
+        if (!pedidas[k]) { ctx.mapa.removeLayer(ctx._imagens[k]); delete ctx._imagens[k]; }
+      });
+      Object.keys(pedidas).forEach(function (k) {
+        var p = pedidas[k]; if (!p || !p.url || !p.bounds) return;
+        var op = p.opacity === undefined ? 0.85 : p.opacity;
+        if (ctx._imagens[k]) { ctx._imagens[k].setOpacity(op); return; }
+        ctx._imagens[k] = ctx.L.imageOverlay(p.url, p.bounds, { opacity: op, attribution: p.attribution || "", zIndex: p.z || 10 }).addTo(ctx.mapa);
       });
     };
     // vetores: {chave: {geojson, estilo, ponto, popup}} — idem
@@ -390,6 +406,7 @@
     function ativar(passo) {
       if (!passo || passo === ctx._passo) return;
       ctx._passo = passo;
+      if (ctx.travarMapa) ctx.travarMapa();
       $$(".rp-passo").forEach(function (p) { p.classList.toggle("ativo", p === passo); });
       var id = passo.dataset.passo;
       var camada = passo.dataset.camada !== undefined ? passo.dataset.camada : id;
@@ -463,6 +480,23 @@
       // rolar a página não deve dar zoom; clicar no mapa libera
       ctx.mapa.on("click", function () { ctx.mapa.scrollWheelZoom.enable(); });
       ctx.mapa.on("mouseout", function () { ctx.mapa.scrollWheelZoom.disable(); });
+      // No toque, o mapa fixo ocupa a metade de cima da tela: com arrasto ligado
+      // o Leaflet põe touch-action:none e o dedo que rola a página passa a mover
+      // o mapa (medido em 390×844: um gesto de 250 px rolava 0 px; travado, rola 253). Então ele começa
+      // travado, um toque libera arrastar e pinçar, e o passo seguinte trava de novo.
+      if (window.matchMedia("(pointer: coarse)").matches) {
+        var caixaMapa = el.parentElement;
+        ctx.travarMapa = function () {
+          ctx.mapa.dragging.disable(); ctx.mapa.touchZoom.disable();
+          if (caixaMapa) caixaMapa.classList.add("rp-mapa-travado");
+        };
+        ctx.travarMapa();
+        ctx.mapa.on("click", function () {
+          ctx.mapa.dragging.enable(); ctx.mapa.touchZoom.enable();
+          if (caixaMapa) caixaMapa.classList.remove("rp-mapa-travado");
+        });
+        if (caixaMapa) caixaMapa.setAttribute("data-dica", ctx.t("toque no mapa para mover e dar zoom", "tap the map to pan and zoom"));
+      }
     }).catch(function (e) {
       if (estado) estado.textContent = ctx.t("O mapa não carregou (" + e.message + "). Os números continuam valendo.",
                                              "The map did not load (" + e.message + "). The numbers still stand.");

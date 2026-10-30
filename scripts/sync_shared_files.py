@@ -34,6 +34,8 @@ APPS = {
     "camposcope": Path("/server/camposcope"),
     "yvynation": Path("/home/leandromb/google_eengine/yvynation/reflex_app"),
     "muda_clima": Path("/server/2026_projeto_clima/muda-clima"),
+    # the portal's long stories (public/historias/) run on the same kit
+    "portal": Path("/media/leandromb/db_lin/gitstore/leandromet/umaterra-portal"),
 }
 CANONICAL = "naturametrics"
 
@@ -73,12 +75,14 @@ SHARED = {
         "camposcope": "camposcope/reportagem/kit.js",
         "yvynation": "yvynation/reportagem/kit.js",
         "muda_clima": "app/web/static/reportagem/kit.js",
+        "portal": "public/historias/kit.js",
     },
     "reportagem_kit_css": {
         "naturametrics": "naturametrics/reportagem/kit.css",
         "camposcope": "camposcope/reportagem/kit.css",
         "yvynation": "yvynation/reportagem/kit.css",
         "muda_clima": "app/web/static/reportagem/kit.css",
+        "portal": "public/historias/kit.css",
     },
 }
 MANIFEST = Path("tests") / "shared_files.sha256"
@@ -137,7 +141,9 @@ def main() -> int:
             for paths in SHARED.values():
                 if app not in paths:
                     continue
+                (present[app] / paths[app]).parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(APPS[CANONICAL] / paths[CANONICAL], present[app] / paths[app])
+        (present[app] / MANIFEST).parent.mkdir(parents=True, exist_ok=True)
         (present[app] / MANIFEST).write_text(manifest_text(app))
         problems = verify(app)
         print(f"{app}: {'synced' if not problems else 'FAILED ' + '; '.join(problems)}")

@@ -285,6 +285,7 @@ TRANSLATIONS_PT: dict[str, str] = {
     # --- help / cite --------------------------------------------------------- #
     "help_trigger": "Como usar",
     "help_dialog_title": "Como usar o Naturametrics Canadá",
+    "help_demo_link": "Prefere ver funcionando? Abra a demonstração passo a passo com um ponto real em Kelowna (em inglês) →",
     "help_dialog_desc": (
         "História do inventário agrícola, idade e mudança da floresta em "
         "qualquer ponto do Canadá."

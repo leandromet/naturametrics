@@ -16,18 +16,23 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from naturametrics.canada.services import demonstracao as demonstracao_ca  # noqa: E402
 from naturametrics.services import demonstracao  # noqa: E402
 
 
 def main() -> int:
-    dados = demonstracao.instantaneo()
-    if dados["erros"]:
-        print("Análises com erro, nada gravado:", dados["erros"])
-        return 1
-    alvo = demonstracao.ARQUIVO_EXEMPLO
-    alvo.parent.mkdir(parents=True, exist_ok=True)
-    alvo.write_text(json.dumps(dados, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    print(f"{alvo} — {alvo.stat().st_size // 1024} KB")
+    so = sys.argv[1:]   # "br" ou "ca" (Kelowna, a página em inglês) para regravar só um deles
+    for chave, modulo in (("br", demonstracao), ("ca", demonstracao_ca)):
+        if so and chave not in so:
+            continue
+        dados = modulo.instantaneo()
+        if dados["erros"]:
+            print(f"[{chave}] análises com erro, nada gravado:", dados["erros"])
+            return 1
+        alvo = modulo.ARQUIVO_EXEMPLO
+        alvo.parent.mkdir(parents=True, exist_ok=True)
+        alvo.write_text(json.dumps(dados, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        print(f"{alvo} — {alvo.stat().st_size // 1024} KB")
     return 0
 
 

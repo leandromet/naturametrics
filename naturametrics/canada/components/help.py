@@ -55,6 +55,14 @@ def how_to_use_dialog() -> rx.Component:
             rx.dialog.title(S.tr["help_dialog_title"]),
             rx.dialog.description(S.tr["help_dialog_desc"], size="2",
                                   color_scheme="gray", margin_bottom="0.75rem"),
+            # The scrolling walkthrough on a point above Kelowna (pages/demonstracao.py,
+            # English only: the Portuguese one opens a Brazilian plot).
+            rx.link(
+                rx.callout(S.tr["help_demo_link"], icon="presentation", size="1",
+                           color_scheme="green", width="100%"),
+                href="/walkthrough", underline="none",
+                display="block", margin_bottom="0.75rem",
+            ),
             rx.scroll_area(
                 rx.vstack(
                     _step("1", S.tr["help_step1_title"], S.tr["help_step1_body"]),

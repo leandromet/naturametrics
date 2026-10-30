@@ -1,0 +1,191 @@
+<header class="rp-topo">
+  <span class="marca"><a href="/canada?lang=en">Naturametrics</a> · walkthrough</span>
+  <span class="rp-exemplo" id="topo-exemplo"></span>
+  <span class="sp"></span>
+  <a href="/canada?lang=en" id="link-app" class="rp-link-forte">open this point in the app →</a>
+</header>
+
+<section class="rp-abertura">
+  <div class="rp-chapeu">Forest · land use · step by step</div>
+  <h1>How to read the landscape around a point, one layer at a time</h1>
+  <p class="rp-linha-fina">One click on the map, and Naturametrics draws five circles around it and reads fifteen crop
+    inventories, the age of every forest stand and twenty-five years of tree-cover loss inside each. This walkthrough opens
+    a real point in the forest above Kelowna, step by step, with where each number comes from and where it stops.</p>
+  <p class="rp-cred" id="abertura-exemplo">Loading the example point's analysis…</p>
+  <div class="rp-numeros" aria-live="polite">
+    <div><b data-campo="n-idade">—</b><small>age of the forest stand at the point, 2019 <span class="selo estimado">estimated</span></small></div>
+    <div><b data-campo="n-floresta">—</b><small data-campo="n-floresta-rot">of the 5 km circle is forest</small></div>
+    <div><b data-campo="n-perda">—</b><small data-campo="n-perda-rot">of tree cover lost within 5 km since 2001</small></div>
+    <div><b data-campo="n-pior">—</b><small data-campo="n-pior-rot">the worst year for loss within 5 km</small></div>
+  </div>
+  <p class="rp-legenda-selos">
+    <span class="selo real">measured</span> computed from satellite imagery or from the geometry itself.
+    <span class="selo estimado">estimated</span> a modelled product, with a larger error than the land-use map.
+    <span class="selo ausente">missing</span> a layer that did not respond this time.
+  </p>
+</section>
+
+<section class="rp-scrolly">
+  <div class="rp-passos">
+
+    <article class="rp-passo" data-passo="ponto" data-camada="ponto" data-mapa="grande" data-bloco="busca,ponto" data-titulo="A point on the map" data-selo="real">
+      <div class="num">1</div>
+      <h2>It all starts from a point</h2>
+      <p>Naturametrics does not need a property line. A click, an address, a postal code or a coordinate is enough: the
+        analysis is built around the point, so it works the same on a farm, a park, Crown land or a backyard.<button type="button" class="rp-nota" data-nota="1" aria-label="note 1">1</button></p>
+      <p id="t-ponto"></p>
+      <p class="como"><b>In the app:</b> the <b>Search</b> box on the Canada page, a click on the map, or a direct link with
+        <code>/canada?lat=…&amp;lon=…</code>.</p>
+    </article>
+
+    <article class="rp-passo" data-passo="discos" data-camada="discos" data-mapa="grande" data-bloco="raios" data-titulo="Five circles" data-selo="real">
+      <div class="num">2</div>
+      <h2>Five circles around the point</h2>
+      <p>Every analysis runs five times, in circles of 0.5, 1, 2, 5 and 10 km. The small ones say what is at the point; the
+        large ones, what the landscape around it is like. Each circle contains the smaller ones, so the 10 km circle is the
+        whole picture and the 0.5 km one is the close-up.</p>
+      <p id="t-discos"></p>
+      <p class="como"><b>In the app:</b> the <b>Radius</b> selector above the charts, and the circles on the map.</p>
+    </article>
+
+    <article class="rp-passo" data-passo="historia" data-camada="historia" data-mapa="meio" data-bloco="cobertura" data-titulo="Land cover · AAFC crop inventory" data-selo="real">
+      <div class="num">3</div>
+      <h2>Fifteen crop inventories in one circle</h2>
+      <p>Agriculture and Agri-Food Canada's Annual Crop Inventory classifies every 30 m pixel each year, forests and towns as
+        well as crops. Each column is one year in the 5 km circle, from 2011, when the inventory first covered all of Canada.</p>
+      <p id="t-historia"></p>
+      <p class="como"><b>In the app:</b> the <b>Crop inventory history</b> chart, and the <b>Annual Crop Inventory</b> layer with its year selector.</p>
+    </article>
+
+    <article class="rp-passo" data-passo="raios" data-camada="raios" data-mapa="meio" data-bloco="cobertura,raios" data-titulo="Natural vegetation by radius" data-selo="real">
+      <div class="num">4</div>
+      <h2>Near and far tell different stories</h2>
+      <p>The same series as the share of each circle that is natural vegetation: forest, wetland, grassland and shrub. When
+        the small circles stay green and the large ones fall, the point sits in a remnant inside a changing landscape.</p>
+      <p id="t-raios"></p>
+      <p class="como"><b>In the app:</b> the <b>Crop inventory history</b> chart with the <b>%</b> button, changing radius.</p>
+    </article>
+
+    <article class="rp-passo" data-passo="pixel" data-camada="pixel" data-mapa="grande" data-bloco="ponto" data-titulo="The point's pixel" data-selo="real">
+      <div class="num">5</div>
+      <h2>The point's own pixel, no averaging</h2>
+      <p>Before any circle, one pixel: the 30 m square under the click, year by year. It is the sharpest reading and the most
+        fragile, because a single misclassified year shows up as a change.</p>
+      <p id="t-pixel"></p>
+      <p class="como"><b>In the app:</b> the clicked pixel's class, year by year, is the first sheet of the point spreadsheet (<b>Download data</b>).</p>
+    </article>
+
+    <article class="rp-passo" data-passo="idade" data-camada="idade" data-mapa="meio" data-bloco="floresta" data-titulo="Stand age · NTEMS" data-selo="estimado">
+      <div class="num">6</div>
+      <h2>How old the forest is</h2>
+      <p>The national forest monitoring system (NTEMS, Canadian Forest Service) maps the age of every forested 30 m pixel
+        in 2019, from three decades of Landsat disturbance and regrowth. Young stands are the ones that burned or were logged;
+        stands over a century old are what was left standing.</p>
+      <p id="t-idade"></p>
+      <p class="como"><b>In the app:</b> the <b>Forest age</b> chart, <b>Age at the clicked pixel</b>, and the <b>Stand age</b> layer.</p>
+    </article>
+
+    <article class="rp-passo" data-passo="mudanca" data-camada="mudanca" data-mapa="meio" data-bloco="floresta,raios" data-titulo="Forest · Hansen/GLAD" data-selo="real">
+      <div class="num">7</div>
+      <h2>Tree cover lost and gained, circle by circle</h2>
+      <p>Hansen/GLAD maps the 30 m pixels that lost their tree cover each year since 2001, and flags, without a date, the
+        ones that gained it. Counting canopy above 30% as forest, the loss in each circle is set against the forest it had in 2000.</p>
+      <p id="t-mudanca"></p>
+      <p class="como"><b>In the app:</b> the <b>Forest change</b> chart, the <b>Loss and gain</b> layer, and the <b>Forest threshold</b> control.</p>
+    </article>
+
+    <article class="rp-passo" data-passo="perda" data-camada="perda" data-mapa="meio" data-bloco="floresta" data-titulo="Loss by year" data-selo="real">
+      <div class="num">8</div>
+      <h2>The years that stand out</h2>
+      <p>Loss by year, inside the 5 km circle. In the Okanagan, a tall column is almost always fire or salvage logging after
+        fire. Hansen dates a pixel by the year the loss was first seen, so a late-summer fire often lands partly in the next year.<button type="button" class="rp-nota" data-nota="2" aria-label="note 2">2</button></p>
+      <p id="t-perda"></p>
+      <p class="como"><b>In the app:</b> the <b>Forest change</b> chart, and <b>Loss from year</b> on the layer.</p>
+    </article>
+
+    <article class="rp-passo" data-passo="procedencia" data-camada="procedencia" data-mapa="oculto" data-bloco="exportar" data-titulo="Provenance and export" data-selo="real">
+      <div class="num">9</div>
+      <h2>Everything on screen, in one spreadsheet</h2>
+      <p>Each analysis keeps its source, scale and time of calculation, and the export carries them with the numbers: a reading
+        of a landscape is only worth what it takes to reproduce it.<button type="button" class="rp-nota" data-nota="3" aria-label="note 3">3</button></p>
+      <p id="t-procedencia"></p>
+      <p class="como"><b>In the app:</b> the <b>Download data</b> button: an ODS spreadsheet with one sheet per table.</p>
+    </article>
+
+  </div>
+
+  <div class="rp-figura" aria-live="polite">
+    <div class="rp-moldura">
+      <div class="rp-barra-janela"><i></i><i></i><i></i><span id="rp-fig-url">naturametrics.umaterra.com.br/canada</span></div>
+      <div class="rp-fig-corpo">
+        <nav class="rp-pagina" aria-label="Where it is in the app">
+          <div class="pg-rot">in the app</div>
+          <div class="pg-b" data-bloco="busca">search</div>
+          <div class="pg-b alto" data-bloco="ponto">map · point</div>
+          <div class="pg-b" data-bloco="raios">radius</div>
+          <div class="pg-par"><div class="pg-b" data-bloco="cobertura">land cover</div><div class="pg-b" data-bloco="floresta">forest</div></div>
+          <div class="pg-b" data-bloco="exportar">download</div>
+        </nav>
+        <div class="rp-fig-principal">
+          <div class="rp-fig-cab"><span id="rp-fig-titulo">Loading…</span><span id="rp-fig-selo" class="selo real">measured</span></div>
+          <div class="rp-fig-area" data-mapa="grande">
+            <div class="rp-mapa-caixa"><div id="rp-mapa"></div><div class="rp-mapa-legenda" id="rp-mapa-legenda"></div></div>
+            <div class="rp-painel">
+              <div id="rp-fig-estado" class="rp-fig-estado">Loading the example point…</div>
+              <div class="rp-camada" id="camada-ponto"><div id="fig-ponto"></div></div>
+              <div class="rp-camada" id="camada-discos"><div id="fig-discos"></div></div>
+              <div class="rp-camada" id="camada-historia"><div id="fig-historia"></div></div>
+              <div class="rp-camada" id="camada-raios"><div id="fig-raios"></div></div>
+              <div class="rp-camada" id="camada-pixel"><div id="fig-pixel"></div></div>
+              <div class="rp-camada" id="camada-idade"><div id="fig-idade"></div></div>
+              <div class="rp-camada" id="camada-mudanca"><div id="fig-mudanca"></div></div>
+              <div class="rp-camada" id="camada-perda"><div id="fig-perda"></div></div>
+              <div class="rp-camada" id="camada-procedencia"><div id="fig-procedencia"></div></div>
+              <p class="rp-fig-legenda" id="rp-fig-legenda"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="rp-fim">
+  <h2>What Naturametrics does not say</h2>
+  <ul class="rp-limites">
+    <li><b>It does not tell you why the forest changed.</b> Fire, logging, pests and building all look like loss to a
+      satellite; the cause is for the forest record or a visit.</li>
+    <li><b>It does not date a stand exactly.</b> NTEMS age is a model built from Landsat since the 1980s; stands older than
+      that are estimated, and the oldest class is open-ended.</li>
+    <li><b>It does not count carbon.</b> Area and age describe the landscape; a carbon figure would need an inventory and
+      growth curves the tool does not have.</li>
+    <li><b>It cannot see below 30 m.</b> A narrow riparian strip or a backyard grove is a few pixels at most.</li>
+  </ul>
+  <p class="rp-fim-extra" id="fim-extra"></p>
+  <a class="rp-cta" id="cta-app" href="/canada?lang=en">Open this point in Naturametrics →</a>
+  <a class="rp-cta sec" href="/walkthrough/brazil">The same walkthrough on a Brazilian forest plot</a>
+  <p class="rp-rodape">More examples:
+    <a href="?">Myra-Bellevue (BC), this page's example</a> ·
+    <a href="?lat=49.87&amp;lon=-119.60">West Kelowna (BC), the 2023 McDougall Creek fire</a> ·
+    <a href="?lat=49.78&amp;lon=-119.55">Okanagan Mountain Park (BC), the 2003 fire</a> ·
+    <a href="?lat=50.70&amp;lon=-120.35">Kamloops (BC), grassland</a>.
+    Pass any coordinate in Canada south of 58° N (<code>?lat=…&amp;lon=…</code>); the numbers come from the app's own services.
+    <a href="/demonstracao" lang="pt-BR">Versão em português (com um conglomerado do Brasil)</a>.</p>
+</section>
+
+<section class="rp-notas" aria-label="Notes">
+  <h3>Notes</h3>
+  <ol>
+    <li id="nota-1">The three UmaTerra tools differ in who draws the boundary they analyse: the state (Indigenous lands
+      and conservation units), the landholder (a cadastre) or the analyst (a point on the map). Naturametrics is the
+      analyst's tool: it draws no boundary at all, only circles of fixed size, so two points anywhere are compared on equal terms.
+      <span class="rp-pop-fonte">Biondo et al., <i>Registry, coordinate, cadastre</i> (manuscript in preparation, 2026).</span></li>
+    <li id="nota-2">Hansen/GLAD records a year, not a date: a pixel is booked in the first year its loss is detected in the
+      annual Landsat composite. A fire in August can therefore spread its loss over that year and the next, and the two
+      columns should be read together.
+      <span class="rp-pop-fonte">Hansen et al. (2013), <i>Science</i> 342, 850–853.</span></li>
+    <li id="nota-3">Every area on this page is a pixel count times the true pixel area, measured on the same grid as the
+      count. Canada spans 41° to 83° N, and a flat 0.09 ha per pixel, or a grid mismatch, drifts by a third at Kelowna's latitude.
+      <span class="rp-pop-fonte">Biondo et al., <i>Registry, coordinate, cadastre</i> (manuscript in preparation, 2026).</span></li>
+  </ol>
+</section>

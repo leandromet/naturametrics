@@ -18,5 +18,11 @@ def demonstracao() -> rx.Component:
 
 
 def walkthrough() -> rx.Component:
-    """``/walkthrough`` — the same article in English (naturametrics.en.html)."""
+    """``/walkthrough`` — the English walkthrough, on a point above Kelowna
+    (naturametrics_ca.{en.html,js}, numbers from canada/services/demonstracao.py)."""
+    return pagina("naturametrics_ca", lingua="en")
+
+
+def walkthrough_brasil() -> rx.Component:
+    """``/walkthrough/brazil`` — the Brazil article in English (naturametrics.en.html)."""
     return pagina("naturametrics", lingua="en")

@@ -74,14 +74,23 @@ def _histogram_call(fc, image, scale: int, tile_scale: int):
     ).getInfo()
 
 
-def _pixel_area_call(fc, scale: int, tile_scale: int):
-    """Mean true pixel area (m²) inside each buffer — the D3 area basis."""
+def _pixel_area_call(fc, scale: int, tile_scale: int, like=None):
+    """Mean true pixel area (m²) inside each buffer — the D3 area basis.
+
+    Measured on ``like``'s grid, the image the histogram counts: ``pixelArea()``
+    alone is reduced on a lat/long grid, where a "30 m" pixel at 50°N covers
+    580 m², while the ACI (Albers) counts true 900 m² pixels — the pair
+    understated Canadian areas by a third (found 2026-10-29).
+    """
     import ee
+    # a stacked image carries one projection per band (all the same grid): read the first
+    kwargs = {"crs": like.select(0).projection()} if like is not None else {}
     return ee.Image.pixelArea().reduceRegions(
         collection=fc,
         reducer=ee.Reducer.mean(),
         scale=scale,
         tileScale=tile_scale,
+        **kwargs,
     ).getInfo()
 
 
@@ -141,7 +150,7 @@ def land_cover_history(
         try:
             with ThreadPoolExecutor(max_workers=2) as ex:
                 f_hist = ex.submit(_histogram_call, fc, image, s, ts)
-                f_area = ex.submit(_pixel_area_call, fc, s, ts)
+                f_area = ex.submit(_pixel_area_call, fc, s, ts, image)
                 hist, areas = f_hist.result(), f_area.result()
             if attempt > 0:
                 prov.degrade(

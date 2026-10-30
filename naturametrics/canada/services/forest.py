@@ -121,8 +121,9 @@ def buffer_forest_age(
             scale=scale, tileScale=tile_scale).getInfo()
 
     def _area(scale, tile_scale):
+        # on the age map's own grid, like the count (see aci_history._pixel_area_call)
         return ee.Image.pixelArea().reduceRegions(
-            collection=fc, reducer=ee.Reducer.mean(),
+            collection=fc, reducer=ee.Reducer.mean(), crs=binned.projection(),
             scale=scale, tileScale=tile_scale).getInfo()
 
     hist = areas = None

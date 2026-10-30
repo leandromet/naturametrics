@@ -75,7 +75,7 @@ def como_usar_dialog() -> rx.Component:
             rx.link(
                 rx.callout(tr["help_demo_link"], icon="presentation", size="1",
                            color_scheme="green", width="100%"),
-                href=rx.cond(AppState.language == "en", "/walkthrough", "/demonstracao"),
+                href=rx.cond(AppState.language == "en", "/walkthrough/brazil", "/demonstracao"),
                 underline="none",
                 display="block", margin_bottom="0.75rem",
             ),

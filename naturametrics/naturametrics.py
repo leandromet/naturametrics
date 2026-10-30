@@ -14,7 +14,7 @@ from .canada.pages.index import canada_index
 from .canada.state import CanadaState
 from .components.layout import ACCENT
 from .config.settings import GA_MEASUREMENT_ID
-from .pages.demonstracao import demonstracao, walkthrough
+from .pages.demonstracao import demonstracao, walkthrough, walkthrough_brasil
 from .pages.index import index
 from .state import AppState
 
@@ -91,6 +91,17 @@ app.add_page(
     walkthrough,
     route="/walkthrough",
     title="Naturametrics — step-by-step walkthrough",
+    description=(
+        "How to read the landscape around a point, one radius at a time: the "
+        "AAFC crop inventory, the point's pixel, NTEMS stand age and Hansen "
+        "forest loss, on a real point in the forest above Kelowna."
+    ),
+)
+
+app.add_page(
+    walkthrough_brasil,
+    route="/walkthrough/brazil",
+    title="Naturametrics — step-by-step walkthrough (Brazil)",
     description=(
         "How to read the landscape around a point, one radius at a time: "
         "MapBiomas, the point's pixel, change since 2008, vegetation age, "

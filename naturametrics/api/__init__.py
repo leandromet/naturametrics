@@ -22,6 +22,7 @@ from starlette.responses import JSONResponse, Response
 
 from ..canada.services import gbif as gbif_ca
 from ..config.settings import IFN_VIEWPORT_LIMIT
+from ..canada.services import demonstracao as demonstracao_ca
 from ..services import auto_infracao, biomes, demonstracao, embargos, gbif, ifn, territorios
 
 logger = logging.getLogger(__name__)
@@ -276,6 +277,24 @@ async def gbif_ca_geojson(request: Request) -> Response:
     return JSONResponse(payload, headers={"Cache-Control": "no-store"})
 
 
+async def demonstracao_ca_json(request: Request) -> Response:
+    """The Canada walkthrough's numbers (Kelowna), from the Canada page's services.
+
+    ``?lat=&lon=`` swap the example point; a point outside the crop inventory's
+    reach answers 400 with the message for the reader.
+    """
+    lat = _float_param(request, "lat")
+    lon = _float_param(request, "lon")
+    try:
+        payload = await _run_blocking(lambda: demonstracao_ca.pacote(lat, lon))
+    except demonstracao.PontoInvalido as exc:
+        return JSONResponse({"error": "invalid point", "detail": str(exc)}, status_code=400)
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("Canada walkthrough could not be built")
+        return JSONResponse({"error": "walkthrough unavailable", "detail": str(exc)}, status_code=503)
+    return JSONResponse(payload, headers={"Cache-Control": "public, max-age=600"})
+
+
 async def demonstracao_json(request: Request) -> Response:
     """Os números da demonstração em rolagem, dos mesmos serviços da interface.
 
@@ -314,6 +333,7 @@ def register(app) -> None:
     api.add_route(gbif.GEOJSON_PATH, gbif_geojson, methods=["GET"])
     api.add_route(gbif_ca.GEOJSON_PATH, gbif_ca_geojson, methods=["GET"])
     api.add_route(demonstracao.ROTA, demonstracao_json, methods=["GET"])
+    api.add_route(demonstracao_ca.ROTA, demonstracao_ca_json, methods=["GET"])
     logger.info("Registered backend routes %s, %s, %s, %s, %s, %s, %s, %s, %s",
                 biomes.GEOJSON_PATH,
                 territorios.GEOJSON_PATHS["indigena"],

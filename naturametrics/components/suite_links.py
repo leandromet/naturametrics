@@ -61,6 +61,13 @@ _DEFAULT_URLS = {
 NAMES = {"portal": "UmaTerra", "camposcope": "Camposcope",
          "naturametrics": "Naturametrics", "yvynation": "Yvynation",
          "clima": "muda-clima"}
+#: Names that change with the language: muda-clima is "climate-shift" in English (2026-10-31);
+#: Portuguese, Spanish and French keep muda-clima.
+NAMES_BY_LANG = {"clima": {"en": "climate-shift", "pt": "muda-clima", "es": "muda-clima", "fr": "muda-clima"}}
+
+
+def name(platform: str, lang: str) -> str:
+    return NAMES_BY_LANG.get(platform, {}).get(lang, NAMES[platform])
 
 #: The icon each app already carries in its own header.
 ICONS = {"portal": "globe", "camposcope": "scan-search", "naturametrics": "layers",
@@ -191,7 +198,7 @@ def _by_lang(table: dict, language):
 
 
 def _tip(platform: str, language, here: bool):
-    desc = {c: f"{NAMES[platform]} — {DESCRIPTIONS[platform][c]}" for c in _LANGS}
+    desc = {c: f"{name(platform, c)} — {DESCRIPTIONS[platform][c]}" for c in _LANGS}
     if not here:
         return _by_lang(desc, language)
     return _by_lang({c: f"{desc[c]} ({HERE[c]})" for c in _LANGS}, language)
@@ -202,7 +209,7 @@ def _chip(platform: str, *, current: str, region: str, language,
     here = platform == current          # never true for the portal
     inner = rx.hstack(
         rx.icon(ICONS[platform], size=14),
-        rx.text(NAMES[platform], size="1", weight="medium"),
+        rx.text(_by_lang({c: name(platform, c) for c in _LANGS}, language), size="1", weight="medium"),
         spacing="1", align="center",
         padding="3px 9px", border_radius="var(--radius-2)",
     )
@@ -227,7 +234,7 @@ def _menu_item(platform: str, *, current: str, region: str, language) -> rx.Comp
     text = rx.vstack(
         rx.hstack(
             rx.icon(ICONS[platform], size=14),
-            rx.text(NAMES[platform], size="2", weight="bold"),
+            rx.text(_by_lang({c: name(platform, c) for c in _LANGS}, language), size="2", weight="bold"),
             rx.cond(here, rx.badge(_by_lang(HERE, language), size="1", variant="soft"),
                     rx.fragment()),
             spacing="2", align="center",

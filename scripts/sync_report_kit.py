@@ -1,4 +1,4 @@
-"""Vendor the canonical report_kit into Camposcope and Yvynation (doc/14 §2.1).
+"""Vendor the canonical report_kit into Camposcope, Yvynation and muda-clima (doc/14 §2.1).
 
     python scripts/sync_report_kit.py            # rewrite MANIFEST, copy to both apps
     python scripts/sync_report_kit.py --check    # verify every copy, change nothing
@@ -24,6 +24,7 @@ KIT = ROOT / "naturametrics" / "report_kit"
 TARGETS = {
     "camposcope": Path("/server/camposcope/camposcope/report_kit"),
     "yvynation": Path("/home/leandromb/google_eengine/yvynation/reflex_app/yvynation/report_kit"),
+    "muda-clima": Path("/server/2026_projeto_clima/muda-clima/app/report_kit"),
 }
 SKIP_DIRS = {"__pycache__"}
 MANIFEST = "MANIFEST"

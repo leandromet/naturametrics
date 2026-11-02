@@ -372,6 +372,44 @@
         ctx._imagens[k] = ctx.L.imageOverlay(p.url, p.bounds, { opacity: op, attribution: p.attribution || "", zIndex: p.z || 10 }).addTo(ctx.mapa);
       });
     };
+    // cortina: compara duas datas da mesma área com uma barra arrastável. `chaves` (uma ou
+    // uma lista) são as imagens de cima, as mais recentes, já pedidas por ctx.imagens:
+    // recortadas à direita da barra, deixam ver à esquerda as de baixo. As de cima ficam
+    // opacas como a mais opaca do mapa, para os dois lados se compararem por igual.
+    // Recalculada quando o mapa se move, porque o Leaflet reposiciona as imagens; cada
+    // passo novo começa sem cortina (ver ativar).
+    ctx.cortina = function (chaves, esq, dir) {
+      ctx.semCortina();
+      if (!ctx.mapa) return;
+      var topo = [].concat(chaves).map(function (k) { return ctx._imagens[k]; }).filter(Boolean);
+      if (!topo.length) return;
+      var op = Math.max.apply(null, Object.keys(ctx._imagens).map(function (k) { return ctx._imagens[k].options.opacity; }));
+      var caixa = ctx.mapa.getContainer(), f = 0.5, el = document.createElement("div");
+      el.className = "rp-cortina";
+      el.innerHTML = '<div class="rp-cortina-linha"><span>' + fmt.esc(esq) + "</span><span>" + fmt.esc(dir) + '</span></div>' +
+        '<input type="range" min="0" max="100" value="50" aria-label="' + fmt.esc(ctx.t("Comparar " + esq + " e " + dir, "Compare " + esq + " and " + dir)) + '">';
+      caixa.appendChild(el);
+      var linha = el.querySelector(".rp-cortina-linha"), faixa = el.querySelector("input");
+      var itens = topo.map(function (c) { var o = c.options.opacity; c.setOpacity(op); return { camada: c, img: c.getElement(), op: o }; });
+      function atualizar() {
+        var c = caixa.getBoundingClientRect(), x = c.width * f;
+        linha.style.left = x + "px";
+        itens.forEach(function (t) { var r = t.img.getBoundingClientRect(); t.img.style.clipPath = "inset(0 0 0 " + Math.max(0, c.left + x - r.left) + "px)"; });
+      }
+      faixa.addEventListener("input", function () { f = faixa.value / 100; atualizar(); });
+      // a barra não arrasta nem amplia o mapa
+      ["mousedown", "touchstart", "pointerdown", "dblclick", "wheel"].forEach(function (e) { el.addEventListener(e, function (ev) { ev.stopPropagation(); }); });
+      ctx.mapa.on("move zoom zoomend moveend resize", atualizar);
+      itens.forEach(function (t) { t.img.addEventListener("load", atualizar); });
+      ctx._cortina = { el: el, itens: itens, fn: atualizar };
+      atualizar();
+    };
+    ctx.semCortina = function () {
+      var c = ctx._cortina; if (!c) return;
+      ctx.mapa.off("move zoom zoomend moveend resize", c.fn);
+      c.itens.forEach(function (t) { t.img.style.clipPath = ""; t.camada.setOpacity(t.op); });
+      c.el.remove(); ctx._cortina = null;
+    };
     // vetores: {chave: {geojson, estilo, ponto, popup}} — idem
     ctx.vetores = function (pedidos) {
       if (!ctx.mapa) return;
@@ -431,6 +469,7 @@
       if (!ctx.dados) return;
       var fn = cfg.passos && cfg.passos[id];
       ctx._enquadre = null;
+      ctx.semCortina();
       if (fn) { try { fn(ctx, ctx.dados); } catch (e) { console.error("[reportagem] passo " + id, e); } }
       // no celular a legenda fica sob o mapa: a deste passo pode ter mudado a altura dele
       // depois do enquadramento, que então é refeito no tamanho novo

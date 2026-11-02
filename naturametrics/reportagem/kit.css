@@ -315,3 +315,11 @@
   .rp-tab { font-size: 12px; }
   .rp-ficha { font-size: 12.5px; gap: 3px 10px; }
 }
+
+/* cortina (ctx.cortina): a linha branca com os dois anos e a barra no alto do mapa, à direita do zoom */
+.rp-cortina { position: absolute; inset: 0; z-index: 650; pointer-events: none; }
+.rp-cortina-linha { position: absolute; top: 0; bottom: 0; width: 0; border-left: 3px solid #fff; box-shadow: 0 0 6px rgba(0,0,0,.6); }
+.rp-cortina-linha span { position: absolute; top: 46px; padding: 2px 7px; border-radius: 4px; background: rgba(0,0,0,.65); color: #fff; font: 600 12px/1.4 var(--rp-sans); white-space: nowrap; }
+.rp-cortina-linha span:first-child { right: 8px; }
+.rp-cortina-linha span:last-child { left: 5px; }
+.rp-cortina input { position: absolute; left: 56px; right: 10px; top: 10px; width: calc(100% - 66px); margin: 0; pointer-events: auto; accent-color: #fff; height: 28px; cursor: ew-resize; }

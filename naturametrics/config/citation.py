@@ -82,6 +82,10 @@ DATA_SOURCES = [
      "Agriculture and Agri-Food Canada. Licença Open Government — Canadá. "
      "Usado na página Canadá.",
      "https://developers.google.com/earth-engine/datasets/catalog/AAFC_ACI"),
+    ("USGS — Annual NLCD (EUA)",
+     "U.S. Geological Survey. Annual National Land Cover Database, Collection 1 "
+     "v2, 1985–2025 (48 estados contíguos). Domínio público. Base da página dos EUA.",
+     "https://www.usgs.gov/centers/eros/science/annual-national-land-cover-database"),
     ("NTEMS — Idade da floresta (Canadá, 2019)",
      "Natural Resources Canada / National Forest Information System; "
      "Hermosilla et al. Usado na página Canadá.",
@@ -172,6 +176,10 @@ DATA_SOURCES_EN = [
      "Agriculture and Agri-Food Canada. Open Government Licence — Canada. "
      "Used on the Canada page.",
      "https://developers.google.com/earth-engine/datasets/catalog/AAFC_ACI"),
+    ("USGS — Annual NLCD (US)",
+     "U.S. Geological Survey. Annual National Land Cover Database, Collection 1 "
+     "v2, 1985–2025 (conterminous US). Public domain. Basis of the USA page.",
+     "https://www.usgs.gov/centers/eros/science/annual-national-land-cover-database"),
     ("NTEMS — Canada forest age (2019)",
      "Natural Resources Canada / National Forest Information System; "
      "Hermosilla et al. Used on the Canada page.",

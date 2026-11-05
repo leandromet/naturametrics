@@ -258,3 +258,34 @@ def _style_loss(fig: go.Figure, lang: str) -> go.Figure:
         plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
     )
     return fig
+
+
+def biomass_chart(df: pd.DataFrame, radius_km: float, lang: str = "en") -> go.Figure:
+    """Mean above-ground biomass (Mg/ha) by year for one radius, with the product's own uncertainty
+    as a band (ESA CCI). Years are the product's snapshot years, so the gaps are real gaps."""
+    fig = go.Figure()
+    sub = pd.DataFrame()
+    if df is not None and not df.empty and "radius_km" in df.columns:
+        sub = df[df["radius_km"] == radius_km].sort_values("year")
+    if sub.empty:
+        fig.add_annotation(text="Sem dados" if lang == "pt" else "No data", showarrow=False,
+                           font=dict(size=13, color="#888"))
+    else:
+        x = [int(y) for y in sub["year"]]
+        m = [float(v) for v in sub["agb_mean_mgha"]]
+        sd = [float(v) if v == v else 0.0 for v in sub["agb_sd_mgha"]]
+        hi = [a + b for a, b in zip(m, sd)]
+        lo = [max(0.0, a - b) for a, b in zip(m, sd)]
+        fig.add_scatter(x=x + x[::-1], y=hi + lo[::-1], fill="toself", mode="lines", line=dict(width=0),
+                        fillcolor="rgba(31,141,73,0.15)", hoverinfo="skip", showlegend=False)
+        fig.add_scatter(x=x, y=m, mode="lines+markers", line=dict(color="#1f8d49"), marker=dict(size=7),
+                        name="Mg/ha", hovertemplate="%{x}: %{y:.1f} Mg/ha<extra></extra>")
+    fig.update_layout(
+        template="plotly_white", height=240, margin=dict(l=56, r=8, t=8, b=44), dragmode=False,
+        showlegend=False, plot_bgcolor="rgba(0,0,0,0)", paper_bgcolor="rgba(0,0,0,0)",
+        xaxis=dict(title=None, tickmode="array", tickvals=[2007, 2010, 2015, 2017, 2019, 2022],
+                   fixedrange=True, showgrid=False),
+        yaxis=dict(title="Mg/ha" if lang != "pt" else "Mg/ha", fixedrange=True,
+                   gridcolor="rgba(0,0,0,0.06)", rangemode="tozero"),
+    )
+    return fig

@@ -63,7 +63,7 @@ TRANSLATIONS_EN: dict[str, str] = {
     "search_read_as": "read as:",
     "search_button": "Search",
     "search_button_busy": "Searching…",
-    "search_municipios_heading": "Municípios",
+    "search_municipios_heading": "Municipalities",
     "search_territorios_heading": "Indigenous lands and conservation units",
     "search_territorios_note": (
         "A territory only frames the map and switches its layer on; no "
@@ -73,7 +73,7 @@ TRANSLATIONS_EN: dict[str, str] = {
     "search_places_attribution": "© OpenStreetMap contributors (ODbL)",
     "search_place_hint": "click the map to choose an analysis point",
     "echo_coordenada": "coordinate",
-    "echo_municipio": "município",
+    "echo_municipio": "municipality",
     "echo_territorio": "territory",
     "echo_lugar": "place",
     "echo_cep": "CEP (postcode)",
@@ -98,7 +98,7 @@ TRANSLATIONS_EN: dict[str, str] = {
     ),
     "qs_step2_lead": "Click any point",
     "qs_step2_body": (
-        "on the map: a marker and four analysis areas (1 to 10 km) are drawn "
+        "on the map: a marker and five analysis areas (0.5 to 10 km) are drawn "
         "around it."
     ),
     "qs_step3_lead": "Read the history",
@@ -120,8 +120,8 @@ TRANSLATIONS_EN: dict[str, str] = {
 
     # --- layer panel: info-icon popovers ---------------------------------- #
     "search_info": (
-        "Find a coordinate, a município, or a place name to navigate the "
-        "map. A município or place only frames the map; an exact "
+        "Find a coordinate, a municipality, or a place name to navigate the "
+        "map. A municipality or place only frames the map; an exact "
         "coordinate also chooses it as the study point, the same as "
         "clicking there would."
     ),
@@ -147,7 +147,7 @@ TRANSLATIONS_EN: dict[str, str] = {
     ),
     "basemap_info": (
         "Choose the map's background imagery. The SPOT 2008 options show "
-        "real satellite photos from ~2008 — the Forest Code's baseline "
+        "real satellite imagery from ~2008 — the Forest Code's baseline "
         "year — letting you check by eye whether an area really had "
         "vegetation that year, something MapBiomas (a classification, not "
         "a photo) doesn't show directly."
@@ -283,13 +283,13 @@ TRANSLATIONS_EN: dict[str, str] = {
         "apart from land already cleared by 2008."
     ),
     "ibge_spot_visual_note": (
-        "Drag the white line on the map. The right side is IBGE Vegetação "
+        "Drag the white line on the map. The right side is IBGE Vegetation "
         "2022, the left side is SPOT 2008 Visual — compares today's "
         "remaining vegetation against the landscape in the Forest Code's "
         "baseline year."
     ),
     "ibge_spot_analytic_note": (
-        "Drag the white line on the map. The right side is IBGE Vegetação "
+        "Drag the white line on the map. The right side is IBGE Vegetation "
         "2022, the left side is SPOT 2008 in false-colour infrared — the "
         "2008 infrared helps show where the vegetation IBGE classifies "
         "today already existed (or didn't) in the baseline year."
@@ -384,8 +384,8 @@ TRANSLATIONS_EN: dict[str, str] = {
     "landuse_title": "Land-use history",
     "download_button": "Download data",
     "download_point_aria": "Download data for this point",
-    "analysis_running": "Reducing 41 years over 4 buffers…",
-    "full_area_running": "Reducing 41 years over the bounding box…",
+    "analysis_running": "Processing 41 years over 5 buffers…",
+    "full_area_running": "Processing 41 years over the bounding box…",
     "top_classes_title": "Top classes (2025)",
     "area_natural_label": "Natural area (recorded)",
     "median_label": "Median (dated)",
@@ -434,7 +434,7 @@ TRANSLATIONS_EN: dict[str, str] = {
     "export_table_label": "Export table",
     "biomass_tab": "Biomass",
     "biomass_tab_hint": (
-        "Above-ground biomass in this buffer (ESA CCI), a proxy for how "
+        "Above-ground biomass in this buffer (ESA CCI), an approximation of how "
         "much carbon the standing vegetation holds."
     ),
     "biomass_running": "Reading above-ground biomass (ESA CCI)…",
@@ -452,7 +452,7 @@ TRANSLATIONS_EN: dict[str, str] = {
     "ibge_veg_forest_label": "Forest",
     "ibge_veg_natural_label": "Natural",
     "ibge_veg_layer_note": (
-        "IBGE Vegetação, 1:250,000 (2022) — 54 official classes; coloured "
+        "IBGE Vegetation, 1:250,000 (2022) — 54 official classes; coloured "
         "by family (forest in green, non-forest in tan, anthropic in pink, "
         "water in blue) for readability on the map. Turn the layer on with "
         "a point selected to see the present classes in the legend, in the "
@@ -460,7 +460,7 @@ TRANSLATIONS_EN: dict[str, str] = {
     ),
     "ibge_compare_note": (
         "Drag the white line on the map. The right side is MapBiomas 2022, "
-        "the left side is IBGE Vegetação 2022 — turns off the year-compare "
+        "the left side is IBGE Vegetation 2022 — turns off the year-compare "
         "curtain above, since the map has only one divider."
     ),
     "ibge_veg_caveat": (
@@ -474,7 +474,7 @@ TRANSLATIONS_EN: dict[str, str] = {
     "empty_state_title": "Click the map or draw an area",
     "empty_state_body": (
         "The land-use history and vegetation age, from 1985/1987 to 2025, "
-        "will be computed for radii of 1, 2, 5 and 10 km around a point — or "
+        "will be computed for radii of 0.5, 1, 2, 5 and 10 km around a point — or "
         "for the whole area if you draw one, paste a WKT, or upload a KML."
     ),
 
@@ -523,8 +523,8 @@ TRANSLATIONS_EN: dict[str, str] = {
     "report_failed": "Report failed: {exc}",
     "report_expired": "The report request expired. Please try again.",
     "report_region_unsupported": 'Report not yet available for drawn/KML regions.',
-    "report_subject_selection": 'Selection · {n} conglomerado(s), sum of buffers',
-    "report_subject_full_area": 'Selection · {n} conglomerado(s), full area',
+    "report_subject_selection": 'Selection · {n} cluster(s), sum of buffers',
+    "report_subject_full_area": 'Selection · {n} cluster(s), full area',
     "selection_title_submitted": "Submitted list",
     "selection_title_default": "Cluster selection",
     "selection_note": (
@@ -709,8 +709,8 @@ TRANSLATIONS_EN: dict[str, str] = {
     ),
     "help_step1_title": "Choose a point",
     "help_step1_body": (
-        "Click anywhere on the map. A marker is created and four analysis "
-        "areas (1, 2, 5 and 10 km radius) are drawn around it. Clicks "
+        "Click anywhere on the map. A marker is created and five analysis "
+        "areas (0.5, 1, 2, 5 and 10 km radius) are drawn around it. Clicks "
         "outside Brazil are refused: MapBiomas covers only national "
         "territory."
     ),
@@ -718,7 +718,7 @@ TRANSLATIONS_EN: dict[str, str] = {
     "help_step2_body": (
         "The chart below the map shows one column per year, from 1985 to "
         "2025, with MapBiomas classes in their official colours. Switch "
-        "the radius across 1/2/5/10 km and use the «%» button to toggle "
+        "the radius across 0.5/1/2/5/10 km and use the «%» button to toggle "
         "between hectares and area share."
     ),
     "help_step3_title": "Switch the base map",
@@ -872,6 +872,7 @@ TRANSLATIONS_EN: dict[str, str] = {
 
     # --- language switcher ---------------------------------------------- #
     "go_to_canada": "Go to Canada",
+    "go_to_usa": "Go to USA",
     "language_label": "Language",
 
     # --- GBIF biodiversity (components/gbif_panel.py) --------------------- #

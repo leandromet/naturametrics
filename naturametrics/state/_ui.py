@@ -184,3 +184,8 @@ class UIMixin(rx.State, mixin=True):
         default happens to be.
         """
         return f"/canada?lang={self.language}"
+
+    @rx.var
+    def usa_href(self) -> str:
+        """Link across to the USA page (lower 48), carrying the current language."""
+        return f"/usa?lang={self.language}"

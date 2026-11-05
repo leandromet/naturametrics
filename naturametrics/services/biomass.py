@@ -196,14 +196,17 @@ def biomass_history(
     mode: BufferMode = "disc",
     shape: BufferShape = "circle",
     years: list[int] | None = None,
+    check_country: bool = True,
 ) -> tuple[pd.DataFrame, Provenance]:
     """Above-ground biomass (Mg/ha) and its uncertainty, by year and buffer.
 
     Ten Earth Engine assets (one per year) stitched into one image so the
     whole read is a single ``reduceRegions`` — see the module docstring.
+    ``check_country=False`` for the Canada and USA pages, which validate their own points.
     """
     get_ee()
-    validate_for_analysis(p)
+    if check_country:
+        validate_for_analysis(p)
 
     years = years or AGB_YEARS
     fc = buffer_collection(p, radii_km, mode, shape)

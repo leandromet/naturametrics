@@ -5,6 +5,7 @@ from __future__ import annotations
 import reflex as rx
 
 from ...components.map import leaflet_map
+from ...components.panel_kit import workspace_with_sheet
 from ...components.quickstart import quickstart_card
 from ..components.layer_panel import layer_panel
 from ..components.layout import ACCENT, shell
@@ -20,6 +21,7 @@ def map_pane() -> rx.Component:
             center=S.map_center,
             zoom=S.map_zoom,
             bounds=S.map_bounds,
+            swipe=S.compare_on,
             layers=S.map_layers,
             overlays=S.map_overlays,
             vectors=S.map_vectors,
@@ -30,10 +32,8 @@ def map_pane() -> rx.Component:
             height="100%",
         ),
         map_legend(),
-        # The phone map here is its own 52dvh box with the results BELOW it,
-        # not under a sheet — so the card may use the whole box.
-        quickstart_card(S, accent=ACCENT, desktop_from=3,
-                        mobile_max_height="calc(100% - 16px)"),
+        # desktop_from=3: like the Brazil page, the bottom sheet stays up to "lg".
+        quickstart_card(S, accent=ACCENT, desktop_from=3),
         width="100%", height="100%",
         # Leaflet needs a positioned, sized container or it renders one grey tile.
         position="absolute", top="0", left="0",
@@ -41,23 +41,12 @@ def map_pane() -> rx.Component:
 
 
 def workspace_main() -> rx.Component:
-    """Map above, results below. Same fixed-height-on-mobile reasoning as the
-    Brazil page: a flex-sized map inside a scrolling column collapses to zero
-    and Leaflet then paints a single grey tile."""
-    return rx.vstack(
-        rx.box(
-            map_pane(),
-            width="100%",
-            height=["52dvh", "52dvh", "56dvh", "auto"],
-            min_height=["300px", "320px", "360px", "0"],
-            flex=["0 0 auto", "0 0 auto", "0 0 auto", "1 1 auto"],
-            position="relative",
-        ),
-        results_drawer(),
-        width="100%",
-        height=["auto", "auto", "auto", "100%"],
-        spacing="0", align_items="stretch",
-    )
+    """One map and one flex column at every breakpoint, the Brazil page's arrangement: below
+    desktop the controls and the results live in a draggable bottom sheet over the map; on
+    desktop the results sit under it (``components/panel_kit.py``)."""
+    return workspace_with_sheet(
+        S, map_pane=map_pane(), results=results_drawer,
+        panel_for_sheet=lambda: layer_panel(fill_height=False), accent=ACCENT)
 
 
 def canada_index() -> rx.Component:

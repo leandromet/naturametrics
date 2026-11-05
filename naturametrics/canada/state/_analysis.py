@@ -131,6 +131,7 @@ class CanadaAnalysisMixin(rx.State, mixin=True):
                 if token == self._run_token:
                     self.age_running = False
                     self.age_error = self.tr["err_forest_failed"].format(exc=exc)
+            # the landscape tab does not depend on the forest block: it still runs
             return
 
         async with self:
@@ -375,3 +376,110 @@ class CanadaAnalysisMixin(rx.State, mixin=True):
             gain_total_ha=float(row.get("gain_ha") or 0.0),
             lang=self.language,
         )
+
+
+    # ---------------------------------------------------------------------- #
+    # Landscape metrics and biomass (the Brazil page's tabs, on this country's data)
+    # ---------------------------------------------------------------------- #
+    metrics_running: bool = False
+    metrics_error: str = ""
+    biomass_running: bool = False
+    biomass_error: str = ""
+    _metrics: list[dict[str, Any]] = []
+    _metrics_provenance: dict[str, Any] = {}
+    _biomass: list[dict[str, Any]] = []
+    _biomass_provenance: dict[str, Any] = {}
+
+    @rx.event(background=True)
+    async def run_landscape_biomass(self, lat: float, lon: float):
+        """Landscape metrics on the latest land-cover year, and biomass by year. Two independent
+        answers with their own error channels, so one failing never blanks the other."""
+        from ..services import extras as xs
+
+        async with self:
+            token = self._run_token
+            self.metrics_running = self.biomass_running = True
+            self.metrics_error = self.biomass_error = ""
+        loop = asyncio.get_running_loop()
+        p = point(lat=lat, lon=lon)
+
+        async def metrics():
+            try:
+                summary, _hist, prov = await loop.run_in_executor(None, xs.landscape_for_point, p, BUFFER_RADII_KM)
+            except Exception as exc:  # noqa: BLE001
+                logger.exception("landscape metrics failed")
+                async with self:
+                    if token == self._run_token:
+                        self.metrics_running = False
+                        self.metrics_error = self.tr["err_extra_failed"].format(exc=exc)
+                return
+            async with self:
+                if token != self._run_token:
+                    return
+                self._metrics = summary.to_dict("records") if summary is not None and not summary.empty else []
+                self._metrics_provenance = prov.to_dict() if prov is not None else {}
+                self.metrics_running = False
+
+        async def biomass():
+            try:
+                df, prov = await loop.run_in_executor(None, xs.biomass_for_point, p, BUFFER_RADII_KM)
+            except Exception as exc:  # noqa: BLE001
+                logger.exception("biomass failed")
+                async with self:
+                    if token == self._run_token:
+                        self.biomass_running = False
+                        self.biomass_error = self.tr["err_extra_failed"].format(exc=exc)
+                return
+            async with self:
+                if token != self._run_token:
+                    return
+                self._biomass = df.to_dict("records") if not df.empty else []
+                self._biomass_provenance = prov.to_dict()
+                self.biomass_running = False
+
+        await asyncio.gather(metrics(), biomass())
+
+    @rx.var(cache=True)
+    def metrics_has(self) -> bool:
+        return bool(self._metrics)
+
+    @rx.var(cache=True)
+    def metrics_rows(self) -> list[dict[str, str]]:
+        import math
+        pt = self.language == "pt"
+
+        def f(v, d=0):
+            if v is None or (isinstance(v, float) and math.isnan(v)):
+                return "—"
+            text = f"{float(v):,.{d}f}"
+            return text.replace(",", "X").replace(".", ",").replace("X", ".") if pt else text
+
+        return [{"radius": f"{float(r['radius_km']):g} km", "patches": f(r["patches"]),
+                 "largest": f(r["largest_patch_pct"], 1), "edge": f(r["edge_density"], 1),
+                 "meff": f(r["meff_ha"]), "shannon": f(r["shannon"], 2),
+                 "evenness": f(r["simpson_evenness"], 2)} for r in self._metrics]
+
+    @rx.var(cache=True)
+    def biomass_has(self) -> bool:
+        return bool(self._biomass)
+
+    @rx.var(cache=True)
+    def biomass_rows(self) -> list[dict[str, str]]:
+        import math
+        pt = self.language == "pt"
+        rows = [r for r in self._biomass if float(r["radius_km"]) == float(self.selected_radius)]
+
+        def f(v, d=1):
+            if v is None or (isinstance(v, float) and math.isnan(v)):
+                return "—"
+            text = f"{float(v):,.{d}f}"
+            return text.replace(",", "X").replace(".", ",").replace("X", ".") if pt else text
+
+        return [{"year": str(int(r["year"])), "mean": f(r["agb_mean_mgha"]), "sd": f(r["agb_sd_mgha"])}
+                for r in sorted(rows, key=lambda r: r["year"])]
+
+    @rx.var(cache=True)
+    def biomass_chart_figure(self) -> go.Figure:
+        import pandas as pd
+        from ..components.charts import biomass_chart
+        return biomass_chart(pd.DataFrame(self._biomass), self.selected_radius, lang=self.language)

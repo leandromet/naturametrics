@@ -18,6 +18,7 @@ TRANSLATIONS_EN: dict[str, str] = {
     "legend_collapse_aria": "Collapse the legend",
     "legend_expand_aria": "Expand the legend",
     "go_to_brazil": "Go to Brazil",
+    "go_to_usa": "USA",
     "language_label": "Language",
     "close_button": "Close",
 
@@ -58,7 +59,7 @@ TRANSLATIONS_EN: dict[str, str] = {
     ),
     "qs_step2_lead": "Click any point",
     "qs_step2_body": (
-        "in Canada: a marker and four analysis areas are drawn around it."
+        "in Canada: a marker and five analysis areas are drawn around it."
     ),
     "qs_step3_lead": "Read the results",
     "qs_step3_body": (
@@ -184,12 +185,12 @@ TRANSLATIONS_EN: dict[str, str] = {
 
     # --- results ------------------------------------------------------------ #
     "landuse_title": "Crop inventory history",
-    "analysis_running": "Reducing 17 years over 4 buffers…",
+    "analysis_running": "Processing 17 years over 5 buffers…",
     "top_classes_title": "Top classes ({year})",
     "empty_state_title": "Click the map to choose a point",
     "empty_state_body": (
         "The crop-inventory history (2009–2025), forest stand age and Hansen "
-        "forest change will be computed for radii of 1, 2, 5 and 10 km around "
+        "forest change will be computed for radii of 0.5, 1, 2, 5 and 10 km around "
         "it."
     ),
     "aci_empty_title": "No crop-inventory data here",
@@ -291,15 +292,15 @@ TRANSLATIONS_EN: dict[str, str] = {
     ),
     "help_step1_title": "Choose a point",
     "help_step1_body": (
-        "Click anywhere in Canada. A marker is created and four analysis areas "
-        "(1, 2, 5 and 10 km radius) are drawn around it. Clicks outside Canada "
+        "Click anywhere in Canada. A marker is created and five analysis areas "
+        "(0.5, 1, 2, 5 and 10 km radius) are drawn around it. Clicks outside Canada "
         "are refused; clicks in the far north are not — see the note on "
         "coverage below."
     ),
     "help_step2_title": "Read the crop-inventory history",
     "help_step2_body": (
         "The chart below the map shows one column per year, 2009–2025, in the "
-        "official AAFC legend colours. Switch the radius across 1/2/5/10 km and "
+        "official AAFC legend colours. Switch the radius across 0.5/1/2/5/10 km and "
         "use the «%» button to toggle between hectares and area share."
     ),
     "help_step3_title": "Mind the coverage",
@@ -308,7 +309,7 @@ TRANSLATIONS_EN: dict[str, str] = {
         "national land cover. It reaches roughly 58°N and no further, and its "
         "first two years (2009, 2010) cover only the Prairies. North of that "
         "limit the land-cover chart is empty while the forest panels still "
-        "answer — the crop inventory simply does not extend there."
+        "work — the crop inventory simply does not extend there."
     ),
     "help_step4_title": "Read the forest age",
     "help_step4_body": (
@@ -373,4 +374,36 @@ TRANSLATIONS_EN: dict[str, str] = {
         "et al., 2026), using the AAFC Annual Crop Inventory and Hansen "
         "Global Forest Change data (Hansen et al., 2013).\""
     ),
+    "group_study_area": 'Study point',
+    "group_landcover": 'Basemap & land cover',
+    "group_forest": 'Forest age & change',
+    "group_biodiversity": 'Biodiversity (GBIF)',
+    "compare_toggle": 'Compare two years',
+    "compare_year_left": 'Year on the left (baseline)',
+    "compare_note": 'Drag the divider on the map. The right side is the year chosen above; the left side is this year. Defaults: the first national year (2011; 2009–2010 cover only the Prairies) and the newest.',
+    'extras_running': 'Reading…',
+    'err_extra_failed': 'Earth Engine query failed: {exc}',
+    'metrics_title': 'Landscape metrics',
+    'metrics_hint': 'Patches, largest patch, edge density, effective mesh size and diversity of the natural-vs-other classes in each radius, on the latest land-cover year.',
+    'metrics_none': 'No landscape metrics for this point.',
+    'biomass_title': 'Above-ground biomass',
+    'biomass_hint': "Mean biomass (Mg/ha) by year for the selected radius, with the product's own uncertainty.",
+    'biomass_none': 'No biomass data here.',
+    'col_radius': 'Radius',
+    'col_patches': 'Patches',
+    'col_largest': 'Largest %',
+    'col_edge': 'Edge m/ha',
+    'col_meff': 'Meff (ha)',
+    'col_shannon': 'Shannon',
+    'col_evenness': 'Evenness',
+    'col_year': 'Year',
+    'col_mgha': 'Mg/ha',
+    'col_sd': '± (product)',
+    'biomass_attr': 'ESA CCI Biomass v6.0 — Santoro & Cartus (2025) · 100 m',
+    'tab_age': 'Forest age',
+    'tab_forest': 'Forest change',
+    'tab_metrics': 'Landscape',
+    'tab_biomass': 'Biomass',
+    'tab_species': 'Species (GBIF)',
+    'metrics_attr': 'AAFC Annual Crop Inventory 2025 · 30 m',
 }

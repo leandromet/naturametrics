@@ -12,9 +12,11 @@ import reflex as rx
 from .api import register as register_api
 from .canada.pages.index import canada_index
 from .canada.state import CanadaState
+from .usa.pages.index import usa_index
+from .usa.state import USState
 from .components.layout import ACCENT
 from .config.settings import GA_MEASUREMENT_ID
-from .pages.demonstracao import demonstracao, walkthrough, walkthrough_brasil
+from .pages.demonstracao import demonstracao, walkthrough, walkthrough_brasil, walkthrough_usa
 from .pages.index import index
 from .state import AppState
 
@@ -99,6 +101,17 @@ app.add_page(
 )
 
 app.add_page(
+    walkthrough_usa,
+    route="/walkthrough/usa",
+    title="Naturametrics — step-by-step walkthrough (USA)",
+    description=(
+        "How to read the landscape around a point in the United States, one layer at a time: "
+        "Annual NLCD, the point's pixel, LCMS disturbance, MTBS fire severity, time since "
+        "disturbance, tree canopy and Hansen forest loss, on Paradise, California."
+    ),
+)
+
+app.add_page(
     walkthrough_brasil,
     route="/walkthrough/brazil",
     title="Naturametrics — step-by-step walkthrough (Brazil)",
@@ -125,6 +138,21 @@ app.add_page(
         "Forest Change on Earth Engine."
     ),
     on_load=CanadaState.adopt_lang_param,
+)
+
+# The USA page (lower 48) is a sibling of the Canada page, forked from it: its own state
+# root, services, components and translations, sharing only the Earth Engine client,
+# buffer geometry, tile cache, ODS writer and Leaflet component. Annual NLCD replaces
+# the AAFC crop inventory; there is no stand-age panel (NTEMS is Canadian).
+app.add_page(
+    usa_index,
+    route="/usa",
+    title="Naturametrics USA — Land cover and forest change",
+    description=(
+        "Land-cover history and forest change anywhere in the lower 48 states, "
+        "from USGS Annual NLCD and Hansen Global Forest Change on Earth Engine."
+    ),
+    on_load=USState.adopt_lang_param,
 )
 
 # The biome polygons are fetched by the browser over HTTP, not pushed through

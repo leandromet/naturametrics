@@ -165,6 +165,9 @@ def _landscape_metrics_from_collection(
     shape: str,
     radii_km: tuple[float, ...],
     year: int,
+    image: Any = None,
+    dataset_id: str | None = None,
+    band_name: str | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame, Provenance]:
     """Shared reduce/parsing body behind :func:`landscape_metrics` and
     :func:`full_area_landscape_metrics` — generic over where ``fc``'s geometry
@@ -172,8 +175,9 @@ def _landscape_metrics_from_collection(
     """
     import ee
 
-    image = ee.Image(mb.MAPBIOMAS_COLLECTIONS[mb.MAPBIOMAS_DEFAULT_COLLECTION]).select(
-        mb.band_for_year(year)).rename("class")
+    if image is None:       # MapBiomas, the Brazil page's default
+        image = ee.Image(mb.MAPBIOMAS_COLLECTIONS[mb.MAPBIOMAS_DEFAULT_COLLECTION]).select(
+            mb.band_for_year(year)).rename("class")
     neighbours = image.neighborhoodToBands(ee.Kernel.plus(1))
     edge = neighbours.neq(image).reduce(ee.Reducer.sum()).gt(0).rename("edge")
 
@@ -234,8 +238,8 @@ def _landscape_metrics_from_collection(
 
     prov = Provenance(
         name="landscape_metrics",
-        dataset_id=mb.MAPBIOMAS_COLLECTIONS[mb.MAPBIOMAS_DEFAULT_COLLECTION],
-        bands=[mb.band_for_year(year)], scale_m=EE_DEFAULT_SCALE_M,
+        dataset_id=dataset_id or mb.MAPBIOMAS_COLLECTIONS[mb.MAPBIOMAS_DEFAULT_COLLECTION],
+        bands=[band_name or mb.band_for_year(year)], scale_m=EE_DEFAULT_SCALE_M,
         reducer="frequencyHistogram + reduceToVectors patches + neighbourhood edge",
         pixel_area_basis="mean ee.Image.pixelArea() per buffer",
         max_pixels=EE_MAX_PIXELS, tile_scale=EE_TILE_SCALE,
@@ -249,6 +253,27 @@ def _landscape_metrics_from_collection(
     logger.info("Landscape metrics for %s: %s radii, %s classes", point_label,
                 len(summary_df), len(hist_df))
     return summary_df, hist_df, prov
+
+
+def landscape_metrics_on(
+    p: Point,
+    image: Any,
+    *,
+    dataset_id: str,
+    band_name: str,
+    radii_km: tuple[float, ...] = BUFFER_RADII_KM,
+    mode: BufferMode = "disc",
+    shape: BufferShape = "circle",
+) -> tuple[pd.DataFrame, pd.DataFrame, Provenance]:
+    """The same metrics on any single-band categorical image (NLCD, AAFC, …), renamed ``class``
+    by the caller. Patches, edge and diversity are computed the same way as for MapBiomas.
+    The caller validates the point against its own country (this module is the Brazil page's)."""
+    get_ee()
+    fc = buffer_collection(p, radii_km, mode, shape)
+    return _landscape_metrics_from_collection(
+        fc, geometry=p.to_geojson(), point_label=str(p), mode=mode, shape=shape,
+        radii_km=radii_km, year=0, image=image, dataset_id=dataset_id, band_name=band_name,
+    )
 
 
 def landscape_metrics(

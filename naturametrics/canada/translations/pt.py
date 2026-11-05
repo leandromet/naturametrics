@@ -18,6 +18,7 @@ TRANSLATIONS_PT: dict[str, str] = {
     "legend_collapse_aria": "Recolher a legenda",
     "legend_expand_aria": "Expandir a legenda",
     "go_to_brazil": "Ir para o Brasil",
+    "go_to_usa": "EUA",
     "language_label": "Idioma",
     "close_button": "Fechar",
 
@@ -58,7 +59,7 @@ TRANSLATIONS_PT: dict[str, str] = {
     ),
     "qs_step2_lead": "Clique em qualquer ponto",
     "qs_step2_body": (
-        "do Canadá: um marcador e quatro áreas de análise são criados em "
+        "do Canadá: um marcador e cinco áreas de análise são criados em "
         "volta dele."
     ),
     "qs_step3_lead": "Leia os resultados",
@@ -77,7 +78,7 @@ TRANSLATIONS_PT: dict[str, str] = {
     "qs_close_aria": "Fechar o início rápido",
     "help_show_quickstart": "Mostrar o início rápido de novo",
     "clear_button": "Limpar",
-    "reset_button": "Resetar",
+    "reset_button": "Restaurar",
     "cancel_button": "Cancelar",
 
     # --- layer panel: sections -------------------------------------------- #
@@ -185,12 +186,12 @@ TRANSLATIONS_PT: dict[str, str] = {
 
     # --- results ------------------------------------------------------------ #
     "landuse_title": "História do inventário agrícola",
-    "analysis_running": "Reduzindo 17 anos sobre 4 buffers…",
+    "analysis_running": "Processando 17 anos em 5 buffers…",
     "top_classes_title": "Classes principais ({year})",
     "empty_state_title": "Clique no mapa para escolher um ponto",
     "empty_state_body": (
         "A história do inventário agrícola (2009–2025), a idade da floresta e "
-        "a mudança florestal de Hansen serão calculadas para raios de 1, 2, 5 "
+        "a mudança florestal de Hansen serão calculadas para raios de 0,5, 1, 2, 5 "
         "e 10 km em volta dele."
     ),
     "aci_empty_title": "Sem dados do inventário agrícola aqui",
@@ -198,7 +199,7 @@ TRANSLATIONS_PT: dict[str, str] = {
     "age_running": "Lendo o raster de idade do NTEMS…",
     "age_median_label": "Faixa de idade mediana",
     "age_forest_area_label": "Área florestal",
-    "age_forest_pct_label": "Parcela do buffer que é floresta",
+    "age_forest_pct_label": "Fração do buffer que é floresta",
     "age_reference_note": "As idades são referentes a {year}, ano de referência do NTEMS.",
     "age_point_label": "Idade no pixel clicado",
     "age_point_not_forest": "O pixel clicado não é floresta",
@@ -292,24 +293,24 @@ TRANSLATIONS_PT: dict[str, str] = {
     ),
     "help_step1_title": "Escolha um ponto",
     "help_step1_body": (
-        "Clique em qualquer lugar do Canadá. Um marcador é criado e quatro "
-        "áreas de análise (1, 2, 5 e 10 km de raio) são desenhadas em volta "
+        "Clique em qualquer lugar do Canadá. Um marcador é criado e cinco "
+        "áreas de análise (0,5, 1, 2, 5 e 10 km de raio) são desenhadas em volta "
         "dele. Cliques fora do Canadá são recusados; cliques no extremo norte "
         "não são — veja a nota sobre cobertura abaixo."
     ),
     "help_step2_title": "Leia a história do inventário agrícola",
     "help_step2_body": (
         "O gráfico abaixo do mapa traz uma coluna por ano, de 2009 a 2025, nas "
-        "cores oficiais da legenda AAFC. Troque o raio em 1/2/5/10 km e use o "
+        "cores oficiais da legenda AAFC. Troque o raio em 0,5/1/2/5/10 km e use o "
         "botão «%» para alternar entre hectares e proporção da área."
     ),
     "help_step3_title": "Atenção à cobertura",
     "help_step3_body": (
         "O Inventário Anual de Culturas da AAFC é um produto agrícola, não uma "
-        "cobertura do solo nacional. Alcança cerca de 58°N e não mais que isso, "
+        "cobertura do solo nacional. Alcança cerca de 58°N e não vai além disso, "
         "e seus dois primeiros anos (2009, 2010) cobrem apenas as Pradarias. Ao "
         "norte desse limite o gráfico de cobertura fica vazio enquanto os "
-        "painéis de floresta continuam respondendo — o inventário simplesmente "
+        "painéis de floresta continuam funcionando — o inventário simplesmente "
         "não chega lá."
     ),
     "help_step4_title": "Leia a idade da floresta",
@@ -318,7 +319,7 @@ TRANSLATIONS_PT: dict[str, str] = {
         "florestal do Canadá, referente a 2019. O histograma agrupa a área "
         "florestal de cada buffer por idade; o resumo ao lado dá a faixa "
         "mediana e quanto do buffer é floresta. Pixels sem valor não são "
-        "floresta, em vez de estarem faltando."
+        "floresta — não são dados ausentes."
     ),
     "help_step5_title": "Leia a mudança florestal",
     "help_step5_body": (
@@ -341,7 +342,7 @@ TRANSLATIONS_PT: dict[str, str] = {
         "dos gráficos e uma aba de metadados explicando como cada número foi "
         "calculado."
     ),
-    "help_limitations_title": "Limitações que valem conhecer",
+    "help_limitations_title": "Limitações que vale conhecer",
     "help_limit_1": (
         "O inventário agrícola cobre apenas o sul agrícola, até cerca de 58°N, "
         "e só é nacional a partir de 2011."
@@ -378,4 +379,36 @@ TRANSLATIONS_PT: dict[str, str] = {
         "(Biondo et al., 2026), a partir de dados do AAFC Annual Crop "
         "Inventory e do Hansen Global Forest Change (Hansen et al., 2013).\""
     ),
+    "group_study_area": 'Ponto de estudo',
+    "group_landcover": 'Mapa base e cobertura do solo',
+    "group_forest": 'Idade e mudança da floresta',
+    "group_biodiversity": 'Biodiversidade (GBIF)',
+    "compare_toggle": 'Comparar dois anos',
+    "compare_year_left": 'Ano à esquerda (referência)',
+    "compare_note": 'Arraste a linha divisória no mapa. O lado direito é o ano escolhido acima; o esquerdo é este ano. Padrão: o primeiro ano nacional (2011; 2009–2010 cobrem só as Pradarias) e o mais novo.',
+    'extras_running': 'Lendo…',
+    'err_extra_failed': 'Falha ao consultar o Earth Engine: {exc}',
+    'metrics_title': 'Métricas de paisagem',
+    'metrics_hint': 'Manchas, maior mancha, densidade de borda, tamanho efetivo de malha e diversidade das classes em cada raio, no ano de cobertura mais recente.',
+    'metrics_none': 'Sem métricas de paisagem para este ponto.',
+    'biomass_title': 'Biomassa acima do solo',
+    'biomass_hint': 'Biomassa média (Mg/ha) por ano para o raio escolhido, com a incerteza do próprio produto.',
+    'biomass_none': 'Sem dados de biomassa aqui.',
+    'col_radius': 'Raio',
+    'col_patches': 'Manchas',
+    'col_largest': 'Maior %',
+    'col_edge': 'Borda m/ha',
+    'col_meff': 'Meff (ha)',
+    'col_shannon': 'Shannon',
+    'col_evenness': 'Equitabilidade',
+    'col_year': 'Ano',
+    'col_mgha': 'Mg/ha',
+    'col_sd': '± (produto)',
+    'biomass_attr': 'ESA CCI Biomass v6.0 — Santoro & Cartus (2025) · 100 m',
+    'tab_age': 'Idade da floresta',
+    'tab_forest': 'Mudança florestal',
+    'tab_metrics': 'Paisagem',
+    'tab_biomass': 'Biomassa',
+    'tab_species': 'Espécies (GBIF)',
+    'metrics_attr': 'AAFC Annual Crop Inventory 2025 · 30 m',
 }

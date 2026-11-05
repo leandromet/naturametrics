@@ -22,6 +22,13 @@ class CanadaUIMixin(rx.State, mixin=True):
     #: Mobile overlay drawer only; the desktop sidebar is always visible.
     sidebar_open: bool = False
 
+    #: Which sidebar groups are open (controlled, like the Brazil page's ``open_groups``).
+    open_groups: list[str] = ["study_area"]
+
+    def set_open_groups(self, value: str | list[str]):
+        # typed str | list[str] to pass Reflex's accordion event-spec check; always a list here
+        self.open_groups = [value] if isinstance(value, str) else list(value)
+
     #: The on-map legend collapsed to just its header — see the Brazil page's
     #: own ``state/_ui.py`` for why this default is decided in the browser.
     legend_open: bool = True
@@ -116,3 +123,8 @@ class CanadaUIMixin(rx.State, mixin=True):
     def brazil_href(self) -> str:
         """Link back to the Brazil page, carrying the current language."""
         return f"/?lang={self.language}"
+
+    @rx.var
+    def usa_href(self) -> str:
+        """Link to the USA page (lower 48), carrying the current language."""
+        return f"/usa?lang={self.language}"

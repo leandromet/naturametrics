@@ -205,6 +205,15 @@ def aci_control() -> rx.Component:
             ),
             rx.fragment(),
         ),
+        rx.hstack(rx.switch(checked=S.compare_on, on_change=S.toggle_compare),
+                  rx.text(S.tr["compare_toggle"], size="2"), width="100%", align="center", spacing="2"),
+        rx.cond(S.compare_on, rx.vstack(
+            rx.hstack(rx.text(S.tr["compare_year_left"], size="1", color_scheme="gray"), rx.spacer(),
+                      rx.badge(S.compare_year.to_string(), color_scheme="amber", variant="solid"), width="100%"),
+            rx.slider(min=aafc.ACI_YEAR_START, max=aafc.ACI_YEAR_END, step=1,
+                      default_value=[aafc.ACI_NATIONAL_FROM], on_change=S.set_compare_year, width="100%"),
+            rx.text(S.tr["compare_note"], size="1", color_scheme="gray"),
+            spacing="2", width="100%", padding_top="0.25rem"), rx.fragment()),
         rx.text(S.tr["aci_coverage_note"], size="1", color_scheme="gray"),
     )
 
@@ -352,41 +361,22 @@ def status_line() -> rx.Component:
     )
 
 
-def layer_panel() -> rx.Component:
-    # Imported here, not at module level: gbif_panel.py imports _section/
-    # _info_icon/_filter_select back from this module (same reason as the
-    # Brazil page's own layer_panel()) — a top-level import here would try to
-    # read those names off this module before it has finished defining them.
+def layer_panel(fill_height: bool = True) -> rx.Component:
+    """The Brazil page's arrangement: search on top, then topic groups in one collapsible
+    wrapper (``components/panel_kit.py``). ``fill_height=False`` is for the mobile sheet."""
+    # Imported here, not at module level: gbif_panel.py imports _section/_info_icon/_filter_select
+    # back from this module.
+    from ...components.panel_kit import group_item, grouped_panel
     from .gbif_panel import gbif_control
     from .search import search_panel
 
-    return rx.vstack(
-        search_panel(),
-        rx.divider(),
-        point_control(),
-        rx.divider(),
-        basemap_control(),
-        rx.divider(),
-        landsat_control(),
-        rx.divider(),
-        aci_control(),
-        rx.divider(),
-        buffer_preview_control(),
-        rx.divider(),
-        forest_age_control(),
-        rx.divider(),
-        forest_change_control(),
-        rx.divider(),
-        gbif_control(),
-        rx.spacer(),
-        rx.divider(),
-        status_line(),
-        rx.cond(
-            S.ee_error != "",
-            rx.callout(S.ee_error, icon="triangle-alert", color_scheme="red",
-                       size="1", width="100%"),
-            rx.fragment(),
-        ),
-        spacing="4", align_items="stretch", height="100%", width="100%",
-        padding="1rem",
-    )
+    return grouped_panel(
+        S, search=search_panel(), fill_height=fill_height, status=status_line(),
+        groups=[
+            group_item("study_area", "target", S.tr["group_study_area"], point_control()),
+            group_item("landcover", "layers", S.tr["group_landcover"],
+                       basemap_control(), landsat_control(), aci_control(), buffer_preview_control()),
+            group_item("forest", "trees", S.tr["group_forest"],
+                       forest_age_control(), forest_change_control()),
+            group_item("biodiversity", "bug", S.tr["group_biodiversity"], gbif_control()),
+        ])

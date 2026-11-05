@@ -47,15 +47,22 @@ def brazil_link() -> rx.Component:
     )
 
 
+def usa_link() -> rx.Component:
+    """To the USA page (lower 48), carrying the chosen language."""
+    return rx.link(
+        rx.button(
+            rx.text("🇺🇸", font_size="0.95rem"),
+            rx.text(S.tr["go_to_usa"],
+                    display=["none", "none", "block", "block"]),
+            size="1", variant="soft", color_scheme="gray",
+            aria_label=S.tr["go_to_usa"],
+        ),
+        href=S.usa_href,
+    )
+
+
 def header() -> rx.Component:
     return rx.hstack(
-        rx.button(
-            rx.icon("panel-left", size=18),
-            on_click=S.toggle_sidebar,
-            size="1", variant="ghost", color_scheme="gray",
-            display=_MOBILE_ONLY,
-            aria_label=S.tr["nav_toggle_layers_aria"],
-        ),
         rx.hstack(
             rx.icon("layers", size=20, color=f"var(--{ACCENT}-11)"),
             rx.heading("Naturametrics", size=rx.breakpoints(initial="3", md="4"),
@@ -71,6 +78,7 @@ def header() -> rx.Component:
         suite_links("naturametrics", region="canada", language=S.language,
                     accent=ACCENT),
         brazil_link(),
+        usa_link(),
         language_switcher(),
         header_actions(),
         width="100%", min_width="0",
@@ -81,51 +89,8 @@ def header() -> rx.Component:
     )
 
 
-def _mobile_sidebar(sidebar: rx.Component) -> rx.Component:
-    return rx.fragment(
-        rx.cond(
-            S.sidebar_open,
-            rx.box(
-                on_click=S.toggle_sidebar,
-                position="fixed", top=HEADER_H, left="0",
-                width="100vw", height=f"calc(100dvh - {HEADER_H})",
-                background="rgba(0,0,0,0.45)", z_index="900",
-                display=_MOBILE_ONLY,
-            ),
-            rx.fragment(),
-        ),
-        rx.box(
-            rx.vstack(
-                rx.hstack(
-                    rx.text(S.tr["drawer_title"], size="2", weight="bold"),
-                    rx.spacer(),
-                    rx.button(
-                        rx.icon("x", size=16), on_click=S.toggle_sidebar,
-                        size="1", variant="ghost", color_scheme="gray",
-                        aria_label=S.tr["drawer_close_aria"],
-                    ),
-                    width="100%", align="center", padding="0.6rem 0.75rem 0",
-                ),
-                sidebar,
-                spacing="0", align_items="stretch", width="100%",
-            ),
-            position="fixed", top=HEADER_H, left="0",
-            width=["86vw", "78vw", "360px", "360px"], max_width="380px",
-            height=f"calc(100dvh - {HEADER_H})",
-            background="var(--color-panel-solid)",
-            border_right="1px solid var(--gray-5)",
-            box_shadow="4px 0 24px rgba(0,0,0,.18)",
-            overflow_y="auto", z_index="901",
-            transform=rx.cond(S.sidebar_open, "translateX(0)", "translateX(-105%)"),
-            transition="transform .22s ease",
-            display=_MOBILE_ONLY,
-        ),
-    )
-
-
 def workspace(sidebar: rx.Component, main: rx.Component) -> rx.Component:
     return rx.fragment(
-        _mobile_sidebar(sidebar),
         rx.hstack(
             rx.box(
                 sidebar,

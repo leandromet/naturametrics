@@ -65,6 +65,12 @@ class CanadaLayersMixin(rx.State, mixin=True):
     show_aci: bool = False
     aci_year: int = aafc.ACI_YEAR_END
     aci_opacity: float = 0.75
+    #: Swipe comparison of two ACI years: the baseline (``compare_year``) on the left of the divider,
+    #: the active ``aci_year`` (default the newest) on the right. The baseline defaults to the first
+    #: *national* year (2011): 2009 and 2010 cover only the Prairies, so against them most of the
+    #: country would compare with nothing.
+    compare_on: bool = False
+    compare_year: int = aafc.ACI_NATIONAL_FROM
 
     # --- buffer preview ("magnifying glass") ------------------------------
     #: Shows the crop inventory *only inside* the analysis radius around the
@@ -145,7 +151,17 @@ class CanadaLayersMixin(rx.State, mixin=True):
                     "id": lid, "url": url, "opacity": self.aci_opacity,
                     "attribution": f"{layer_service.ACI_ATTRIBUTION} {self.aci_year}",
                     "z_index": 10, "max_native_zoom": 15,
+                    "clip": "right" if self.compare_on else None,
                 }
+            if self.compare_on:
+                lid_b = f"ca:aci:{self.compare_year}"
+                url_b = self._url_cache.get(lid_b)
+                if url_b:
+                    yield f"{lid_b}:cmp", {
+                        "id": f"{lid_b}:cmp", "url": url_b, "opacity": self.aci_opacity,
+                        "attribution": f"{layer_service.ACI_ATTRIBUTION} {self.compare_year}",
+                        "z_index": 11, "max_native_zoom": 15, "clip": "left",
+                    }
 
         # Suppressed while the full ACI layer is on — the coverage is already
         # painted across the whole map, so a magnifier over it shows nothing new.
@@ -338,6 +354,29 @@ class CanadaLayersMixin(rx.State, mixin=True):
         if on:
             await self._mint(f"ca:aci:{year}",
                              lambda: layer_service.aci_spec(year))
+
+    @rx.event(background=True)
+    async def toggle_compare(self, checked: bool):
+        """Swipe comparison of two years: turns the ACI layer on and mints both years."""
+        async with self:
+            self.compare_on = checked
+            if checked:
+                self.show_aci = True
+            year_a, year_b = self.aci_year, self.compare_year
+            self._refresh_layers()
+        if checked:
+            await self._mint(f"ca:aci:{year_a}", lambda: layer_service.aci_spec(year_a))
+            await self._mint(f"ca:aci:{year_b}", lambda: layer_service.aci_spec(year_b))
+
+    @rx.event(background=True)
+    async def set_compare_year(self, value: list[int | float]):
+        raw = value[0] if isinstance(value, (list, tuple)) else value
+        async with self:
+            self.compare_year = int(raw)
+            year, on = self.compare_year, self.compare_on
+            self._refresh_layers()
+        if on:
+            await self._mint(f"ca:aci:{year}", lambda: layer_service.aci_spec(year))
 
     def set_aci_opacity(self, value: list[int | float]):
         raw = value[0] if isinstance(value, (list, tuple)) else value

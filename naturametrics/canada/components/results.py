@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import reflex as rx
 
+from ...components.panel_kit import biomass_panel, metrics_panel, right_tabs
 from .gbif_panel import gbif_buffer_panel
 from ..state import CanadaState as S
 
@@ -358,27 +359,22 @@ def results_drawer() -> rx.Component:
             rx.fragment(
                 rx.flex(
                     rx.box(_land_cover_panel(), flex="1 1 50%", min_width="0"),
-                    rx.vstack(
-                        _forest_change_panel(),
-                        rx.divider(),
-                        _forest_age_panel(),
-                        spacing="3", align_items="stretch",
+                    rx.box(
+                        right_tabs([
+                            ("age", S.tr["tab_age"], _forest_age_panel()),
+                            ("forest", S.tr["tab_forest"], _forest_change_panel()),
+                            ("metrics", S.tr["tab_metrics"], metrics_panel(S)),
+                            ("biomass", S.tr["tab_biomass"], biomass_panel(S)),
+                            ("species", S.tr["tab_species"], _gbif_species_panel()),
+                        ]),
                         flex="1 1 50%", min_width="0",
-                        border_left=["none", "none", "none",
-                                     "1px solid var(--gray-5)"],
+                        border_left=["none", "none", "none", "1px solid var(--gray-5)"],
                         padding_left=["0", "0", "0", "1rem"],
                     ),
                     width="100%", align="start", gap="1rem",
                     direction=rx.breakpoints(initial="column", lg="row"),
                     padding=["0.6rem 0.7rem", "0.6rem 0.75rem", "0.75rem 1rem",
                              "0.75rem 1rem"],
-                ),
-                rx.divider(),
-                rx.box(
-                    _gbif_species_panel(),
-                    width="100%",
-                    padding=["0 0.7rem 0.6rem", "0 0.75rem 0.6rem",
-                             "0 1rem 0.75rem", "0 1rem 0.75rem"],
                 ),
             ),
             rx.center(

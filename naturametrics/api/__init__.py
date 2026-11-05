@@ -21,8 +21,10 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
 from ..canada.services import gbif as gbif_ca
+from ..usa.services import gbif as gbif_us
 from ..config.settings import IFN_VIEWPORT_LIMIT
 from ..canada.services import demonstracao as demonstracao_ca
+from ..usa.services import demonstracao as demonstracao_us
 from ..services import auto_infracao, biomes, demonstracao, embargos, gbif, ifn, territorios
 
 logger = logging.getLogger(__name__)
@@ -277,6 +279,31 @@ async def gbif_ca_geojson(request: Request) -> Response:
     return JSONResponse(payload, headers={"Cache-Control": "no-store"})
 
 
+async def gbif_us_geojson(request: Request) -> Response:
+    """GBIF occurrences inside a viewport, filtered by the accordion — the USA page's
+    counterpart to ``gbif_geojson`` above (``country=US``)."""
+    west = _float_param(request, "west")
+    south = _float_param(request, "south")
+    east = _float_param(request, "east")
+    north = _float_param(request, "north")
+    if None in (west, south, east, north):
+        west, south, east, north = -180.0, -90.0, 180.0, 90.0
+
+    filters = gbif_us.filters_from_query(request.query_params)
+    try:
+        payload = await _run_blocking(
+            lambda: gbif_us.points_in_bbox(west, south, east, north, filters)
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("GBIF US GeoJSON could not be produced")
+        return JSONResponse(
+            {"error": "GBIF occurrences unavailable", "detail": str(exc)},
+            status_code=503,
+        )
+
+    return JSONResponse(payload, headers={"Cache-Control": "no-store"})
+
+
 async def demonstracao_ca_json(request: Request) -> Response:
     """The Canada walkthrough's numbers (Kelowna), from the Canada page's services.
 
@@ -291,6 +318,24 @@ async def demonstracao_ca_json(request: Request) -> Response:
         return JSONResponse({"error": "invalid point", "detail": str(exc)}, status_code=400)
     except Exception as exc:  # noqa: BLE001
         logger.exception("Canada walkthrough could not be built")
+        return JSONResponse({"error": "walkthrough unavailable", "detail": str(exc)}, status_code=503)
+    return JSONResponse(payload, headers={"Cache-Control": "public, max-age=600"})
+
+
+async def demonstracao_us_json(request: Request) -> Response:
+    """The USA walkthrough's numbers (Paradise CA), from the USA page's services.
+
+    ``?lat=&lon=`` swap the example point; a point outside the covered United States answers 400
+    with the message for the reader.
+    """
+    lat = _float_param(request, "lat")
+    lon = _float_param(request, "lon")
+    try:
+        payload = await _run_blocking(lambda: demonstracao_us.pacote(lat, lon))
+    except demonstracao.PontoInvalido as exc:
+        return JSONResponse({"error": "invalid point", "detail": str(exc)}, status_code=400)
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("USA walkthrough could not be built")
         return JSONResponse({"error": "walkthrough unavailable", "detail": str(exc)}, status_code=503)
     return JSONResponse(payload, headers={"Cache-Control": "public, max-age=600"})
 
@@ -332,8 +377,10 @@ def register(app) -> None:
     api.add_route(auto_infracao.GEOJSON_PATH, auto_infracao_geojson, methods=["GET"])
     api.add_route(gbif.GEOJSON_PATH, gbif_geojson, methods=["GET"])
     api.add_route(gbif_ca.GEOJSON_PATH, gbif_ca_geojson, methods=["GET"])
+    api.add_route(gbif_us.GEOJSON_PATH, gbif_us_geojson, methods=["GET"])
     api.add_route(demonstracao.ROTA, demonstracao_json, methods=["GET"])
     api.add_route(demonstracao_ca.ROTA, demonstracao_ca_json, methods=["GET"])
+    api.add_route(demonstracao_us.ROTA, demonstracao_us_json, methods=["GET"])
     logger.info("Registered backend routes %s, %s, %s, %s, %s, %s, %s, %s, %s",
                 biomes.GEOJSON_PATH,
                 territorios.GEOJSON_PATHS["indigena"],

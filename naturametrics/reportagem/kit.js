@@ -520,8 +520,18 @@
       ctx.mapa = L.map(el, { zoomControl: true, scrollWheelZoom: false, attributionControl: true, worldCopyJump: true })
         .setView(cfg.centro || [-14, -52], cfg.zoom || 4);
       ctx.mapa.createPane("rpVetores").style.zIndex = 450;
-      var base = cfg.base || { url: "https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", attribution: "© Google" };
-      L.tileLayer(base.url, { attribution: base.attribution, maxZoom: 20, maxNativeZoom: base.maxNativeZoom || 20 }).addTo(ctx.mapa);
+      // base padrão: Google híbrido (satélite com nomes de lugares); o seletor troca para satélite ou ruas.
+      // Uma página que passa a sua própria base (cfg.base) fica só com ela, sem o seletor.
+      var base = cfg.base || { url: "https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}", attribution: "© Google" };
+      var tiles = function (url, attribution) { return L.tileLayer(url, { attribution: attribution, maxZoom: 20, maxNativeZoom: base.maxNativeZoom || 20 }); };
+      var camadaBase = tiles(base.url, base.attribution).addTo(ctx.mapa);
+      if (!cfg.base) {
+        var bases = {};
+        bases[ctx.t("Híbrido (com nomes)", "Hybrid (with names)")] = camadaBase;
+        bases[ctx.t("Satélite", "Satellite")] = tiles("https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}", base.attribution);
+        bases[ctx.t("Ruas", "Streets")] = tiles("https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}", base.attribution);
+        L.control.layers(bases, null, { position: "topright", collapsed: true }).addTo(ctx.mapa);
+      }
       // rolar a página não deve dar zoom; clicar no mapa libera
       ctx.mapa.on("click", function () { ctx.mapa.scrollWheelZoom.enable(); });
       ctx.mapa.on("mouseout", function () { ctx.mapa.scrollWheelZoom.disable(); });

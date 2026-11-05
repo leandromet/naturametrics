@@ -176,13 +176,13 @@ def _zoom_to_click(lat: float, lon: float):
     its own container node as ``_nmMap`` (see the comment there), and the
     container carries the literal ``id`` ``LeafletMap`` requires.
 
-    Both pages' maps are looked up, not just the Brazil one, so the Canada page
-    (``nm-canada-map``) gets the same behaviour from its own click handler
+    All pages' maps are looked up, not just the Brazil one, so the Canada and USA pages
+    (``nm-canada-map``, ``nm-usa-map``) get the same behaviour from its own click handler
     without a second copy of this.
     """
     return rx.call_script(
         "(function () {"
-        "  var ids = ['nm-map', 'nm-canada-map'];"
+        "  var ids = ['nm-map', 'nm-canada-map', 'nm-usa-map'];"
         "  for (var i = 0; i < ids.length; i++) {"
         "    var el = document.getElementById(ids[i]);"
         "    var map = el && el._nmMap;"

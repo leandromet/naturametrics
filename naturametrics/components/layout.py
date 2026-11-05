@@ -60,6 +60,20 @@ def canada_link() -> rx.Component:
     )
 
 
+def usa_link() -> rx.Component:
+    """Across to the USA page (lower 48), carrying the chosen language."""
+    return rx.link(
+        rx.button(
+            rx.text("🇺🇸", font_size="0.95rem"),
+            rx.text(AppState.tr["go_to_usa"],
+                    display=["none", "none", "block", "block"]),
+            size="1", variant="soft", color_scheme="gray",
+            aria_label=AppState.tr["go_to_usa"],
+        ),
+        href=AppState.usa_href,
+    )
+
+
 def header() -> rx.Component:
     # Below desktop, the sidebar is folded into the mobile bottom sheet
     # (pages/index.py::_mobile_sheet()) — always mounted, opened by dragging
@@ -93,6 +107,7 @@ def header() -> rx.Component:
         suite_links("naturametrics", region="brazil", language=AppState.language,
                     accent=ACCENT),
         canada_link(),
+        usa_link(),
         language_switcher(),
         header_actions(),
         width="100%",

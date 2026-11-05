@@ -56,3 +56,8 @@ def test_basemap_is_seeded_before_any_backend_event():
     assert seeded, "map_layers must be seeded with a basemap"
     assert seeded[0]["id"].startswith("basemap:")
     assert seeded[0]["url"].startswith("http")
+
+
+def test_usa_page_builds():
+    from naturametrics.usa.pages.index import usa_index
+    assert usa_index() is not None

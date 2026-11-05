@@ -175,8 +175,9 @@ def base_url(platform: str) -> str:
 
 
 def href(platform: str, region: str, language) -> str:
-    """Link target: the platform's Brazil (``/``) or Canada (``/canada``) page,
-    carrying the language. ``language`` may be a string or a state Var.
+    """Link target: the platform's Brazil (``/``), Canada (``/canada``) or USA (``/usa``)
+    page, carrying the language. Camposcope has no USA page (no public national parcel
+    service): its link from a USA page goes to its home page. ``language`` may be a string or a state Var.
 
     The portal has no regions and keeps its language in the path rather than a
     parameter: Portuguese at ``/``, then ``/es/``, ``/fr/`` and ``/en/`` (the
@@ -185,10 +186,10 @@ def href(platform: str, region: str, language) -> str:
         root = base_url(PORTAL)
         return rx.match(language, ("pt", f"{root}/"), ("es", f"{root}/es/"),
                         ("fr", f"{root}/fr/"), f"{root}/en/")
-    if platform == "clima":             # one page for both countries; ?region=ca frames Canada
+    if platform == "clima":             # one page for all countries; ?region=ca / us frames one
         return (f"{base_url(platform)}/app/?lang={language}"
-                + ("&region=ca" if region == "canada" else ""))
-    path = "/canada" if region == "canada" else "/"
+                + ("&region=ca" if region == "canada" else "&region=us" if region == "usa" else ""))
+    path = "/canada" if region == "canada" else "/usa" if region == "usa" and platform != "camposcope" else "/"
     return f"{base_url(platform)}{path}?lang={language}"
 
 
@@ -255,8 +256,8 @@ def _menu_item(platform: str, *, current: str, region: str, language) -> rx.Comp
 def suite_links(current: str, *, region: str, language, accent: str = "green",
                 compact: bool = False) -> rx.Component:
     """The platform switcher. ``current`` is this app (``"camposcope"``,
-    ``"naturametrics"``, ``"yvynation"`` or ``"clima"``); ``region`` is ``"brazil"`` or
-    ``"canada"`` — the page the reader is on, which the links preserve;
+    ``"naturametrics"``, ``"yvynation"`` or ``"clima"``); ``region`` is ``"brazil"``,
+    ``"canada"`` or ``"usa"`` — the page the reader is on, which the links preserve;
     ``language`` is the page's language (string or Var)."""
     menu = rx.menu.root(
         # The button is the trigger's *direct* child: wrapping it in a tooltip

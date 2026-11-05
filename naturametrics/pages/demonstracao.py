@@ -26,3 +26,9 @@ def walkthrough() -> rx.Component:
 def walkthrough_brasil() -> rx.Component:
     """``/walkthrough/brazil`` — the Brazil article in English (naturametrics.en.html)."""
     return pagina("naturametrics", lingua="en")
+
+
+def walkthrough_usa() -> rx.Component:
+    """``/walkthrough/usa`` — the English walkthrough on Paradise, California
+    (naturametrics_us.{en.html,js}, numbers from usa/services/demonstracao.py)."""
+    return pagina("naturametrics_us", lingua="en")

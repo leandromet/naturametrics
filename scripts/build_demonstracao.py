@@ -17,12 +17,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from naturametrics.canada.services import demonstracao as demonstracao_ca  # noqa: E402
+from naturametrics.usa.services import demonstracao as demonstracao_us  # noqa: E402
 from naturametrics.services import demonstracao  # noqa: E402
 
 
 def main() -> int:
-    so = sys.argv[1:]   # "br" ou "ca" (Kelowna, a página em inglês) para regravar só um deles
-    for chave, modulo in (("br", demonstracao), ("ca", demonstracao_ca)):
+    so = sys.argv[1:]   # "br", "ca" (Kelowna) ou "us" (Paradise CA) para regravar só um deles
+    for chave, modulo in (("br", demonstracao), ("ca", demonstracao_ca), ("us", demonstracao_us)):
         if so and chave not in so:
             continue
         dados = modulo.instantaneo()

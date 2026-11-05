@@ -49,13 +49,13 @@ TRANSLATIONS_PT: dict[str, str] = {
     "hansen_threshold_label": "Limiar de floresta (% de dossel em 2000)",
     "section_point": "Ponto de estudo",
     "buffer_square_toggle_label": "Usar buffers quadrados (lado = diâmetro)",
-    "buffer_caption_square": "(lado quadrado)",
-    "buffer_caption_circle": "(raio círculo)",
+    "buffer_caption_square": "(lado do quadrado)",
+    "buffer_caption_circle": "(raio do círculo)",
     "radius_selector_hint": (
         "Alterna o gráfico e a tabela entre os tamanhos de buffer ao redor "
         "do ponto — um raio maior cobre mais área, mas perde detalhe local."
     ),
-    "multi_shape_change_note": "Altere o formato antes de selecionar pontos múltiplos.",
+    "multi_shape_change_note": "Altere o formato antes de selecionar vários pontos.",
 
     # --- busca de localização ------------------------------------------------ #
     "search_title": "Buscar",
@@ -98,7 +98,7 @@ TRANSLATIONS_PT: dict[str, str] = {
     ),
     "qs_step2_lead": "Clique em qualquer ponto",
     "qs_step2_body": (
-        "do mapa: um marcador e quatro áreas de análise (1 a 10 km) são "
+        "do mapa: um marcador e cinco áreas de análise (0,5 a 10 km) são "
         "criados em volta dele."
     ),
     "qs_step3_lead": "Leia o histórico",
@@ -129,11 +129,11 @@ TRANSLATIONS_PT: dict[str, str] = {
     ),
     "point_info": (
         "Clique em qualquer lugar do Brasil para escolher um ponto de "
-        "estudo. A aplicação calcula automaticamente uso do solo, idade da "
+        "estudo. O aplicativo calcula automaticamente uso do solo, idade da "
         "vegetação, métricas de paisagem, biomassa e comparação com o IBGE "
         "em cinco raios ao redor do ponto (0,5 a 10 km) — a forma mais "
-        "rápida de começar a entender um lugar específico. \"Mostrar Uso "
-        "no Buffer\" mostra o MapBiomas do ano selecionado em «Cobertura "
+        "rápida de começar a entender um lugar específico. \"Mostrar uso "
+        "no buffer\" mostra o MapBiomas do ano selecionado em «Cobertura "
         "do solo» só dentro desses raios ao passar o cursor — uma prévia "
         "rápida e gratuita, sem consulta ao Earth Engine, antes de rodar a "
         "análise completa."
@@ -150,7 +150,7 @@ TRANSLATIONS_PT: dict[str, str] = {
     ),
     "basemap_info": (
         "Escolha a imagem de fundo do mapa. As opções SPOT 2008 mostram "
-        "fotos reais de satélite de ~2008 — o marco do Código Florestal — "
+        "imagens reais de satélite de cerca de 2008 — o marco do Código Florestal — "
         "permitindo conferir a olho se uma área realmente tinha vegetação "
         "naquele ano, algo que o MapBiomas (classificado, não é foto) não "
         "mostra diretamente."
@@ -166,7 +166,7 @@ TRANSLATIONS_PT: dict[str, str] = {
         "divisória arrastável: dois anos do MapBiomas (antes/depois), IBGE "
         "× MapBiomas (checagem cruzada de classificação), os dois mosaicos "
         "SPOT 2008 entre si (cor natural × infravermelho), ou o MapBiomas "
-        "2008/IBGE contra o SPOT 2008 — validando uma classificação direto "
+        "2008/IBGE contra o SPOT 2008 — validando uma classificação diretamente "
         "contra a imagem real do ano-base do Código Florestal."
     ),
     "change_mask_info": (
@@ -187,8 +187,8 @@ TRANSLATIONS_PT: dict[str, str] = {
         "Áreas embargadas pelo IBAMA por infrações ambientais, buscadas "
         "ao vivo do próprio serviço do IBAMA para a área visível. "
         "Atualizado no ritmo do IBAMA, fora do controle deste app — pode "
-        "ficar temporariamente esparso ou indisponível, independente "
-        "daqui."
+        "ficar temporariamente esparso ou indisponível, independentemente "
+        "deste app."
     ),
     "auto_infracao_info": (
         "Autos de infração emitidos pelo IBAMA, um a um, buscados ao "
@@ -228,7 +228,7 @@ TRANSLATIONS_PT: dict[str, str] = {
     ),
     "biomass_info": (
         "Biomassa acima do solo (toneladas por hectare) do produto ESA CCI "
-        "Biomass, em dez anos entre 2007 e 2022. Estima quanto carbono está "
+        "Biomass, em dez anos distintos entre 2007 e 2022. Estima quanto carbono está "
         "armazenado na vegetação da área — um complemento à classificação "
         "de cobertura do solo do MapBiomas."
     ),
@@ -249,11 +249,11 @@ TRANSLATIONS_PT: dict[str, str] = {
     "opacity_label": "Opacidade",
     "opacity_label_compare": "Opacidade — ano à direita",
     "clear_button": "Limpar",
-    "reset_button": "Reset",
+    "reset_button": "Restaurar",
 
-    "buffer_preview_toggle_label": "Mostrar Uso no Buffer",
+    "buffer_preview_toggle_label": "Mostrar uso no buffer",
     "buffer_preview_hidden_note": (
-        "Oculta enquanto «MapBiomas 11» está ligado — a cobertura já "
+        "Oculto enquanto «MapBiomas 11» está ligado — a cobertura já "
         "aparece no mapa inteiro."
     ),
 
@@ -314,15 +314,15 @@ TRANSLATIONS_PT: dict[str, str] = {
     "ifn_toggle_label": "Conglomerados",
     "embargos_toggle_label": "Mostrar áreas embargadas",
     "embargos_note": (
-        "Feed ao vivo do próprio serviço do IBAMA, atualizado por eles, "
-        "não por este app — não fica em cache aqui além de alguns "
+        "Dados ao vivo do próprio serviço do IBAMA, atualizados por eles, "
+        "não por este app — não ficam em cache aqui além de alguns "
         "minutos."
     ),
     "auto_infracao_toggle_label": "Mostrar autos de infração",
     "auto_infracao_note": (
         "Só aparece com o zoom mais fechado do que os embargos — um "
-        "conjunto bem mais denso no país todo. Feed ao vivo do próprio "
-        "serviço do IBAMA, não fica em cache aqui além de alguns "
+        "conjunto bem mais denso no país todo. Dados ao vivo do próprio "
+        "serviço do IBAMA, que não ficam em cache aqui além de alguns "
         "minutos."
     ),
     "filter_all": "Todos",
@@ -392,8 +392,8 @@ TRANSLATIONS_PT: dict[str, str] = {
     "landuse_title": "História de uso da terra",
     "download_button": "Baixar dados",
     "download_point_aria": "Baixar dados deste ponto",
-    "analysis_running": "Reduzindo 41 anos sobre 4 buffers…",
-    "full_area_running": "Reduzindo 41 anos sobre a caixa delimitadora…",
+    "analysis_running": "Processando 41 anos em 5 buffers…",
+    "full_area_running": "Processando 41 anos na caixa delimitadora…",
     "top_classes_title": "Classes principais (2025)",
     "area_natural_label": "Área natural (registrada)",
     "median_label": "Mediana (datada)",
@@ -422,7 +422,7 @@ TRANSLATIONS_PT: dict[str, str] = {
     "metrics_meff": "Meff (ha)",
     "metrics_shannon": "Shannon",
     "metrics_simpson": "Simpson",
-    "metrics_evenness": "Equidade",
+    "metrics_evenness": "Equitabilidade",
     "connectivity_hint": (
         "Distância média até o fragmento de floresta mais próximo (vizinho "
         "mais próximo, ENN) — mais custosa que as métricas acima porque "
@@ -434,7 +434,7 @@ TRANSLATIONS_PT: dict[str, str] = {
     "connectivity_empty": "Ainda não calculada — clique para rodar.",
     "err_connectivity_failed": "Falha ao calcular a conectividade: {exc}",
     "connectivity_n_fragments": "Fragmentos",
-    "connectivity_enn_mean": "Dist. média viz. mais próx. (m)",
+    "connectivity_enn_mean": "Dist. média ao vizinho mais próx. (m)",
     "connectivity_enn_median": "Mediana (m)",
     "export_chart_aria": "Baixar este gráfico (PNG)",
     "export_table_aria": "Baixar esta tabela (CSV)",
@@ -442,7 +442,7 @@ TRANSLATIONS_PT: dict[str, str] = {
     "export_table_label": "Exportar tabela",
     "biomass_tab": "Biomassa",
     "biomass_tab_hint": (
-        "Biomassa acima do solo neste buffer (ESA CCI), uma proxy de "
+        "Biomassa acima do solo neste buffer (ESA CCI), uma aproximação de "
         "quanto carbono a vegetação em pé armazena."
     ),
     "biomass_running": "Lendo a biomassa acima do solo (ESA CCI)…",
@@ -468,7 +468,7 @@ TRANSLATIONS_PT: dict[str, str] = {
     ),
     "ibge_compare_note": (
         "Arraste a linha branca no mapa. À direita fica o MapBiomas 2022, "
-        "à esquerda a Vegetação IBGE 2022 — desliga a cortina de comparação "
+        "à esquerda a Vegetação IBGE 2022 — desativa a comparação "
         "de anos acima, já que o mapa tem apenas um divisor."
     ),
     "ibge_veg_caveat": (
@@ -483,7 +483,7 @@ TRANSLATIONS_PT: dict[str, str] = {
     "empty_state_title": "Clique no mapa ou desenhe uma área",
     "empty_state_body": (
         "A história de uso da terra e a idade da vegetação, de 1985/1987 a "
-        "2025, serão calculadas para raios de 1, 2, 5 e 10 km em volta de um "
+        "2025, serão calculadas para raios de 0,5, 1, 2, 5 e 10 km em volta de um "
         "ponto — ou para toda a área, se você desenhar, colar um WKT ou "
         "enviar um KML."
     ),
@@ -722,8 +722,8 @@ TRANSLATIONS_PT: dict[str, str] = {
     ),
     "help_step1_title": "Escolha um ponto",
     "help_step1_body": (
-        "Clique em qualquer lugar do mapa. Um marcador é criado e quatro "
-        "áreas de análise (1, 2, 5 e 10 km de raio) são desenhadas em volta "
+        "Clique em qualquer lugar do mapa. Um marcador é criado e cinco "
+        "áreas de análise (0,5, 1, 2, 5 e 10 km de raio) são desenhadas em volta "
         "dele. Cliques fora do Brasil são recusados: o MapBiomas cobre "
         "apenas o território nacional."
     ),
@@ -731,7 +731,7 @@ TRANSLATIONS_PT: dict[str, str] = {
     "help_step2_body": (
         "O gráfico abaixo do mapa traz uma coluna por ano, de 1985 a 2025, "
         "com as classes do MapBiomas nas cores oficiais. Troque o raio em "
-        "1/2/5/10 km e use o botão «%» para alternar entre hectares e "
+        "0,5/1/2/5/10 km e use o botão «%» para alternar entre hectares e "
         "proporção da área."
     ),
     "help_step3_title": "Troque o mapa base",
@@ -815,7 +815,7 @@ TRANSLATIONS_PT: dict[str, str] = {
         "supressão. Use-a para orientar a investigação, não para "
         "concluí-la."
     ),
-    "help_limitations_title": "Limitações que valem conhecer",
+    "help_limitations_title": "Limitações que vale conhecer",
     "help_limit_1": (
         "Resolução de 30 m: num raio de 1 km cabem cerca de 3.500 pixels, "
         "então poucos pixels mal classificados já mexem nas porcentagens."
@@ -830,8 +830,8 @@ TRANSLATIONS_PT: dict[str, str] = {
         "0,09 ha superestimaria a área."
     ),
     "help_limit_4": (
-        "As classes do MapBiomas não são seguras para daltonismo — a "
-        "legenda sempre traz o nome ao lado da cor."
+        "As cores das classes do MapBiomas não são adequadas para pessoas "
+        "com daltonismo — a legenda sempre traz o nome ao lado da cor."
     ),
 
     # --- "Como citar" dialog ------------------------------------------------ #
@@ -885,6 +885,7 @@ TRANSLATIONS_PT: dict[str, str] = {
 
     # --- language switcher ---------------------------------------------- #
     "go_to_canada": "Ir para o Canadá",
+    "go_to_usa": "Ir para os EUA",
     "language_label": "Idioma",
 
     # --- GBIF biodiversity (components/gbif_panel.py) --------------------- #

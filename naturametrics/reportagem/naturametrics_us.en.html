@@ -1,0 +1,220 @@
+<header class="rp-topo">
+  <span class="marca"><a href="/usa?lang=en">Naturametrics</a> · walkthrough</span>
+  <span class="rp-exemplo" id="topo-exemplo"></span>
+  <span class="sp"></span>
+  <a href="/usa?lang=en" id="link-app" class="rp-link-forte">open this point in the app →</a>
+</header>
+
+<section class="rp-abertura">
+  <div class="rp-chapeu">Land cover · disturbance · step by step</div>
+  <h1>How to read the landscape around a point in the United States, one layer at a time</h1>
+  <p class="rp-linha-fina">One click on the map, and Naturametrics draws five circles around it and reads forty-one years of
+    land cover, of disturbance, of fire severity and of tree canopy inside each. This walkthrough opens a real point,
+    Paradise, California, step by step, with where each number comes from and where it stops.</p>
+  <p class="rp-cred" id="abertura-exemplo">Loading the example point's analysis…</p>
+  <div class="rp-numeros" aria-live="polite">
+    <div><b data-campo="n-fogo">—</b><small data-campo="n-fogo-rot">burned in the worst fire year within 5 km</small></div>
+    <div><b data-campo="n-dossel">—</b><small data-campo="n-dossel-rot">tree canopy within 5 km, 1985 to 2025</small></div>
+    <div><b data-campo="n-jovem">—</b><small data-campo="n-jovem-rot">of the forest within 5 km disturbed in the last 10 years</small></div>
+    <div><b data-campo="n-perda">—</b><small data-campo="n-perda-rot">of tree cover lost within 5 km since 2001</small></div>
+  </div>
+  <p class="rp-legenda-selos">
+    <span class="selo real">measured</span> computed from satellite imagery or from the geometry itself.
+    <span class="selo estimado">estimated</span> a modelled or derived product, with a larger error than the land-cover map.
+    <span class="selo ausente">missing</span> a layer that did not respond this time.
+  </p>
+</section>
+
+<section class="rp-scrolly">
+  <div class="rp-passos">
+
+    <article class="rp-passo" data-passo="ponto" data-camada="ponto" data-mapa="grande" data-bloco="busca,ponto" data-titulo="A point on the map" data-selo="real">
+      <div class="num">1</div>
+      <h2>It all starts from a point</h2>
+      <p>Naturametrics does not need a property line. A click, an address, a ZIP code or a coordinate is enough: the
+        analysis is built around the point, so it works the same on a ranch, a park, a national forest or a backyard.<button type="button" class="rp-nota" data-nota="1" aria-label="note 1">1</button></p>
+      <p id="t-ponto"></p>
+      <p class="como"><b>In the app:</b> the <b>Search</b> box on the USA page, a click on the map, or a direct link with
+        <code>/usa?lat=…&amp;lon=…</code>.</p>
+    </article>
+
+    <article class="rp-passo" data-passo="discos" data-camada="discos" data-mapa="grande" data-bloco="raios" data-titulo="Five circles" data-selo="real">
+      <div class="num">2</div>
+      <h2>Five circles around the point</h2>
+      <p>Every analysis runs five times, in circles of 0.5, 1, 2, 5 and 10 km. The small ones say what is at the point; the
+        large ones, what the landscape around it is like. Each circle contains the smaller ones, so the 10 km circle is the
+        whole picture and the 0.5 km one is the close-up.</p>
+      <p id="t-discos"></p>
+      <p class="como"><b>In the app:</b> the <b>Radius</b> selector above the charts, and the circles on the map.</p>
+    </article>
+
+    <article class="rp-passo" data-passo="historia" data-camada="historia" data-mapa="meio" data-bloco="cobertura" data-titulo="Land cover · Annual NLCD" data-selo="real">
+      <div class="num">3</div>
+      <h2>Forty-one land-cover maps in one circle</h2>
+      <p>The USGS Annual National Land Cover Database classifies every 30 m pixel of the lower 48 each year, from 1985 to
+        2025. Each column is one year in the 5 km circle, and each colour a class: forest, shrub, grassland, crops, wetland,
+        water and four levels of development.</p>
+      <p id="t-historia"></p>
+      <p class="como"><b>In the app:</b> the <b>Land-cover history</b> chart, and the <b>Annual NLCD</b> layer with its year selector.</p>
+    </article>
+
+    <article class="rp-passo" data-passo="raios" data-camada="raios" data-mapa="meio" data-bloco="cobertura,raios" data-titulo="Natural vegetation by radius" data-selo="real">
+      <div class="num">4</div>
+      <h2>Near and far tell different stories</h2>
+      <p>The same series as the share of each circle that is natural vegetation: forest, wetland, grassland and shrub. When
+        the small circles and the large ones move together, the change is regional; when they part, the point is doing
+        something its surroundings are not.</p>
+      <p id="t-raios"></p>
+      <p class="como"><b>In the app:</b> the <b>Land-cover history</b> chart with the <b>%</b> button, changing radius.</p>
+    </article>
+
+    <article class="rp-passo" data-passo="pixel" data-camada="pixel" data-mapa="grande" data-bloco="ponto" data-titulo="The point's pixel" data-selo="real">
+      <div class="num">5</div>
+      <h2>The point's own pixel, no averaging</h2>
+      <p>Before any circle, one pixel: the 30 m square under the click, year by year. It is the sharpest reading and the most
+        fragile, because a single misclassified year shows up as a change.</p>
+      <p id="t-pixel"></p>
+      <p class="como"><b>In the app:</b> the clicked pixel's class, year by year, is a sheet of the point spreadsheet (<b>Download data</b>).</p>
+    </article>
+
+    <article class="rp-passo" data-passo="disturbio" data-camada="disturbio" data-mapa="meio" data-bloco="floresta,raios" data-titulo="Disturbance · USFS LCMS" data-selo="real">
+      <div class="num">6</div>
+      <h2>What changed, and when</h2>
+      <p>The Forest Service's Landscape Change Monitoring System reads the Landsat record year by year and labels what it
+        sees: wildfire, tree removal, insects and drought, wind, and the regrowth that follows. Each column is the area it
+        flags in the 5 km circle that year.<button type="button" class="rp-nota" data-nota="2" aria-label="note 2">2</button></p>
+      <p id="t-disturbio"></p>
+      <p class="como"><b>In the app:</b> the <b>Disturbance history</b> chart and the <b>Last disturbance (LCMS)</b> layer.</p>
+    </article>
+
+    <article class="rp-passo" data-passo="fogo" data-camada="fogo" data-mapa="meio" data-bloco="floresta" data-titulo="Fire severity · MTBS" data-selo="real">
+      <div class="num">7</div>
+      <h2>How hard the fire burned</h2>
+      <p>MTBS maps the perimeter and the burn severity of the large fires: low, moderate or high. It is a separate mapping,
+        made from before-and-after images of each fire, so it dates the fire where LCMS dates its effect. It only maps fires
+        of at least 1,000 acres in the west (500 in the east): smaller ones are not here.</p>
+      <p id="t-fogo"></p>
+      <p class="como"><b>In the app:</b> the <b>Fire (MTBS)</b> chart and the <b>Fire severity</b> layer.</p>
+    </article>
+
+    <article class="rp-passo" data-passo="idade" data-camada="idade" data-mapa="meio" data-bloco="floresta" data-titulo="Time since disturbance · derived" data-selo="estimado">
+      <div class="num">8</div>
+      <h2>How long since the forest was disturbed</h2>
+      <p>The United States has no measured map of stand age, so this is its nearest honest equivalent: for each pixel that is
+        tree cover today, the years since the last fire, cutting or insect outbreak LCMS detected. The clock starts in 1985,
+        so the last bar means "not disturbed since 1985", and says nothing about how old those trees are.<button type="button" class="rp-nota" data-nota="3" aria-label="note 3">3</button></p>
+      <p id="t-idade"></p>
+      <p class="como"><b>In the app:</b> the <b>Time since disturbance</b> chart.</p>
+    </article>
+
+    <article class="rp-passo" data-passo="dossel" data-camada="dossel" data-mapa="meio" data-bloco="floresta" data-titulo="Tree canopy · USFS" data-selo="estimado">
+      <div class="num">9</div>
+      <h2>How much canopy there is</h2>
+      <p>The Forest Service's Tree Canopy Cover estimates, for each 30 m pixel and year, the share covered by tree crowns.
+        The mean over a circle is the simplest summary of a landscape's tree cover, and it tracks both loss and regrowth
+        from 1985 on.</p>
+      <p id="t-dossel"></p>
+      <p class="como"><b>In the app:</b> the <b>Tree canopy cover</b> chart and layer.</p>
+    </article>
+
+    <article class="rp-passo" data-passo="perda" data-camada="perda" data-mapa="meio" data-bloco="floresta" data-titulo="Forest · Hansen/GLAD" data-selo="real">
+      <div class="num">10</div>
+      <h2>A second opinion on the loss</h2>
+      <p>Hansen/GLAD is a different, global product: it flags, by year since 2001, the pixels that lost their tree cover.
+        Where it and LCMS agree, the story is firmer. Hansen books a pixel in the year the loss is first seen, so a
+        late-year fire may fall partly in the next.</p>
+      <p id="t-perda"></p>
+      <p class="como"><b>In the app:</b> the <b>Forest change</b> chart, the <b>Loss and gain</b> layer, and the <b>Forest threshold</b> control.</p>
+    </article>
+
+    <article class="rp-passo" data-passo="procedencia" data-camada="procedencia" data-mapa="oculto" data-bloco="exportar" data-titulo="Provenance and export" data-selo="real">
+      <div class="num">11</div>
+      <h2>Everything on screen, in one spreadsheet</h2>
+      <p>Each analysis keeps its source, scale and time of calculation, and the export carries them with the numbers: a reading
+        of a landscape is only worth what it takes to reproduce it.</p>
+      <p id="t-procedencia"></p>
+      <p class="como"><b>In the app:</b> the <b>Download data</b> button: an ODS spreadsheet with one sheet per table.</p>
+    </article>
+
+  </div>
+
+  <div class="rp-figura" aria-live="polite">
+    <div class="rp-moldura">
+      <div class="rp-barra-janela"><i></i><i></i><i></i><span id="rp-fig-url">naturametrics.umaterra.com.br/usa</span></div>
+      <div class="rp-fig-corpo">
+        <nav class="rp-pagina" aria-label="Where it is in the app">
+          <div class="pg-rot">in the app</div>
+          <div class="pg-b" data-bloco="busca">search</div>
+          <div class="pg-b alto" data-bloco="ponto">map · point</div>
+          <div class="pg-b" data-bloco="raios">radius</div>
+          <div class="pg-par"><div class="pg-b" data-bloco="cobertura">land cover</div><div class="pg-b" data-bloco="floresta">forest</div></div>
+          <div class="pg-b" data-bloco="exportar">download</div>
+        </nav>
+        <div class="rp-fig-principal">
+          <div class="rp-fig-cab"><span id="rp-fig-titulo">Loading…</span><span id="rp-fig-selo" class="selo real">measured</span></div>
+          <div class="rp-fig-area" data-mapa="grande">
+            <div class="rp-mapa-caixa"><div id="rp-mapa"></div><div class="rp-mapa-legenda" id="rp-mapa-legenda"></div></div>
+            <div class="rp-painel">
+              <div id="rp-fig-estado" class="rp-fig-estado">Loading the example point…</div>
+              <div class="rp-camada" id="camada-ponto"><div id="fig-ponto"></div></div>
+              <div class="rp-camada" id="camada-discos"><div id="fig-discos"></div></div>
+              <div class="rp-camada" id="camada-historia"><div id="fig-historia"></div></div>
+              <div class="rp-camada" id="camada-raios"><div id="fig-raios"></div></div>
+              <div class="rp-camada" id="camada-pixel"><div id="fig-pixel"></div></div>
+              <div class="rp-camada" id="camada-disturbio"><div id="fig-disturbio"></div></div>
+              <div class="rp-camada" id="camada-fogo"><div id="fig-fogo"></div></div>
+              <div class="rp-camada" id="camada-idade"><div id="fig-idade"></div></div>
+              <div class="rp-camada" id="camada-dossel"><div id="fig-dossel"></div></div>
+              <div class="rp-camada" id="camada-perda"><div id="fig-perda"></div></div>
+              <div class="rp-camada" id="camada-procedencia"><div id="fig-procedencia"></div></div>
+              <p class="rp-fig-legenda" id="rp-fig-legenda"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="rp-fim">
+  <h2>What Naturametrics does not say</h2>
+  <ul class="rp-limites">
+    <li><b>It does not tell you why the land changed.</b> LCMS and MTBS label causes from the pattern in the imagery;
+      a fire, a salvage logging and a clearing can look alike to a satellite. The cause is for the forest record or a visit.</li>
+    <li><b>It does not date a stand.</b> "Time since disturbance" starts counting in 1985; a stand not disturbed since then
+      is open-ended, not forty-one years old.</li>
+    <li><b>It does not map every fire.</b> MTBS covers fires of at least 1,000 acres in the west and 500 in the east;
+      LCMS sees smaller disturbances, with more noise.</li>
+    <li><b>It does not count carbon.</b> Canopy and disturbance describe the landscape; a carbon figure would need an
+      inventory and growth curves the tool does not have.</li>
+    <li><b>It cannot see below 30 m.</b> A narrow riparian strip or a backyard grove is a few pixels at most.</li>
+  </ul>
+  <p class="rp-fim-extra" id="fim-extra"></p>
+  <a class="rp-cta" id="cta-app" href="/usa?lang=en">Open this point in Naturametrics →</a>
+  <a class="rp-cta sec" href="/walkthrough">The same walkthrough on a point above Kelowna (Canada)</a>
+  <p class="rp-rodape">More examples:
+    <a href="?">Paradise (CA), the 2018 Camp Fire, this page's example</a> ·
+    <a href="?lat=44.60&amp;lon=-110.50">Yellowstone (WY), the 1988 fires' regrowth</a> ·
+    <a href="?lat=41.20&amp;lon=-100.70">Nebraska Sand Hills (NE), grassland</a> ·
+    <a href="?lat=61.20&amp;lon=-149.90">Anchorage (AK), three NLCD snapshots</a>.
+    Pass any coordinate in the lower 48, Alaska or Hawaii (<code>?lat=…&amp;lon=…</code>); the numbers come from the app's own services.
+    <a href="/demonstracao" lang="pt-BR">Versão em português (com um conglomerado do Brasil)</a>.</p>
+</section>
+
+<section class="rp-notas" aria-label="Notes">
+  <h3>Notes</h3>
+  <ol>
+    <li id="nota-1">The three UmaTerra tools differ in who draws the boundary they analyse: the state (protected and
+      Indigenous lands), the landholder (a cadastre) or the analyst (a point on the map). Naturametrics is the analyst's
+      tool: it draws no boundary at all, only circles of fixed size, so two points anywhere are compared on equal terms.
+      <span class="rp-pop-fonte">Biondo et al., <i>Registry, coordinate, cadastre</i> (manuscript in preparation, 2026).</span></li>
+    <li id="nota-2">LCMS assigns a change to the year in which the Landsat record first shows it, which for a fire late in
+      the year is the following one. That is why the Camp Fire of November 2018 shows as 2019 here and as 2018 in MTBS, and
+      the two columns should be read together.
+      <span class="rp-pop-fonte">USFS GTAC, <i>Landscape Change Monitoring System</i>, v2025-11.</span></li>
+    <li id="nota-3">Brazil's page derives vegetation age the same way, from a count of years since a pixel was last cleared,
+      and for the same reason reports the oldest class as open-ended. Canada's page can show a measured stand age because
+      Canada publishes one; the United States does not.
+      <span class="rp-pop-fonte">Biondo et al., <i>Registry, coordinate, cadastre</i> (manuscript in preparation, 2026).</span></li>
+  </ol>
+</section>

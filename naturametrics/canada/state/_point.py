@@ -70,6 +70,7 @@ class CanadaPointMixin(rx.State, mixin=True):
         # Same click-zoom as the Brazil page — the helper looks both maps up
         # by id, so there is nothing Canada-specific to duplicate here.
         return [type(self).run_analysis(p.lat, p.lon),
+               type(self).run_landscape_biomass(p.lat, p.lon),
                _zoom_to_click(p.lat, p.lon)]
 
     def clear_study_point(self):

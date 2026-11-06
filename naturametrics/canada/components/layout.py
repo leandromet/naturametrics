@@ -37,7 +37,6 @@ def brazil_link() -> rx.Component:
     """Back to the Brazil page, carrying the chosen language."""
     return rx.link(
         rx.button(
-            rx.text("🇧🇷", font_size="0.95rem"),
             rx.text(S.tr["go_to_brazil"],
                     display=["none", "none", "block", "block"]),
             size="1", variant="soft", color_scheme="gray",
@@ -51,7 +50,6 @@ def usa_link() -> rx.Component:
     """To the USA page (lower 48), carrying the chosen language."""
     return rx.link(
         rx.button(
-            rx.text("🇺🇸", font_size="0.95rem"),
             rx.text(S.tr["go_to_usa"],
                     display=["none", "none", "block", "block"]),
             size="1", variant="soft", color_scheme="gray",

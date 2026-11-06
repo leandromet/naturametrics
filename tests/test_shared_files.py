@@ -24,8 +24,8 @@ def _entries():
 
 def test_the_manifest_lists_the_shared_files():
     names = sorted(Path(rel).name for rel in _entries())
-    assert names == ["address.py", "kit.css", "kit.js", "kit.py", "mapbiomas_legend.py",
-                     "quickstart.py", "suite_links.py"], names
+    assert names == ["address.py", "kit.css", "kit.js", "kit.py", "lang_pref.py",
+                     "mapbiomas_legend.py", "quickstart.py", "suite_links.py"], names
 
 
 def test_every_shared_file_matches_the_manifest():

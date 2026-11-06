@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 TRANSLATIONS_EN: dict[str, str] = {
+    "region_usa": "USA",
+    "region_canada": "Canada",
+    "region_brazil": "Brazil",
+    "go_to_canada": "Go to Canada",
     # --- header / drawer ------------------------------------------------- #
     "nav_toggle_layers_aria": "Open layers panel",
     "nav_subtitle": "Crop inventory, forest age and forest change",
@@ -18,7 +22,7 @@ TRANSLATIONS_EN: dict[str, str] = {
     "legend_collapse_aria": "Collapse the legend",
     "legend_expand_aria": "Expand the legend",
     "go_to_brazil": "Go to Brazil",
-    "go_to_usa": "USA",
+    "go_to_usa": "Go to USA",
     "language_label": "Language",
     "close_button": "Close",
 

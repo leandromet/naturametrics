@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 TRANSLATIONS_EN: dict[str, str] = {
+    "region_usa": "USA",
+    "region_canada": "Canada",
+    "region_brazil": "Brazil",
+    "go_to_brazil": "Go to Brazil",
     # --- header / drawer ------------------------------------------------- #
     "nav_toggle_layers_aria": "Open layers panel",
     "nav_subtitle": "Land-use history and landscape analysis",

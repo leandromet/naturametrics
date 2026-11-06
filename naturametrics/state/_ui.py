@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import reflex as rx
 
+from ..components.lang_pref import detect_language_event, store_script
+
 from ..config import settings as st
 from ..translations import get_translations
 
@@ -53,6 +55,15 @@ class UIMixin(rx.State, mixin=True):
         raw = lang[0] if isinstance(lang, (list, tuple)) and lang else lang
         if raw in st.SUPPORTED_LANGUAGES:
             self.language = raw
+            return rx.call_script(store_script(raw))
+
+    def detect_language(self):
+        """On load: the language this page opens in (see components/lang_pref.py)."""
+        return detect_language_event(type(self), st.SUPPORTED_LANGUAGES)
+
+    def apply_detected_language(self, lang: str):
+        if lang in st.SUPPORTED_LANGUAGES:
+            self.language = lang
 
     def adopt_lang_param(self):
         """Honour ``?lang=`` on page load.
@@ -100,7 +111,7 @@ class UIMixin(rx.State, mixin=True):
     #: "1" once this browser dismissed the quick-start card. Browser storage:
     #: a per-viewer convenience that must survive a reload and never follow a
     #: user to someone else's screen.
-    quickstart_seen: str = rx.LocalStorage("", name="naturametrics_quickstart_br_v1")
+    quickstart_seen: str = rx.SessionStorage("", name="naturametrics_quickstart_br_v1")
 
     @rx.var
     def show_quickstart(self) -> bool:

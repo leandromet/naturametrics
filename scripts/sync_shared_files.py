@@ -63,6 +63,12 @@ SHARED = {
         "camposcope": "camposcope/components/suite_links.py",
         "yvynation": "yvynation/components/suite_links.py",
     },
+    # Which language a page opens in (?lang=, the remembered choice, the browser, the default).
+    "lang_pref": {
+        "naturametrics": "naturametrics/components/lang_pref.py",
+        "camposcope": "camposcope/components/lang_pref.py",
+        "yvynation": "yvynation/components/lang_pref.py",
+    },
     # The scrolling demonstrations' kit (reportagem/kit.py wraps an article in
     # a Reflex page; muda-clima serves the CSS/JS from its own static dir).
     "reportagem_kit_py": {

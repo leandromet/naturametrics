@@ -72,7 +72,7 @@ app.add_page(
         "Análise da história de uso da terra e da paisagem no Brasil a partir de "
         "MapBiomas, Hansen e Earth Engine."
     ),
-    on_load=AppState.adopt_url_params,
+    on_load=[AppState.adopt_url_params, AppState.detect_language],
 )
 
 # The scrolling walkthrough of one real point (doc in pages/demonstracao.py).
@@ -137,7 +137,7 @@ app.add_page(
         "Canada, from the AAFC Annual Crop Inventory, NTEMS and Hansen Global "
         "Forest Change on Earth Engine."
     ),
-    on_load=CanadaState.adopt_lang_param,
+    on_load=[CanadaState.adopt_lang_param, CanadaState.detect_language],
 )
 
 # The USA page (lower 48) is a sibling of the Canada page, forked from it: its own state
@@ -152,7 +152,7 @@ app.add_page(
         "Land-cover history and forest change anywhere in the lower 48 states, "
         "from USGS Annual NLCD and Hansen Global Forest Change on Earth Engine."
     ),
-    on_load=USState.adopt_lang_param,
+    on_load=[USState.adopt_lang_param, USState.detect_language],
 )
 
 # The biome polygons are fetched by the browser over HTTP, not pushed through

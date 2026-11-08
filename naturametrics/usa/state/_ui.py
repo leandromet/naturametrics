@@ -139,3 +139,8 @@ class USUIMixin(rx.State, mixin=True):
     def canada_href(self) -> str:
         """Link to the Canada page, carrying the current language."""
         return f"/canada?lang={self.language}"
+
+    @rx.var
+    def world_href(self) -> str:
+        """Link to the world page (/mundo), carrying the current language."""
+        return f"/mundo?lang={self.language}"

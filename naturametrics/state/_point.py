@@ -18,7 +18,7 @@ from ..config.settings import (
     MAP_CLICK_ZOOM,
 )
 from ..services.buffers import buffer_geojson
-from ..services.geo import CoordinateError, point, validate_for_analysis
+from ..services.geo import CoordinateError, looks_swapped, point, validate_for_analysis
 
 logger = logging.getLogger(__name__)
 
@@ -84,6 +84,10 @@ class PointMixin(rx.State, mixin=True):
             p = point(lat=lat, lon=lon)
             validate_for_analysis(p, messages=self.tr)
         except CoordinateError as exc:
+            if -90 <= lat <= 90 and -180 <= lon <= 180 and not looks_swapped(point(lat=lat, lon=lon)):
+                # on land the page does not cover (Paraguay, Mexico, …): the world page reads any point
+                logger.info("Click at (%s, %s) outside this page; sending it to /mundo", lat, lon)
+                return rx.redirect(f"/mundo?lang={self.language}&lat={lat:.5f}&lon={lon:.5f}")
             self.has_point = False
             self.point_error = str(exc)
             self.point_label = ""
@@ -177,12 +181,12 @@ def _zoom_to_click(lat: float, lon: float):
     container carries the literal ``id`` ``LeafletMap`` requires.
 
     All pages' maps are looked up, not just the Brazil one, so the Canada and USA pages
-    (``nm-canada-map``, ``nm-usa-map``) get the same behaviour from its own click handler
+    (``nm-canada-map``, ``nm-usa-map``, ``nm-world-map``) get the same behaviour from its own click handler
     without a second copy of this.
     """
     return rx.call_script(
         "(function () {"
-        "  var ids = ['nm-map', 'nm-canada-map', 'nm-usa-map'];"
+        "  var ids = ['nm-map', 'nm-canada-map', 'nm-usa-map', 'nm-world-map'];"
         "  for (var i = 0; i < ids.length; i++) {"
         "    var el = document.getElementById(ids[i]);"
         "    var map = el && el._nmMap;"

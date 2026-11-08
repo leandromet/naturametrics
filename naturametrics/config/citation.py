@@ -236,3 +236,46 @@ DATA_SOURCES_EN = [
      "Esri World Imagery; OpenStreetMap contributors; Google.",
      "https://www.openstreetmap.org/copyright"),
 ]
+
+
+#: What the World page (/mundo) uses: its own land-cover and climate sources first, then the shared ones it
+#: also draws (forest change, biomass, imagery, GBIF, Earth Engine, base maps). Same shape as the lists above.
+_WORLD_OWN_PT = [
+    ("GLC-FCS30D — cobertura do solo global, 30 m",
+     "Zhang, X. et al. (2024). GLC_FCS30D: the first global 30-m land-cover dynamics monitoring product with a "
+     "fine classification system for the period from 1985 to 2022. Earth System Science Data 16, 1353–1381. "
+     "doi:10.5194/essd-16-1353-2024. Dados: Zenodo, doi:10.5281/zenodo.8239305. Licença CC BY 4.0. "
+     "Base do histórico de cobertura do solo (2000–2022).",
+     "https://doi.org/10.5281/zenodo.8239305"),
+    ("NASA NEX-GDDP-CMIP6",
+     "Thrasher, B. et al. (2022). NASA Global Daily Downscaled Projections, CMIP6. Scientific Data 9, 262. "
+     "doi:10.1038/s41597-022-01393-4. Nove modelos, 0,25°, lidos em células de 0,5° na aba «Clima». "
+     "Licença CC0 (desde set/2022); os termos de uso do CMIP6 de origem continuam valendo.",
+     "https://www.nccs.nasa.gov/services/data-collections/land-based-products/nex-gddp-cmip6"),
+    ("Köppen-Geiger 1 km (Beck et al. 2023)",
+     "Beck, H. E. et al. (2023). Scientific Data 10, 724. doi:10.1038/s41597-023-02549-6. "
+     "Classes climáticas 1991–2020 e 2041–2070. Licença CC BY 4.0.",
+     "https://doi.org/10.6084/m9.figshare.21789074"),
+]
+_WORLD_OWN_EN = [
+    ("GLC-FCS30D — global land cover, 30 m",
+     "Zhang, X. et al. (2024). GLC_FCS30D: the first global 30-m land-cover dynamics monitoring product with a "
+     "fine classification system for the period from 1985 to 2022. Earth System Science Data 16, 1353–1381. "
+     "doi:10.5194/essd-16-1353-2024. Data: Zenodo, doi:10.5281/zenodo.8239305. Licence CC BY 4.0. "
+     "Basis of the land-cover history (2000–2022).",
+     _WORLD_OWN_PT[0][2]),
+    ("NASA NEX-GDDP-CMIP6",
+     "Thrasher, B. et al. (2022). NASA Global Daily Downscaled Projections, CMIP6. Scientific Data 9, 262. "
+     "doi:10.1038/s41597-022-01393-4. Nine models, 0.25°, read in 0.5° cells in the «Climate» tab. "
+     "Licence CC0 (since Sep 2022); the upstream CMIP6 terms of use still apply.",
+     _WORLD_OWN_PT[1][2]),
+    ("Köppen-Geiger 1 km (Beck et al. 2023)",
+     "Beck, H. E. et al. (2023). Scientific Data 10, 724. doi:10.1038/s41597-023-02549-6. "
+     "Climate classes 1991–2020 and 2041–2070. Licence CC BY 4.0.",
+     _WORLD_OWN_PT[2][2]),
+]
+_WORLD_SHARED = ("Hansen Global Forest Change", "ESA CCI Biomass (Biomass_cci) v6.0", "Composições anuais Landsat",
+                 "GBIF — Registros de ocorrência de espécies", "Google Earth Engine", "Mapas base")
+_pairs = [(pt, en) for pt, en in zip(DATA_SOURCES, DATA_SOURCES_EN) if pt[0] in _WORLD_SHARED]
+WORLD_SOURCES = _WORLD_OWN_PT + [pt for pt, _ in _pairs]
+WORLD_SOURCES_EN = _WORLD_OWN_EN + [en for _, en in _pairs]

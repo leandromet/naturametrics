@@ -200,3 +200,8 @@ class UIMixin(rx.State, mixin=True):
     def usa_href(self) -> str:
         """Link across to the USA page (lower 48), carrying the current language."""
         return f"/usa?lang={self.language}"
+
+    @rx.var
+    def world_href(self) -> str:
+        """Link to the world page (/mundo), carrying the current language."""
+        return f"/mundo?lang={self.language}"

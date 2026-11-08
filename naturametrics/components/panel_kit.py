@@ -21,6 +21,7 @@ from __future__ import annotations
 import reflex as rx
 
 from .layer_panel import _group
+from .tab_style import TAB_CHIP, TAB_LIST
 from ..pages.index import _SHEET_SCRIPT, _drag_handle  # noqa: F401  (script is run by the page)
 
 MOBILE_ONLY = ["flex", "flex", "flex", "none"]
@@ -128,10 +129,12 @@ def workspace_with_sheet(S, *, map_pane: rx.Component, results, panel_for_sheet,
 def right_tabs(items: list[tuple[str, rx.Var, rx.Component]]) -> rx.Component:
     """Tabs in the results area's right column, the Brazil page's arrangement: one trigger per
     analysis, the first one open. ``items`` = (value, label, content)."""
+    # The right padding keeps the last chip clear of the Resize button above the panel.
     return rx.tabs.root(
         rx.tabs.list(
-            *[rx.tabs.trigger(label, value=value, white_space="nowrap") for value, label, _ in items],
-            style={"overflowX": "auto", "maxWidth": "100%", "flexWrap": "nowrap"},
+            *[rx.tabs.trigger(label, value=value, title=label, style=TAB_CHIP) for value, label, _ in items],
+            style={**TAB_LIST, "paddingRight": "4.8rem"},
+            width="100%",
         ),
         *[rx.tabs.content(content, value=value, padding_top="0.6rem", width="100%")
           for value, _, content in items],

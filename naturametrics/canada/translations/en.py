@@ -7,6 +7,7 @@ TRANSLATIONS_EN: dict[str, str] = {
     "region_canada": "Canada",
     "region_brazil": "Brazil",
     "go_to_canada": "Go to Canada",
+    "go_to_world": "World",
     # --- header / drawer ------------------------------------------------- #
     "nav_toggle_layers_aria": "Open layers panel",
     "nav_subtitle": "Crop inventory, forest age and forest change",
@@ -298,7 +299,7 @@ TRANSLATIONS_EN: dict[str, str] = {
     "help_step1_body": (
         "Click anywhere in Canada. A marker is created and five analysis areas "
         "(0.5, 1, 2, 5 and 10 km radius) are drawn around it. Clicks outside Canada "
-        "are refused; clicks in the far north are not — see the note on "
+        "open the World page at that point; clicks in the far north do not — see the note on "
         "coverage below."
     ),
     "help_step2_title": "Read the crop-inventory history",

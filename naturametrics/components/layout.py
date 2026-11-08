@@ -72,6 +72,21 @@ def usa_link() -> rx.Component:
     )
 
 
+def world_link() -> rx.Component:
+    """To the world page (/mundo), carrying the chosen language. The icon stays on a phone, where the
+    text is hidden."""
+    return rx.link(
+        rx.button(
+            rx.icon("globe", size=14),
+            rx.text(AppState.tr["go_to_world"],
+                    display=["none", "none", "block", "block"]),
+            size="1", variant="soft", color_scheme="gray",
+            aria_label=AppState.tr["go_to_world"],
+        ),
+        href=AppState.world_href,
+    )
+
+
 def header() -> rx.Component:
     # Below desktop, the sidebar is folded into the mobile bottom sheet
     # (pages/index.py::_mobile_sheet()) — always mounted, opened by dragging
@@ -106,6 +121,7 @@ def header() -> rx.Component:
                     accent=ACCENT),
         canada_link(),
         usa_link(),
+        world_link(),
         language_switcher(),
         header_actions(),
         width="100%",

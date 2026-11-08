@@ -226,7 +226,7 @@ TRANSLATIONS_EN: dict[str, str] = {
         'Click anywhere in the lower 48 states, Alaska (east of 170°W) or Hawaii. A '
         'marker is created and five analysis areas (0.5, 1, 2, 5 and 10 km radius) '
         'are drawn around it. Clicks outside them — including Puerto Rico and other '
-        'countries — are refused.'
+        'countries — open the World page at that point.'
     ),
     'help_step2_title': 'Read the land-cover history',
     'help_step2_body': (
@@ -306,6 +306,7 @@ TRANSLATIONS_EN: dict[str, str] = {
     ),
     'app_name': 'Naturametrics USA — Land cover, disturbance and forest change',
     'go_to_canada': 'Canada',
+    'go_to_world': 'World',
     'start_hint': 'Click anywhere in the lower 48, Alaska or Hawaii to start',
     'nlcd_toggle_label': 'Annual NLCD',
     'nlcd_coverage_note': (

@@ -728,8 +728,9 @@ TRANSLATIONS_PT: dict[str, str] = {
     "help_step1_body": (
         "Clique em qualquer lugar do mapa. Um marcador é criado e cinco "
         "áreas de análise (0,5, 1, 2, 5 e 10 km de raio) são desenhadas em volta "
-        "dele. Cliques fora do Brasil são recusados: o MapBiomas cobre "
-        "apenas o território nacional."
+        "dele. Cliques fora do Brasil abrem a página Mundo naquele ponto: o "
+        "MapBiomas cobre apenas o território nacional, então ali se usam os "
+        "dados mundiais (GLC-FCS30D)."
     ),
     "help_step2_title": "Leia a história de uso da terra",
     "help_step2_body": (
@@ -889,6 +890,7 @@ TRANSLATIONS_PT: dict[str, str] = {
 
     # --- language switcher ---------------------------------------------- #
     "go_to_canada": "Ir para o Canadá",
+    "go_to_world": "Mundo",
     "go_to_usa": "Ir para os EUA",
     "language_label": "Idioma",
 

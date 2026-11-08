@@ -14,6 +14,8 @@ from .canada.pages.index import canada_index
 from .canada.state import CanadaState
 from .usa.pages.index import usa_index
 from .usa.state import USState
+from .world.pages.index import world_index
+from .world.state import WorldState
 from .components.layout import ACCENT
 from .config.settings import GA_MEASUREMENT_ID
 from .pages.demonstracao import demonstracao, walkthrough, walkthrough_brasil, walkthrough_usa
@@ -153,6 +155,20 @@ app.add_page(
         "from USGS Annual NLCD and Hansen Global Forest Change on Earth Engine."
     ),
     on_load=[USState.adopt_lang_param, USState.detect_language],
+)
+
+# The world page (/mundo): the same data as muda-clima's world view — Global land cover in four
+# GLC-FCS30D tile groups, and climate, fire weather, Köppen and relief at any clicked point. A
+# sibling package like Canada and the USA: its own state root, data reader and translations.
+app.add_page(
+    world_index,
+    route="/mundo",
+    title="Naturametrics — World land cover and climate",
+    description=(
+        "Land cover, terrain, climate, fire weather and Köppen-Geiger class anywhere on Earth, "
+        "from GLC-FCS30D, Copernicus GLO-30, NASA NEX-GDDP and Beck et al. 2023."
+    ),
+    on_load=[WorldState.adopt_url_params, WorldState.detect_language],
 )
 
 # The biome polygons are fetched by the browser over HTTP, not pushed through

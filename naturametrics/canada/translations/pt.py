@@ -7,6 +7,7 @@ TRANSLATIONS_PT: dict[str, str] = {
     "region_canada": "Canadá",
     "region_brazil": "Brasil",
     "go_to_canada": "Ir para o Canadá",
+    "go_to_world": "Mundo",
     # --- header / drawer ------------------------------------------------- #
     "nav_toggle_layers_aria": "Abrir painel de camadas",
     "nav_subtitle": "Inventário agrícola, idade e mudança da floresta",
@@ -299,8 +300,8 @@ TRANSLATIONS_PT: dict[str, str] = {
     "help_step1_body": (
         "Clique em qualquer lugar do Canadá. Um marcador é criado e cinco "
         "áreas de análise (0,5, 1, 2, 5 e 10 km de raio) são desenhadas em volta "
-        "dele. Cliques fora do Canadá são recusados; cliques no extremo norte "
-        "não são — veja a nota sobre cobertura abaixo."
+        "dele. Cliques fora do Canadá abrem a página Mundo naquele ponto; cliques no extremo norte "
+        "não — veja a nota sobre cobertura abaixo."
     ),
     "help_step2_title": "Leia a história do inventário agrícola",
     "help_step2_body": (

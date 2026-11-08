@@ -231,7 +231,7 @@ TRANSLATIONS_PT: dict[str, str] = {
         'Clique em qualquer lugar dos 48 estados contíguos, do Alasca (a leste de '
         '170°O) ou do Havaí. Um marcador é criado e cinco áreas de análise (0,5, 1, '
         '2, 5 e 10 km de raio) são desenhadas em volta dele. Cliques fora delas — '
-        'inclusive Porto Rico e outros países — são recusados.'
+        'inclusive Porto Rico e outros países — abrem a página Mundo naquele ponto.'
     ),
     'help_step2_title': 'Leia o histórico de cobertura do solo',
     'help_step2_body': (
@@ -313,6 +313,7 @@ TRANSLATIONS_PT: dict[str, str] = {
     ),
     'app_name': 'Naturametrics EUA — Cobertura do solo, distúrbios e mudança florestal',
     'go_to_canada': 'Canadá',
+    'go_to_world': 'Mundo',
     'start_hint': (
         'Clique em algum lugar dos 48 estados contíguos, do Alasca ou do Havaí para '
         'começar'

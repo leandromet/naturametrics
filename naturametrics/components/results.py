@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import reflex as rx
 
+from .tab_style import TAB_CHIP, TAB_LIST
 from .gbif_panel import gbif_buffer_panel
 from ..config.mapbiomas import MAPBIOMAS_YEAR_END
 from ..services.change_mask import FOREST_CODE_BASELINE_YEAR
@@ -649,17 +650,10 @@ def _tab_trigger_with_hint(label, short_label, value: str, hint) -> rx.Component
         ),
         value=value,
         style={
-            # Keeps the horizontal-scroll fallback working on a phone, where
-            # even the short labels can overflow: without `flexShrink: 0` flex
-            # resolves the overflow by squashing every trigger instead, so the
-            # content always "fits" and the list never becomes scrollable.
-            "flexShrink": 0,
-            "whiteSpace": "nowrap",
-            # Radix Themes renders each trigger's children TWICE — a visible
-            # copy and a hidden bold one that reserves width so the label does
-            # not shift when it becomes bold on activation. Both copies are
-            # matched by these rules, so the reserved width tracks whichever
-            # label is actually showing.
+            **TAB_CHIP,
+            # Radix Themes renders each trigger's children TWICE (a visible copy and a hidden bold
+            # one that reserves width); both are matched by these rules, so the chip tracks whichever
+            # label is showing: the full one on the active tab, the short one on the others.
             '&[data-state="inactive"] .nm-tab-full': {"display": "none"},
             '&[data-state="active"] .nm-tab-short': {"display": "none"},
         },
@@ -698,34 +692,8 @@ def _forest_age_panel() -> rx.Component:
                             AppState.tr["gbif_species_tab"],
                             AppState.tr["gbif_species_tab_short"], "gbif_species",
                             AppState.tr["gbif_species_tab_hint"]),
-                        # Five tabs stopped fitting the header once "Espécies
-                        # (GBIF)" joined them, so the strip slides sideways
-                        # instead of the labels being squeezed. Scrolling has
-                        # to live on tabs.list itself rather than on a wrapper:
-                        # Reflex enforces tabs.trigger's parent to be
-                        # tabs.list at the component level (see
-                        # _tab_trigger_with_hint), so there is nowhere between
-                        # the two to put a scroll container.
-                        #
-                        # The scrollbar is hidden rather than shown. This app
-                        # is mobile-first, where the gesture is a swipe and a
-                        # horizontal bar is pure clutter under a 32px-tall tab
-                        # strip; on desktop the tabs are usually all visible
-                        # anyway, and browsers scroll a focused trigger into
-                        # view on their own for keyboard users.
-                        style={
-                            "overflowX": "auto",
-                            # `hidden`, not `visible`: a horizontal scroll
-                            # container with visible vertical overflow gets a
-                            # vertical scrollbar too in Chrome, which would
-                            # clip Radix's active-tab underline.
-                            "overflowY": "hidden",
-                            "scrollbarWidth": "none",           # Firefox
-                            "msOverflowStyle": "none",          # legacy Edge
-                            "&::-webkit-scrollbar": {"display": "none"},
-                            # Momentum scrolling on iOS Safari.
-                            "WebkitOverflowScrolling": "touch",
-                        },
+                        # Chips that wrap onto a second row instead of scrolling sideways (phone-friendly).
+                        style=TAB_LIST,
                     ),
                     spacing="2", align="center",
                     flex=["1 1 100%", "1 1 100%", "1 1 auto", "1 1 auto"],

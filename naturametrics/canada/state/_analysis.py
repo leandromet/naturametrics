@@ -459,11 +459,11 @@ class CanadaAnalysisMixin(rx.State, mixin=True):
                  "meff": f(r["meff_ha"]), "shannon": f(r["shannon"], 2),
                  "evenness": f(r["simpson_evenness"], 2)} for r in self._metrics]
 
-    @rx.var(cache=True)
+    @rx.var(cache=True, deps=["biomass_running", "selected_radius", "language"], auto_deps=False)
     def biomass_has(self) -> bool:
         return bool(self._biomass)
 
-    @rx.var(cache=True)
+    @rx.var(cache=True, deps=["biomass_running", "selected_radius", "language"], auto_deps=False)
     def biomass_rows(self) -> list[dict[str, str]]:
         import math
         pt = self.language == "pt"
@@ -478,7 +478,7 @@ class CanadaAnalysisMixin(rx.State, mixin=True):
         return [{"year": str(int(r["year"])), "mean": f(r["agb_mean_mgha"]), "sd": f(r["agb_sd_mgha"])}
                 for r in sorted(rows, key=lambda r: r["year"])]
 
-    @rx.var(cache=True)
+    @rx.var(cache=True, deps=["biomass_running", "selected_radius", "language"], auto_deps=False)
     def biomass_chart_figure(self) -> go.Figure:
         import pandas as pd
         from ..components.charts import biomass_chart

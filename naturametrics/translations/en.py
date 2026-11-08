@@ -715,8 +715,9 @@ TRANSLATIONS_EN: dict[str, str] = {
     "help_step1_body": (
         "Click anywhere on the map. A marker is created and five analysis "
         "areas (0.5, 1, 2, 5 and 10 km radius) are drawn around it. Clicks "
-        "outside Brazil are refused: MapBiomas covers only national "
-        "territory."
+        "outside Brazil open the World page at that point: MapBiomas "
+        "covers only national territory, so the world data (GLC-FCS30D) "
+        "is used there."
     ),
     "help_step2_title": "Read the land-use history",
     "help_step2_body": (
@@ -876,6 +877,7 @@ TRANSLATIONS_EN: dict[str, str] = {
 
     # --- language switcher ---------------------------------------------- #
     "go_to_canada": "Go to Canada",
+    "go_to_world": "World",
     "go_to_usa": "Go to USA",
     "language_label": "Language",
 

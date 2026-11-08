@@ -59,6 +59,21 @@ def canada_link() -> rx.Component:
     )
 
 
+def world_link() -> rx.Component:
+    """To the world page (/mundo), carrying the chosen language. The icon stays on a phone, where the
+    text is hidden."""
+    return rx.link(
+        rx.button(
+            rx.icon("globe", size=14),
+            rx.text(S.tr["go_to_world"],
+                    display=["none", "none", "block", "block"]),
+            size="1", variant="soft", color_scheme="gray",
+            aria_label=S.tr["go_to_world"],
+        ),
+        href=S.world_href,
+    )
+
+
 def header() -> rx.Component:
     return rx.hstack(
         rx.hstack(
@@ -77,6 +92,7 @@ def header() -> rx.Component:
                     accent=ACCENT),
         brazil_link(),
         canada_link(),
+        world_link(),
         language_switcher(),
         header_actions(),
         width="100%", min_width="0",

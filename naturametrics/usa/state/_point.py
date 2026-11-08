@@ -13,7 +13,7 @@ import reflex as rx
 from ...config.settings import BUFFER_MODE_DEFAULT, BUFFER_RADII_KM
 from ...services.buffers import buffer_geojson
 from ...state._point import _zoom_to_click
-from ..services.geo import CoordinateError, point, region_of, validate_for_analysis
+from ..services.geo import CoordinateError, looks_swapped, point, region_of, validate_for_analysis
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +38,10 @@ class USPointMixin(rx.State, mixin=True):
             p = point(lat=lat, lon=lon)
             validate_for_analysis(p, messages=self.tr)
         except CoordinateError as exc:
+            if -90 <= lat <= 90 and -180 <= lon <= 180 and not looks_swapped(point(lat=lat, lon=lon)):
+                # on land the page does not cover (Paraguay, Mexico, …): the world page reads any point
+                logger.info("Click at (%s, %s) outside this page; sending it to /mundo", lat, lon)
+                return rx.redirect(f"/mundo?lang={self.language}&lat={lat:.5f}&lon={lon:.5f}")
             self.has_point = False
             self.point_error = str(exc)
             self.point_label = ""

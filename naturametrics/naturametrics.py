@@ -66,13 +66,49 @@ app = rx.App(
     ],
 )
 
+
+# Link previews (LinkedIn, WhatsApp, Slack, X) read Open Graph tags before any JavaScript runs;
+# without them Reflex falls back to og:image="favicon.ico". Each country page gets its own
+# 1200x630 share image from assets/og/ (served at /og/), cut from the page's own map:
+# brasil (an IFN plot), canada (Kelowna), usa (Paradise, CA), mundo (the world land-cover map).
+SITE = "https://naturametrics.umaterra.com.br"
+
+
+def _share(route: str, title: str, description: str, image: str, locale: str) -> dict:
+    url = SITE + (route.rstrip("/") + "/")
+    image_url = f"{SITE}/og/{image}.jpg"
+    return {
+        "route": route,
+        "title": title,
+        "description": description,
+        "image": image_url,
+        "meta": [
+            rx.el.meta(property="og:type", content="website"),
+            rx.el.meta(property="og:site_name", content="Naturametrics · UmaTerra"),
+            rx.el.meta(property="og:title", content=title),
+            rx.el.meta(property="og:description", content=description),
+            rx.el.meta(property="og:url", content=url),
+            rx.el.meta(property="og:image:width", content="1200"),
+            rx.el.meta(property="og:image:height", content="630"),
+            rx.el.meta(property="og:locale", content=locale),
+            rx.el.meta(name="twitter:card", content="summary_large_image"),
+            rx.el.meta(name="twitter:title", content=title),
+            rx.el.meta(name="twitter:description", content=description),
+            rx.el.meta(name="twitter:image", content=image_url),
+        ],
+    }
+
 app.add_page(
     index,
-    route="/",
-    title="Naturametrics — História de uso da terra",
-    description=(
-        "Análise da história de uso da terra e da paisagem no Brasil a partir de "
-        "MapBiomas, Hansen e Earth Engine."
+    **_share(
+        "/",
+        "Naturametrics — História de uso da terra",
+        (
+            "Análise da história de uso da terra e da paisagem no Brasil a partir de "
+            "MapBiomas, Hansen e Earth Engine."
+        ),
+        "brasil",
+        "pt_BR",
     ),
     on_load=[AppState.adopt_url_params, AppState.detect_language],
 )
@@ -132,12 +168,16 @@ app.add_page(
 # var carrying a "which country" qualifier.
 app.add_page(
     canada_index,
-    route="/canada",
-    title="Naturametrics Canada — Crop inventory and forest change",
-    description=(
-        "Land-use history, forest stand age and forest change anywhere in "
-        "Canada, from the AAFC Annual Crop Inventory, NTEMS and Hansen Global "
-        "Forest Change on Earth Engine."
+    **_share(
+        "/canada",
+        "Naturametrics Canada — Crop inventory and forest change",
+        (
+            "Land-use history, forest stand age and forest change anywhere in "
+            "Canada, from the AAFC Annual Crop Inventory, NTEMS and Hansen Global "
+            "Forest Change on Earth Engine."
+        ),
+        "canada",
+        "en_CA",
     ),
     on_load=[CanadaState.adopt_lang_param, CanadaState.detect_language],
 )
@@ -148,11 +188,16 @@ app.add_page(
 # the AAFC crop inventory; there is no stand-age panel (NTEMS is Canadian).
 app.add_page(
     usa_index,
-    route="/usa",
-    title="Naturametrics USA — Land cover and forest change",
-    description=(
-        "Land-cover history and forest change anywhere in the lower 48 states, "
-        "from USGS Annual NLCD and Hansen Global Forest Change on Earth Engine."
+    **_share(
+        "/usa",
+        "Naturametrics USA — Land cover and forest change",
+        (
+            "Land-cover history, disturbance, fire and forest change anywhere in the United States "
+            "(lower 48, Alaska and Hawaii), from USGS Annual NLCD, USFS LCMS, MTBS and Hansen "
+            "Global Forest Change on Earth Engine."
+        ),
+        "usa",
+        "en_US",
     ),
     on_load=[USState.adopt_lang_param, USState.detect_language],
 )
@@ -162,11 +207,15 @@ app.add_page(
 # sibling package like Canada and the USA: its own state root, data reader and translations.
 app.add_page(
     world_index,
-    route="/mundo",
-    title="Naturametrics — World land cover and climate",
-    description=(
-        "Land cover, terrain, climate, fire weather and Köppen-Geiger class anywhere on Earth, "
-        "from GLC-FCS30D, Copernicus GLO-30, NASA NEX-GDDP and Beck et al. 2023."
+    **_share(
+        "/mundo",
+        "Naturametrics — World land cover and climate",
+        (
+            "Land cover, terrain, climate, fire weather and Köppen-Geiger class anywhere on Earth, "
+            "from GLC-FCS30D, Copernicus GLO-30, NASA NEX-GDDP and Beck et al. 2023."
+        ),
+        "mundo",
+        "en_US",
     ),
     on_load=[WorldState.adopt_url_params, WorldState.detect_language],
 )
